@@ -1,0 +1,57 @@
+<div class="admin-container">
+  <!-- Header/Navbar -->
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i> LOGOUT
+      </a>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <h2 class="dashboard-title">Admin Dashboard</h2>
+    
+    <div class="admin-cards-grid">
+      <!-- Store Masterfile Card -->
+      <div class="admin-card">
+        <div class="card-icon">
+          <i class="bi bi-grid-3x3"></i>
+        </div>
+        <div class="card-content">
+          <h3>Store Masterfile</h3>
+        </div>
+      </div>
+
+      <!-- Route Planner Card -->
+      <div class="admin-card">
+        <div class="card-icon">
+          <i class="bi bi-map"></i>
+        </div>
+        <div class="card-content">
+          <h3>Route Planner</h3>
+        </div>
+      </div>
+
+      <!-- Staff/Rosta Card -->
+      <div class="admin-card" (click)="navigateTo('/roster')">
+        <div class="card-icon">
+          <i class="bi bi-people"></i>
+        </div>
+        <div class="card-content">
+          <h3>Staff / Rosta</h3>
+        </div>
+      </div>
+
+      <!-- News/Updates Card -->
+      <div class="admin-card">
+        <div class="card-icon">
+          <i class="bi bi-megaphone"></i>
+        </div>
+        <div class="card-content">
+          <h3>News / Updates</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
