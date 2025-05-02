@@ -6,8 +6,27 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    console.log('Client index.html loaded');
+    
+    // Add window error handler to catch any JavaScript errors
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error('JavaScript error:', message, 'at', source, ':', lineno, ':', colno);
+      document.body.innerHTML += `<div style="color:red; padding: 20px; border: 1px solid #f00;">
+        <h2>JavaScript Error Detected</h2>
+        <p>${message}</p>
+        <p>Source: ${source}</p>
+        <p>Line: ${lineno}, Column: ${colno}</p>
+      </div>`;
+      return true;
+    };
+  </script>
 </head>
 <body>
+  <div style="padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; margin: 20px;">
+    <h2>OptiRoute Client App</h2>
+    <p>If you see this message, the application HTML is loading but the Angular application might not be initializing properly.</p>
+  </div>
   <app-root></app-root>
 </body>
 </html>
