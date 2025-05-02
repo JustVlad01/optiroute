@@ -1,0 +1,31 @@
+.update-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #2c506e;
+  color: white;
+  text-align: center;
+  padding: 12px;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.update-button {
+  background-color: white;
+  color: #2c506e;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
