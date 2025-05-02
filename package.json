@@ -3,13 +3,17 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "node server.js",
     "build": "ng build",
+    "build:all": "ng build admin --configuration production && ng build client --configuration production",
+    "build:client": "ng build client --configuration production",
+    "build:admin": "ng build admin --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
   "private": true,
   "dependencies": {
+    "@angular/animations": "^19.2.0",
     "@angular/cdk": "^19.2.14",
     "@angular/common": "^19.2.0",
     "@angular/compiler": "^19.2.0",
@@ -22,6 +26,8 @@
     "@supabase/supabase-js": "^2.49.4",
     "bootstrap": "^5.3.5",
     "bootstrap-icons": "^1.11.3",
+    "express": "^4.18.2",
+    "path": "^0.12.7",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

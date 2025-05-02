@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: optiroute
+    env: node
+    buildCommand: npm install --legacy-peer-deps && npm run build:all
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x
+    plan: free
+    domains:
+      - optiroute.onrender.com
+    pullRequestPreviewsEnabled: true 
