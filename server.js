@@ -7,6 +7,10 @@ const app = express();
 const clientBuildPath = path.join(__dirname, 'dist/client');
 const adminBuildPath = path.join(__dirname, 'dist/admin');
 
+// In Angular 19+, the build output is in a 'browser' subfolder
+const clientBrowserPath = path.join(clientBuildPath, 'browser');
+const adminBrowserPath = path.join(adminBuildPath, 'browser');
+
 // Configure middleware based on URL
 app.use((req, res, next) => {
   const host = req.get('host') || '';
@@ -16,12 +20,12 @@ app.use((req, res, next) => {
   
   if (host.includes('admin')) {
     // Serve admin app
-    staticPath = adminBuildPath;
-    indexPath = path.join(adminBuildPath, 'index.html');
+    staticPath = fs.existsSync(adminBrowserPath) ? adminBrowserPath : adminBuildPath;
+    indexPath = path.join(staticPath, 'index.html');
   } else {
     // Serve client app by default
-    staticPath = clientBuildPath;
-    indexPath = path.join(clientBuildPath, 'index.html');
+    staticPath = fs.existsSync(clientBrowserPath) ? clientBrowserPath : clientBuildPath;
+    indexPath = path.join(staticPath, 'index.html');
   }
   
   // Check if the build directory exists before setting paths
@@ -49,6 +53,7 @@ app.get('*', (req, res) => {
     res.status(404).send(`
       <h1>File Not Found</h1>
       <p>The requested application build files could not be found.</p>
+      <p>Path that was checked: ${req.appPath}</p>
     `);
   }
 });
@@ -63,11 +68,22 @@ app.listen(PORT, () => {
   console.log(`Client build directory exists: ${fs.existsSync(clientBuildPath)}`);
   console.log(`Admin build directory exists: ${fs.existsSync(adminBuildPath)}`);
   
+  console.log(`Client browser directory exists: ${fs.existsSync(clientBrowserPath)}`);
+  console.log(`Admin browser directory exists: ${fs.existsSync(adminBrowserPath)}`);
+  
   if (fs.existsSync(clientBuildPath)) {
     console.log(`Client build directory contents: ${fs.readdirSync(clientBuildPath).join(', ')}`);
   }
   
   if (fs.existsSync(adminBuildPath)) {
     console.log(`Admin build directory contents: ${fs.readdirSync(adminBuildPath).join(', ')}`);
+  }
+  
+  if (fs.existsSync(clientBrowserPath)) {
+    console.log(`Client browser directory contents: ${fs.readdirSync(clientBrowserPath).join(', ')}`);
+  }
+  
+  if (fs.existsSync(adminBrowserPath)) {
+    console.log(`Admin browser directory contents: ${fs.readdirSync(adminBrowserPath).join(', ')}`);
   }
 }); 
