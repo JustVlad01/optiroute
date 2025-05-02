@@ -1,0 +1,190 @@
+<div class="driver-forms-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">OPTIROUTE</div>
+    <div class="badge">
+      <span class="badge bg-primary">DRIVER</span>
+    </div>
+  </header>
+
+  <div class="forms-content">
+    <div class="forms-header">
+      <button class="btn btn-outline-primary back-btn" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </button>
+      <h2>Daily Driver Form</h2>
+    </div>
+
+    <div class="form-container">
+      <form [formGroup]="driverForm" (ngSubmit)="onSubmit()">
+        <div class="row">
+          <!-- Driver Name -->
+          <div class="col-md-6 mb-3">
+            <label for="driverName" class="form-label">Driver Name</label>
+            <input type="text" class="form-control" id="driverName" formControlName="driverName" readonly>
+          </div>
+
+          <!-- Date -->
+          <div class="col-md-6 mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="text" class="form-control" id="date" formControlName="date" readonly>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Van Registration -->
+          <div class="col-md-6 mb-3">
+            <label for="vanRegistration" class="form-label">Van Registration *</label>
+            <input type="text" class="form-control" id="vanRegistration" formControlName="vanRegistration">
+            <div *ngIf="driverForm.get('vanRegistration')?.invalid && driverForm.get('vanRegistration')?.touched" class="error-message">
+              Van registration is required
+            </div>
+          </div>
+
+          <!-- Starting Mileage -->
+          <div class="col-md-6 mb-3">
+            <label for="startingMileage" class="form-label">Starting Mileage *</label>
+            <input type="number" class="form-control" id="startingMileage" formControlName="startingMileage">
+            <div *ngIf="driverForm.get('startingMileage')?.invalid && driverForm.get('startingMileage')?.touched" class="error-message">
+              Please enter a valid mileage number
+            </div>
+          </div>
+        </div>
+
+        <!-- Fuel Added -->
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="fuelAdded" formControlName="fuelAdded">
+            <label class="form-check-label" for="fuelAdded">
+              Fuel Added?
+            </label>
+          </div>
+        </div>
+
+        <!-- Conditional Fuel Fields -->
+        <div *ngIf="showFuelFields" class="fuel-fields">
+          <div class="row">
+            <!-- Fuel Litres Added -->
+            <div class="col-md-6 mb-3">
+              <label for="fuelLitresAdded" class="form-label">Fuel Litres Added *</label>
+              <input type="number" step="0.01" class="form-control" id="fuelLitresAdded" formControlName="fuelLitresAdded">
+              <div *ngIf="driverForm.get('fuelLitresAdded')?.invalid && driverForm.get('fuelLitresAdded')?.touched" class="error-message">
+                Please enter a valid number of litres
+              </div>
+            </div>
+
+            <!-- Fuel Card Reg -->
+            <div class="col-md-6 mb-3">
+              <label for="fuelCardReg" class="form-label">Fuel Card Registration *</label>
+              <input type="text" class="form-control" id="fuelCardReg" formControlName="fuelCardReg">
+              <div *ngIf="driverForm.get('fuelCardReg')?.invalid && driverForm.get('fuelCardReg')?.touched" class="error-message">
+                Fuel card registration is required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Full Uniform -->
+          <div class="col-md-6 mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="hasFullUniform" formControlName="hasFullUniform">
+              <label class="form-check-label" for="hasFullUniform">
+                Do you have full uniform?
+              </label>
+            </div>
+          </div>
+
+          <!-- Site Keys -->
+          <div class="col-md-6 mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="hasAllSiteKeys" formControlName="hasAllSiteKeys">
+              <label class="form-check-label" for="hasAllSiteKeys">
+                Do you have all site keys?
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Work Start Time -->
+          <div class="col-md-6 mb-3">
+            <label for="workStartTime" class="form-label">Work Start Time *</label>
+            <input type="time" class="form-control" id="workStartTime" formControlName="workStartTime">
+            <div *ngIf="driverForm.get('workStartTime')?.invalid && driverForm.get('workStartTime')?.touched" class="error-message">
+              Work start time is required
+            </div>
+          </div>
+
+          <!-- Crates Out -->
+          <div class="col-md-6 mb-3">
+            <label for="cratesOut" class="form-label">Number of Crates Out *</label>
+            <input type="number" class="form-control" id="cratesOut" formControlName="cratesOut">
+            <div *ngIf="driverForm.get('cratesOut')?.invalid && driverForm.get('cratesOut')?.touched" class="error-message">
+              Please enter a valid number
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Preload Van Temperature -->
+          <div class="col-md-6 mb-3">
+            <label for="preloadVanTemperature" class="form-label">Preload Van Temperature (optional)</label>
+            <input type="number" step="0.1" class="form-control" id="preloadVanTemperature" formControlName="preloadVanTemperature">
+          </div>
+
+          <!-- Preload Product Temperature Probe -->
+          <div class="col-md-6 mb-3">
+            <label for="preloadProductTemperatureProbe" class="form-label">Preload Product Temperature by Probe (optional)</label>
+            <input type="number" step="0.1" class="form-control" id="preloadProductTemperatureProbe" formControlName="preloadProductTemperatureProbe">
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- All Auxiliary Products On Board -->
+          <div class="col-md-6 mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="allAuxiliaryProductsOnBoard" formControlName="allAuxiliaryProductsOnBoard">
+              <label class="form-check-label" for="allAuxiliaryProductsOnBoard">
+                Are all auxiliary products on board?
+              </label>
+            </div>
+          </div>
+
+          <!-- Van Probe Serial Number -->
+          <div class="col-md-6 mb-3">
+            <label for="vanProbeSerialNumber" class="form-label">Van Probe Serial Number (optional)</label>
+            <input type="text" class="form-control" id="vanProbeSerialNumber" formControlName="vanProbeSerialNumber">
+          </div>
+        </div>
+
+        <!-- Issues with Dockets/Paperwork -->
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="issuesWithDockets" formControlName="issuesWithDockets">
+            <label class="form-check-label" for="issuesWithDockets">
+              Any issues with Dockets/Paperwork?
+            </label>
+          </div>
+        </div>
+
+        <!-- Conditional Docket Issues Reason -->
+        <div *ngIf="showDocketIssueField" class="mb-3">
+          <label for="docketIssuesReason" class="form-label">Please explain the issues with dockets/paperwork *</label>
+          <textarea class="form-control" id="docketIssuesReason" rows="3" formControlName="docketIssuesReason"></textarea>
+          <div *ngIf="driverForm.get('docketIssuesReason')?.invalid && driverForm.get('docketIssuesReason')?.touched" class="error-message">
+            Please explain the issues with dockets/paperwork
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline-secondary" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Submit Form
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

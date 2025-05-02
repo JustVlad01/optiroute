@@ -42,4 +42,9 @@ export class DashboardComponent implements OnInit {
     // Redirect to login page
     this.router.navigate(['/login']);
   }
+
+  navigateToForms(): void {
+    // Navigate to the driver forms page
+    this.router.navigate(['/driver-forms']);
+  }
 }
