@@ -1,3 +1,64 @@
 /* You can add global styles to this file, and also import other style files */
 @import "bootstrap-icons/font/bootstrap-icons.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+/* Add corporate theme global variables */
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --light-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --success-color: #27ae60;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --text-color: #333;
+  --light-text: #6c757d;
+}
+
+/* Common header styling */
+.header-fullwidth, 
+.navbar,
+.header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+  color: white;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+/* Navigation buttons styling */
+.btn-outline-light {
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Icon colors */
+.bi {
+  &.text-primary {
+    color: var(--secondary-color) !important;
+  }
+}
+
+/* Override Bootstrap primary */
+.btn-primary {
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  border: none;
+  
+  &:hover {
+    background: linear-gradient(135deg, #2980b9, #1e2b37);
+  }
+}
+
+/* Bootstrap bg-primary override */
+.bg-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+}

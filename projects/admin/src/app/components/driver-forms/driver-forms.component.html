@@ -1,0 +1,374 @@
+<div class="driver-form-container">
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" (click)="isViewMode ? navigateBack() : navigateToDashboard()">
+        <i class="bi bi-arrow-left"></i> {{ isViewMode ? 'Back to Assignments' : 'Back to Dashboard' }}
+      </a>
+    </div>
+  </header>
+
+  <div class="form-content">
+    <h2 class="form-title">Driver Daily Form</h2>
+
+    <div *ngIf="isViewMode && problemFields.length > 0" class="review-alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      This form needs review due to reported issues highlighted below in red.
+    </div>
+    
+    <form [formGroup]="driverForm" (ngSubmit)="onSubmit()" class="driver-form">
+      <!-- Driver Info Section -->
+      <div class="form-section">
+        <h3>Driver Information</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="driverName">Driver Name</label>
+            <input type="text" id="driverName" formControlName="driverName" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" formControlName="date" [readonly]="isViewMode">
+          </div>
+          
+          <div class="form-group">
+            <label for="time">Time</label>
+            <input type="time" id="time" formControlName="time" [readonly]="isViewMode">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Vehicle Info Section -->
+      <div class="form-section">
+        <h3>Vehicle Information</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vanRegistration">Van Registration</label>
+            <input type="text" id="vanRegistration" formControlName="vanRegistration">
+            <div *ngIf="driverForm.get('vanRegistration')?.invalid && driverForm.get('vanRegistration')?.touched" class="error-message">
+              Van registration is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="startingMileage">Starting Mileage</label>
+            <input type="number" id="startingMileage" formControlName="startingMileage">
+            <div *ngIf="driverForm.get('startingMileage')?.invalid && driverForm.get('startingMileage')?.touched" class="error-message">
+              Starting mileage is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="workStartTime">Work Start Time</label>
+            <input type="time" id="workStartTime" formControlName="workStartTime">
+            <div *ngIf="driverForm.get('workStartTime')?.invalid && driverForm.get('workStartTime')?.touched" class="error-message">
+              Work start time is required
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Fuel Section -->
+      <div class="form-section">
+        <h3>Fuel Information</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="fuelAdded">Fuel Added?</label>
+            <input type="checkbox" id="fuelAdded" formControlName="fuelAdded">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('fuelAdded')?.value">
+          <div class="form-group">
+            <label for="litresAdded">Litres Added</label>
+            <input type="number" id="litresAdded" formControlName="litresAdded">
+            <div *ngIf="driverForm.get('litresAdded')?.invalid && driverForm.get('litresAdded')?.touched" class="error-message">
+              Litres added is required when fuel is added
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="fuelCardReg">Fuel Card Registration</label>
+            <input type="text" id="fuelCardReg" formControlName="fuelCardReg">
+            <div *ngIf="driverForm.get('fuelCardReg')?.invalid && driverForm.get('fuelCardReg')?.touched" class="error-message">
+              Fuel card registration is required when fuel is added
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Equipment Check Section -->
+      <div class="form-section">
+        <h3>Equipment Check</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="fullUniform">Full Uniform?</label>
+            <input type="checkbox" id="fullUniform" formControlName="fullUniform">
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label for="allSiteKeys">All Site Keys?</label>
+            <input type="checkbox" id="allSiteKeys" formControlName="allSiteKeys">
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label for="auxiliaryProducts">All Auxiliary Products On Board?</label>
+            <input type="checkbox" id="auxiliaryProducts" formControlName="auxiliaryProducts">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Temperature Section -->
+      <div class="form-section">
+        <h3>Temperature Readings</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="preloadVanTemp">Preload Van Temperature (Optional)</label>
+            <input type="number" id="preloadVanTemp" formControlName="preloadVanTemp">
+          </div>
+          
+          <div class="form-group">
+            <label for="preloadProductTemp">Preload Product Temperature by Probe (Optional)</label>
+            <input type="number" id="preloadProductTemp" formControlName="preloadProductTemp">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Other Information Section -->
+      <div class="form-section">
+        <h3>Other Information</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numberOfCratesOut">Number of Crates Out</label>
+            <input type="number" id="numberOfCratesOut" formControlName="numberOfCratesOut">
+            <div *ngIf="driverForm.get('numberOfCratesOut')?.invalid && driverForm.get('numberOfCratesOut')?.touched" class="error-message">
+              Number of crates is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="vanProbeSerialNumber">Van Probe Serial Number (Optional)</label>
+            <input type="text" id="vanProbeSerialNumber" formControlName="vanProbeSerialNumber">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Save Button for Initial Form Data -->
+      <div class="form-actions save-section" *ngIf="!isViewMode">
+        <button type="button" class="save-btn" (click)="savePartialForm()">
+          <i class="bi bi-save"></i> Save Progress
+        </button>
+        <div *ngIf="partialSaved" class="save-message">
+          <i class="bi bi-check-circle"></i> Progress saved. You can complete the rest of the form later.
+        </div>
+      </div>
+      
+      <!-- Paperwork Issues Section -->
+      <div class="form-section" [ngClass]="{'problem-section': isFieldProblem('paperworkIssuesReason')}">
+        <h3>Paperwork Issues</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="paperworkIssues">Any Issues with Dockets/Paperwork?</label>
+            <input type="checkbox" id="paperworkIssues" formControlName="paperworkIssues">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('paperworkIssues')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('paperworkIssuesReason')}">
+            <label for="paperworkIssuesReason">Please describe the issues</label>
+            <textarea id="paperworkIssuesReason" formControlName="paperworkIssuesReason" rows="3"></textarea>
+            <div *ngIf="driverForm.get('paperworkIssuesReason')?.invalid && driverForm.get('paperworkIssuesReason')?.touched" class="error-message">
+              Please describe the issues with paperwork
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Orders/Products Issues Section -->
+      <div class="form-section" [ngClass]="{'problem-section': isFieldProblem('ordersProductsIssuesReason')}">
+        <h3>Issues with Orders/Products</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="ordersProductsIssues">Any Issues with Orders/Products?</label>
+            <input type="checkbox" id="ordersProductsIssues" formControlName="ordersProductsIssues">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('ordersProductsIssues')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('ordersProductsIssuesReason')}">
+            <label for="ordersProductsIssuesReason">Please describe the issues</label>
+            <textarea id="ordersProductsIssuesReason" formControlName="ordersProductsIssuesReason" rows="3"></textarea>
+            <div *ngIf="driverForm.get('ordersProductsIssuesReason')?.invalid && driverForm.get('ordersProductsIssuesReason')?.touched" class="error-message">
+              Please describe the issues with orders/products
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Site Issues Section -->
+      <div class="form-section" [ngClass]="{'problem-section': isFieldProblem('siteIssuesReason')}">
+        <h3>Issues with Sites</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="siteIssues">Any Issues with Sites?</label>
+            <input type="checkbox" id="siteIssues" formControlName="siteIssues">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('siteIssues')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('siteIssuesReason')}">
+            <label for="siteIssuesReason">Please describe the issues</label>
+            <textarea id="siteIssuesReason" formControlName="siteIssuesReason" rows="3"></textarea>
+            <div *ngIf="driverForm.get('siteIssuesReason')?.invalid && driverForm.get('siteIssuesReason')?.touched" class="error-message">
+              Please describe the issues with sites
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Customer Complaints Section -->
+      <div class="form-section" [ngClass]="{'problem-section': isFieldProblem('customerComplaintsReason')}">
+        <h3>Customer Complaints</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="customerComplaints">Any Customer Complaints?</label>
+            <input type="checkbox" id="customerComplaints" formControlName="customerComplaints">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('customerComplaints')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('customerComplaintsReason')}">
+            <label for="customerComplaintsReason">Please describe the complaints</label>
+            <textarea id="customerComplaintsReason" formControlName="customerComplaintsReason" rows="3"></textarea>
+            <div *ngIf="driverForm.get('customerComplaintsReason')?.invalid && driverForm.get('customerComplaintsReason')?.touched" class="error-message">
+              Please describe the customer complaints
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Product Complaints Section -->
+      <div class="form-section" [ngClass]="{'problem-section': isFieldProblem('productComplaintsReason')}">
+        <h3>Product Complaints</h3>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="productComplaints">Any Product Complaints?</label>
+            <input type="checkbox" id="productComplaints" formControlName="productComplaints">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="driverForm.get('productComplaints')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('productComplaintsReason')}">
+            <label for="productComplaintsReason">Please describe the complaints</label>
+            <textarea id="productComplaintsReason" formControlName="productComplaintsReason" rows="3"></textarea>
+            <div *ngIf="driverForm.get('productComplaintsReason')?.invalid && driverForm.get('productComplaintsReason')?.touched" class="error-message">
+              Please describe the product complaints
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- End of Shift Section -->
+      <div class="form-section">
+        <h3>End of Shift</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="closingMileage">Closing Mileage</label>
+            <input type="number" id="closingMileage" formControlName="closingMileage">
+          </div>
+          
+          <div class="form-group">
+            <label for="numberOfCratesIn">Number of Crates In (if applicable)</label>
+            <input type="number" id="numberOfCratesIn" formControlName="numberOfCratesIn">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label for="recycledAllReturns">Have you recycled all Returns/Waste/Cardboard?</label>
+            <input type="checkbox" id="recycledAllReturns" formControlName="recycledAllReturns">
+          </div>
+          
+          <div class="form-group checkbox-group" [ngClass]="{'problem-field': isFieldProblem('vanFridgeWorking')}">
+            <label for="vanFridgeWorking">Is your van fridge working correctly?</label>
+            <input type="checkbox" id="vanFridgeWorking" formControlName="vanFridgeWorking">
+            <div *ngIf="isFieldProblem('vanFridgeWorking')" class="problem-message">
+              Fridge not working - needs attention
+            </div>
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label for="returnedVanProbe">Have you returned Van Probe issued?</label>
+            <input type="checkbox" id="returnedVanProbe" formControlName="returnedVanProbe">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group checkbox-group" [ngClass]="{'problem-field': isFieldProblem('cabCleaned')}">
+            <label for="cabCleaned">Has the Cab/Van and Fridge Been cleaned (SOP 24)?</label>
+            <input type="checkbox" id="cabCleaned" formControlName="cabCleaned">
+          </div>
+        </div>
+        
+        <div class="form-row" *ngIf="!driverForm.get('cabCleaned')?.value">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('cabNotCleanedReason')}">
+            <label for="cabNotCleanedReason">If No, Please State Reason</label>
+            <textarea id="cabNotCleanedReason" formControlName="cabNotCleanedReason" rows="2"></textarea>
+            <div *ngIf="isFieldProblem('cabNotCleanedReason')" class="problem-message">
+              Cab not cleaned - needs attention
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="chemicalsUsed">Chemicals used (issued by Hygiene Supervisor)</label>
+            <input type="text" id="chemicalsUsed" formControlName="chemicalsUsed">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('vanIssues')}">
+            <label for="vanIssues">Any issues/incidents/accidents with van</label>
+            <textarea id="vanIssues" formControlName="vanIssues" rows="2"></textarea>
+            <div *ngIf="isFieldProblem('vanIssues')" class="problem-message">
+              Van issues reported - needs attention
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('repairsNeeded')}">
+            <label for="repairsNeeded">Any repairs/maintenance required for van</label>
+            <textarea id="repairsNeeded" formControlName="repairsNeeded" rows="2"></textarea>
+            <div *ngIf="isFieldProblem('repairsNeeded')" class="problem-message">
+              Repairs needed - needs attention
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Submit Button - only show when not in view mode -->
+      <div class="form-actions" *ngIf="!isViewMode">
+        <button type="submit" class="submit-btn">Submit Paperwork</button>
+      </div>
+      
+      <!-- Back Button - only show when in view mode -->
+      <div class="form-actions" *ngIf="isViewMode">
+        <button type="button" class="back-btn" (click)="navigateBack()">Back to Assignments</button>
+      </div>
+    </form>
+  </div>
+</div> 

@@ -1,0 +1,118 @@
+<div class="assignment-container">
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" (click)="navigateToDashboard()">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="header-section">
+      <h2 class="title">Driver Form Assignments</h2>
+      <button class="btn-primary" (click)="toggleAssignmentForm()">
+        <i class="bi bi-plus-circle"></i> 
+        {{ showAssignmentForm ? 'Cancel' : 'Assign New Form' }}
+      </button>
+    </div>
+
+    <!-- Form Assignment Section -->
+    <div class="assignment-form-section" *ngIf="showAssignmentForm">
+      <h3>Assign Form to Driver</h3>
+      
+      <form [formGroup]="assignmentForm" (ngSubmit)="assignForm()" class="assignment-form">
+        <div class="form-group">
+          <label for="driverId">Select Driver</label>
+          <select id="driverId" formControlName="driverId">
+            <option value="">-- Select Driver --</option>
+            <option *ngFor="let driver of drivers" [value]="driver.id">
+              {{ driver.name }} ({{ driver.custom_id }})
+            </option>
+          </select>
+          <div *ngIf="assignmentForm.get('driverId')?.invalid && assignmentForm.get('driverId')?.touched" class="error-message">
+            Please select a driver
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="resetPeriod">Reset Period</label>
+          <select id="resetPeriod" formControlName="resetPeriod">
+            <option value="">-- Select Reset Period --</option>
+            <option *ngFor="let option of resetPeriodOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <div *ngIf="assignmentForm.get('resetPeriod')?.invalid && assignmentForm.get('resetPeriod')?.touched" class="error-message">
+            Please select a reset period
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">Notes (Optional)</label>
+          <textarea id="notes" formControlName="notes" rows="3" placeholder="Add any instructions or notes for the driver"></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn-submit">Assign Form</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Assignment List Section -->
+    <div class="assignments-table-section">
+      <div class="filters">
+        <!-- We can add filters here later if needed -->
+      </div>
+      
+      <div class="loading-indicator" *ngIf="isLoading">
+        <i class="bi bi-hourglass-split"></i> Loading assignments...
+      </div>
+      
+      <div class="no-assignments" *ngIf="!isLoading && formAssignments.length === 0">
+        <p>No form assignments found. Use the "Assign New Form" button to create one.</p>
+      </div>
+      
+      <table class="assignments-table" *ngIf="!isLoading && formAssignments.length > 0">
+        <thead>
+          <tr>
+            <th>Driver</th>
+            <th>Assigned Date</th>
+            <th>Reset Period</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let assignment of formAssignments">
+            <td>{{ assignment.drivers?.name || 'Unknown' }}</td>
+            <td>{{ assignment.created_at | date:'short' }}</td>
+            <td>{{ getResetPeriodText(assignment.reset_period) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(assignment.status)">
+                {{ assignment.status }}
+              </span>
+              <span *ngIf="assignment.status === 'completed' && assignment.driver_forms?.needs_review" 
+                    class="review-badge">
+                CHECK FORM
+              </span>
+            </td>
+            <td>{{ assignment.notes || 'No notes' }}</td>
+            <td class="actions">
+              <button class="btn-icon" *ngIf="assignment.status === 'pending'" (click)="markAsOverdue(assignment.id)" title="Mark as Overdue">
+                <i class="bi bi-exclamation-triangle"></i>
+              </button>
+              <button class="btn-icon" *ngIf="assignment.status === 'completed'" (click)="viewCompletedForm(assignment.form_id)" title="View Completed Form">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn-icon btn-delete" (click)="deleteAssignment(assignment.id)" title="Delete Assignment">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div> 

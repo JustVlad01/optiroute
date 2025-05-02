@@ -2,6 +2,9 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { DriverFormsComponent } from './components/driver-forms/driver-forms.component';
+import { FormDetailsComponent } from './components/form-details/form-details.component';
+import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.component';
+import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
 
 export const routes: Routes = [
     {
@@ -20,6 +23,18 @@ export const routes: Routes = [
     {
         path: 'driver-forms',
         component: DriverFormsComponent
+    },
+    {
+        path: 'form-details/:id',
+        component: FormDetailsComponent
+    },
+    {
+        path: 'admin/forms',
+        component: AdminFormsComponent
+    },
+    {
+        path: 'admin/form-templates',
+        component: FormTemplatesComponent
     },
     {
         path: '**',

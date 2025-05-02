@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 
 // Bootstrap types
@@ -19,7 +19,7 @@ interface Driver {
 @Component({
   selector: 'app-roster',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './roster.component.html',
   styleUrls: ['./roster.component.scss']
 })

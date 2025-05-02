@@ -1,1 +1,11 @@
 // Roster component styles 
+.sub-header {
+  .text-primary {
+    color: var(--secondary-color) !important;
+  }
+  
+  h4 {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+} 

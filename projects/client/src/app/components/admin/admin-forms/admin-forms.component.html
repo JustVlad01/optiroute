@@ -1,0 +1,139 @@
+<div class="page-container">
+  <div class="sidebar">
+    <app-admin-nav></app-admin-nav>
+  </div>
+  
+  <div class="main-content">
+    <div class="admin-container">
+      <div class="header">
+        <h2>Driver Form Assignments</h2>
+        <div class="action-buttons">
+          <button class="btn btn-success me-2" (click)="toggleRecurringModal()">
+            <i class="bi bi-arrow-repeat"></i> Recurring Assignments
+          </button>
+          <button class="btn btn-primary" (click)="assignNewForm()">
+            <i class="bi bi-plus-circle"></i> Assign New Form
+          </button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn" [class.btn-primary]="selectedFilter === 'all'" [class.btn-outline-primary]="selectedFilter !== 'all'" (click)="setFilter('all')">
+            All
+          </button>
+          <button type="button" class="btn" [class.btn-primary]="selectedFilter === 'pending'" [class.btn-outline-primary]="selectedFilter !== 'pending'" (click)="setFilter('pending')">
+            Pending
+          </button>
+          <button type="button" class="btn" [class.btn-primary]="selectedFilter === 'completed'" [class.btn-outline-primary]="selectedFilter !== 'completed'" (click)="setFilter('completed')">
+            Completed
+          </button>
+          <button type="button" class="btn" [class.btn-primary]="selectedFilter === 'overdue'" [class.btn-outline-primary]="selectedFilter !== 'overdue'" (click)="setFilter('overdue')">
+            Overdue
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div *ngIf="loading" class="loading">
+          <p>Loading form assignments...</p>
+        </div>
+
+        <div *ngIf="!loading && formAssignments.length === 0" class="no-forms">
+          <p>No form assignments found.</p>
+        </div>
+
+        <table *ngIf="!loading && formAssignments.length > 0" class="table table-striped">
+          <thead>
+            <tr>
+              <th>Driver</th>
+              <th>Assigned Date</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Completed</th>
+              <th>Recurring</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let form of getFilteredForms()">
+              <td>{{ form.driver_name }}</td>
+              <td>{{ form.assignedDate }}</td>
+              <td>{{ form.dueDate }}</td>
+              <td>
+                <span class="badge" [ngClass]="getStatusBadgeClass(form.status)">{{ form.status }}</span>
+              </td>
+              <td>
+                <span *ngIf="form.completed_at">{{ form.completed_at | date:'medium' }}</span>
+                <span *ngIf="!form.completed_at">-</span>
+              </td>
+              <td>
+                <span *ngIf="form.recurring" class="badge bg-info">
+                  <i class="bi bi-arrow-repeat"></i> Daily
+                </span>
+                <span *ngIf="!form.recurring">-</span>
+              </td>
+              <td>{{ form.notes }}</td>
+              <td>
+                <button class="btn btn-sm btn-info" (click)="viewFormDetails(form.id)">
+                  <i class="bi bi-eye"></i> View
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring Form Assignments Modal -->
+<div class="modal-overlay" *ngIf="showRecurringModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5>Configure Daily Driver Forms</h5>
+      <button type="button" class="btn-close" (click)="toggleRecurringModal()"></button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="recurringForm">
+        <div class="mb-3">
+          <label class="form-label">Auto-reset cooldown period (hours)</label>
+          <input type="number" class="form-control" formControlName="cooldownHours" min="1" max="72">
+          <div class="form-text">
+            Forms will be available to fill out again after this many hours.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Default notes</label>
+          <input type="text" class="form-control" formControlName="notes">
+        </div>
+        
+        <div class="mb-4">
+          <label class="form-label">Assign to drivers</label>
+          <div class="driver-selection">
+            <div *ngFor="let driver of availableDrivers" class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                [id]="'driver-' + driver.id" 
+                [checked]="driver.selected"
+                (change)="toggleDriverSelection(driver.id)">
+              <label class="form-check-label" [for]="'driver-' + driver.id">
+                {{ driver.name }}
+              </label>
+            </div>
+          </div>
+          <div class="form-text">
+            Selected drivers will be assigned a new form daily, 12 hours after their last submission.
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="toggleRecurringModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="saveRecurringSettings()">Save settings</button>
+    </div>
+  </div>
+</div> 

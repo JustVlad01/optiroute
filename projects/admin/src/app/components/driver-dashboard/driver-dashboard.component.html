@@ -1,0 +1,93 @@
+<div class="driver-dashboard">
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="user-info">
+      <span class="driver-name">{{ driverName }}</span>
+      <a class="nav-pill" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i> LOGOUT
+      </a>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <h2 class="dashboard-title">Driver Dashboard</h2>
+    
+    <!-- Forms Cards Section -->
+    <div class="driver-cards-grid">
+      <!-- Assigned Forms Card -->
+      <div class="driver-card assigned-forms-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="bi bi-clipboard-check"></i>
+          </div>
+          <h3>Forms To Complete</h3>
+        </div>
+        
+        <div class="loading-indicator" *ngIf="isLoading">
+          <i class="bi bi-hourglass-split"></i> Loading forms...
+        </div>
+        
+        <div class="card-content" *ngIf="!isLoading">
+          <div class="empty-state" *ngIf="assignedForms.length === 0">
+            <p>You have no pending forms to complete.</p>
+          </div>
+          
+          <ul class="form-list" *ngIf="assignedForms.length > 0">
+            <li *ngFor="let form of assignedForms" 
+                class="form-item" 
+                [ngClass]="getStatusClass(form.status)"
+                (click)="fillOutForm(form.id)">
+              <div class="form-item-content">
+                <h4>Daily Driver Form</h4>
+                <span class="due-date">
+                  <i class="bi bi-calendar-date"></i> 
+                  Due: {{ formatDueDate(form.due_date) }}
+                </span>
+                <p class="notes" *ngIf="form.notes">{{ form.notes }}</p>
+                <span class="status-badge" [ngClass]="getStatusClass(form.status)">
+                  {{ form.status }}
+                </span>
+              </div>
+              <div class="form-item-action">
+                <i class="bi bi-chevron-right"></i>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Completed Forms Card -->
+      <div class="driver-card completed-forms-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <h3>Completed Forms</h3>
+        </div>
+        
+        <div class="card-content" *ngIf="!isLoading">
+          <div class="empty-state" *ngIf="completedForms.length === 0">
+            <p>You have no completed forms.</p>
+          </div>
+          
+          <ul class="form-list" *ngIf="completedForms.length > 0">
+            <li *ngFor="let form of completedForms" 
+                class="form-item"
+                (click)="viewForm(form.form_id)">
+              <div class="form-item-content">
+                <h4>Daily Driver Form</h4>
+                <span class="date">
+                  <i class="bi bi-calendar-check"></i> 
+                  Completed: {{ form.completed_at | date:'mediumDate' }}
+                </span>
+              </div>
+              <div class="form-item-action">
+                <i class="bi bi-chevron-right"></i>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

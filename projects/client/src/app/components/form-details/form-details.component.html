@@ -1,0 +1,426 @@
+<div class="corporate-theme">
+  <div class="header-fullwidth text-white d-flex justify-content-between align-items-center shadow-sm">
+    <div class="d-flex align-items-center">
+      <h2 class="mb-0">OPTIROUTE</h2>
+    </div>
+    <a routerLink="/driver-forms" class="btn btn-outline-light">
+      <i class="bi bi-arrow-left me-1"></i> BACK TO FORMS
+    </a>
+  </div>
+
+  <div class="sub-header bg-light p-3 d-flex justify-content-between align-items-center shadow-sm">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-clipboard-check fs-4 me-2 text-primary"></i>
+      <h4 class="mb-0">Daily Driver Form</h4>
+    </div>
+  </div>
+
+  <div class="form-container mt-0">
+    <div class="content p-3">
+      <div class="form-status d-flex justify-content-between align-items-center p-2 mb-3 bg-light rounded">
+        <div>
+          <span *ngIf="!isViewMode" class="badge bg-warning">PENDING</span>
+          <span *ngIf="isViewMode" class="badge bg-success">COMPLETED</span>
+          <span class="ms-2 text-muted">Due: May 2, 2025</span>
+        </div>
+        <div *ngIf="!isViewMode" class="form-progress text-end">
+          <small class="text-muted">Complete all required fields (*)</small>
+        </div>
+      </div>
+
+      <!-- Completed Form Message when in view mode -->
+      <div *ngIf="isViewMode" class="completed-info alert alert-success d-flex align-items-center mb-3">
+        <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+        <div>
+          <h5 class="mb-0">Form Completed</h5>
+          <p class="mb-0">This form was completed on {{ completedDate | date:'medium' }}</p>
+        </div>
+      </div>
+
+      <form [formGroup]="driverForm" (ngSubmit)="submitForm()">
+        <!-- Basic Information Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-info-circle me-2"></i>Basic Information</h3>
+          
+          <div class="row">
+            <div class="col-md-4 mb-2">
+              <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control form-control-sm" id="date" formControlName="date">
+              <div *ngIf="driverForm.get('date')?.invalid && driverForm.get('date')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-2">
+              <label for="time" class="form-label">Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control form-control-sm" id="time" formControlName="time">
+              <div *ngIf="driverForm.get('time')?.invalid && driverForm.get('time')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-2">
+              <label for="work_start_time" class="form-label">Work Start Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control form-control-sm" id="work_start_time" formControlName="work_start_time">
+              <div *ngIf="driverForm.get('work_start_time')?.invalid && driverForm.get('work_start_time')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vehicle Information Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-truck me-2"></i>Vehicle Information</h3>
+          
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label for="van_registration" class="form-label">Van Registration <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="van_registration" formControlName="van_registration">
+              <div *ngIf="driverForm.get('van_registration')?.invalid && driverForm.get('van_registration')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <label for="starting_mileage" class="form-label">Starting Mileage <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="starting_mileage" formControlName="starting_mileage">
+              <div *ngIf="driverForm.get('starting_mileage')?.invalid && driverForm.get('starting_mileage')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+          
+          <div class="row align-items-center mb-2">
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="fuel_added" formControlName="fuel_added">
+                <label class="form-check-label" for="fuel_added">Fuel Added</label>
+              </div>
+            </div>
+            
+            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
+              <label for="litres_added" class="form-label">Litres Added <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="litres_added" formControlName="litres_added" step="0.01">
+              <div *ngIf="driverForm.get('litres_added')?.invalid && driverForm.get('litres_added')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
+              <label for="fuel_card_reg" class="form-label">Fuel Card Registration <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="fuel_card_reg" formControlName="fuel_card_reg">
+              <div *ngIf="driverForm.get('fuel_card_reg')?.invalid && driverForm.get('fuel_card_reg')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Equipment & Safety Checks Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-shield-check me-2"></i>Equipment & Safety Checks</h3>
+          
+          <div class="row">
+            <div class="col-md-4 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="full_uniform" formControlName="full_uniform">
+                <label class="form-check-label" for="full_uniform">Wearing Full Uniform <span class="text-danger">*</span></label>
+              </div>
+              <div *ngIf="driverForm.get('full_uniform')?.invalid && driverForm.get('full_uniform')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="all_site_keys" formControlName="all_site_keys">
+                <label class="form-check-label" for="all_site_keys">All Site Keys Present <span class="text-danger">*</span></label>
+              </div>
+              <div *ngIf="driverForm.get('all_site_keys')?.invalid && driverForm.get('all_site_keys')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="auxiliary_products" formControlName="auxiliary_products">
+                <label class="form-check-label" for="auxiliary_products">All Auxiliary Products On Board <span class="text-danger">*</span></label>
+              </div>
+              <div *ngIf="driverForm.get('auxiliary_products')?.invalid && driverForm.get('auxiliary_products')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Temperature & Logistics Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-thermometer-half me-2"></i>Temperature & Logistics</h3>
+          
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label for="preload_van_temp" class="form-label">Preload Van Temperature (°C) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="preload_van_temp" formControlName="preload_van_temp" step="0.01">
+              <div *ngIf="driverForm.get('preload_van_temp')?.invalid && driverForm.get('preload_van_temp')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <label for="preload_product_temp" class="form-label">Preload Product Temperature (°C) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="preload_product_temp" formControlName="preload_product_temp" step="0.01">
+              <div *ngIf="driverForm.get('preload_product_temp')?.invalid && driverForm.get('preload_product_temp')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label for="number_of_crates_out" class="form-label">Number of Crates Out <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="number_of_crates_out" formControlName="number_of_crates_out">
+              <div *ngIf="driverForm.get('number_of_crates_out')?.invalid && driverForm.get('number_of_crates_out')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <label for="van_probe_serial_number" class="form-label">Van Probe Serial Number</label>
+              <input type="text" class="form-control form-control-sm" id="van_probe_serial_number" formControlName="van_probe_serial_number">
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Progress Button -->
+        <div class="d-grid gap-2 col-md-6 mx-auto my-4">
+          <button type="button" class="btn btn-secondary">
+            <i class="bi bi-save me-2"></i> Save Progress
+          </button>
+        </div>
+
+        <hr class="mb-3">
+        <h3 class="section-title mb-3"><i class="bi bi-exclamation-triangle me-2"></i>Issues and Complaints</h3>
+
+        <!-- Issues and Complaints List -->
+        <div class="issues-list mb-4">
+          <!-- Paperwork Issues -->
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+              <span class="flex-grow-1">Paperwork Issues</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="paperwork_issues" formControlName="paperwork_issues">
+                <label class="form-check-label small" for="paperwork_issues">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('paperwork_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="paperwork_issues_reason" 
+                        formControlName="paperwork_issues_reason" rows="2" 
+                        placeholder="Please describe the issue"></textarea>
+              <div *ngIf="driverForm.get('paperwork_issues_reason')?.invalid && driverForm.get('paperwork_issues_reason')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+          
+          <!-- Orders/Products Issues -->
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-box me-2 text-primary"></i>
+              <span class="flex-grow-1">Issues with Orders/Products</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="orders_products_issues" formControlName="orders_products_issues">
+                <label class="form-check-label small" for="orders_products_issues">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('orders_products_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="orders_products_issues_reason" 
+                        formControlName="orders_products_issues_reason" rows="2" 
+                        placeholder="Please describe the issue"></textarea>
+              <div *ngIf="driverForm.get('orders_products_issues_reason')?.invalid && driverForm.get('orders_products_issues_reason')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+
+          <!-- Site Issues -->
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-building me-2 text-primary"></i>
+              <span class="flex-grow-1">Issues with Sites</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="site_issues" formControlName="site_issues">
+                <label class="form-check-label small" for="site_issues">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('site_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="site_issues_reason" 
+                        formControlName="site_issues_reason" rows="2" 
+                        placeholder="Please describe the issue"></textarea>
+              <div *ngIf="driverForm.get('site_issues_reason')?.invalid && driverForm.get('site_issues_reason')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+          
+          <!-- Customer Complaints -->
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-people me-2 text-primary"></i>
+              <span class="flex-grow-1">Customer Complaints</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="customer_complaints" formControlName="customer_complaints">
+                <label class="form-check-label small" for="customer_complaints">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('customer_complaints')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="customer_complaints_reason" 
+                        formControlName="customer_complaints_reason" rows="2" 
+                        placeholder="Please describe the complaint"></textarea>
+              <div *ngIf="driverForm.get('customer_complaints_reason')?.invalid && driverForm.get('customer_complaints_reason')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+          
+          <!-- Product Complaints -->
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-exclamation-triangle me-2 text-primary"></i>
+              <span class="flex-grow-1">Product Complaints</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="product_complaints" formControlName="product_complaints">
+                <label class="form-check-label small" for="product_complaints">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('product_complaints')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="product_complaints_reason" 
+                        formControlName="product_complaints_reason" rows="2" 
+                        placeholder="Please describe the complaint"></textarea>
+              <div *ngIf="driverForm.get('product_complaints_reason')?.invalid && driverForm.get('product_complaints_reason')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+        </div>
+          
+        <!-- End of Shift Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-clock-history me-2"></i>End of Shift</h3>
+          
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label for="closing_mileage" class="form-label">Closing Mileage</label>
+              <input type="number" class="form-control form-control-sm" id="closing_mileage" formControlName="closing_mileage">
+              <div *ngIf="driverForm.get('closing_mileage')?.invalid && driverForm.get('closing_mileage')?.touched" class="text-danger small mt-1">
+                Must be a number
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <label for="number_of_crates_in" class="form-label">Number of Crates In (if applicable)</label>
+              <input type="number" class="form-control form-control-sm" id="number_of_crates_in" formControlName="number_of_crates_in">
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="recycled_all_returns" formControlName="recycled_all_returns">
+                <label class="form-check-label" for="recycled_all_returns">Recycled all Returns/Waste/Cardboard</label>
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="van_fridge_working" formControlName="van_fridge_working">
+                <label class="form-check-label" for="van_fridge_working">Van fridge working correctly</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="returned_van_probe" formControlName="returned_van_probe">
+                <label class="form-check-label" for="returned_van_probe">Returned Van Probe issued</label>
+              </div>
+            </div>
+            
+            <div class="col-md-6 mb-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cab_cleaned" formControlName="cab_cleaned">
+                <label class="form-check-label" for="cab_cleaned">Cab/Van/Fridge cleaned (SOP 24)</label>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="!driverForm.get('cab_cleaned')?.value" class="mb-3">
+            <textarea class="form-control form-control-sm" id="cab_not_cleaned_reason" 
+                      formControlName="cab_not_cleaned_reason" rows="2" 
+                      placeholder="Please state reason why cab was not cleaned (e.g. Not on Schedule)"></textarea>
+            <div *ngIf="driverForm.get('cab_not_cleaned_reason')?.invalid && driverForm.get('cab_not_cleaned_reason')?.touched" class="text-danger small mt-1">
+              Required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="chemicals_used" class="form-label">Chemicals used (issued by Hygiene Supervisor)</label>
+            <input type="text" class="form-control form-control-sm" id="chemicals_used" formControlName="chemicals_used">
+          </div>
+          
+          <h4 class="h6 text-muted mb-3">Vehicle Issues and Maintenance</h4>
+          
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-exclamation-circle me-2 text-primary"></i>
+              <span class="flex-grow-1">Issues with Van</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="has_van_issues" formControlName="has_van_issues">
+                <label class="form-check-label small" for="has_van_issues">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('has_van_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="van_issues" 
+                       formControlName="van_issues" rows="2" 
+                       placeholder="Please describe any issues/incidents/accidents"></textarea>
+              <div *ngIf="driverForm.get('van_issues')?.invalid && driverForm.get('van_issues')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-tools me-2 text-primary"></i>
+              <span class="flex-grow-1">Repairs/Maintenance Required</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="has_repairs_needed" formControlName="has_repairs_needed">
+                <label class="form-check-label small" for="has_repairs_needed">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('has_repairs_needed')?.value" class="issue-details mt-1 mb-2 ms-4">
+              <textarea class="form-control form-control-sm" id="repairs_needed" 
+                       formControlName="repairs_needed" rows="2" 
+                       placeholder="Please describe required repairs/maintenance"></textarea>
+              <div *ngIf="driverForm.get('repairs_needed')?.invalid && driverForm.get('repairs_needed')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary" routerLink="/driver-forms">
+            <i class="bi bi-arrow-left me-1"></i> Back
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-primary" [disabled]="submitting">
+            <span *ngIf="submitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <i class="bi bi-send me-1"></i> Submit Paperwork
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

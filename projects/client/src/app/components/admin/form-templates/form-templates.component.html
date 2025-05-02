@@ -1,0 +1,96 @@
+<div class="page-container">
+  <div class="sidebar">
+    <app-admin-nav></app-admin-nav>
+  </div>
+  
+  <div class="main-content">
+    <div class="admin-container">
+      <div class="header">
+        <h2>Form Templates</h2>
+        <button class="btn btn-primary" (click)="createNewForm()">
+          <i class="bi bi-file-earmark-plus"></i> Create New Form
+        </button>
+      </div>
+
+      <div class="content">
+        <div *ngIf="loading" class="loading">
+          <p>Loading form templates...</p>
+        </div>
+
+        <div *ngIf="!loading && formTemplates.length === 0" class="no-forms">
+          <p>No form templates found.</p>
+        </div>
+
+        <table *ngIf="!loading && formTemplates.length > 0" class="table table-striped">
+          <thead>
+            <tr>
+              <th>Form Name</th>
+              <th>Created</th>
+              <th>Assigned Drivers</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let form of formTemplates">
+              <td>{{ form.name }}</td>
+              <td>{{ form.created_at | date }}</td>
+              <td>
+                <span class="badge bg-info">
+                  <i class="bi bi-people-fill"></i> {{ form.assignedDriverCount }} drivers
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-info me-2" (click)="viewFormDetails(form.id)">
+                    <i class="bi bi-eye"></i> View
+                  </button>
+                  <button class="btn btn-sm btn-primary" (click)="viewFormAssignments(form)">
+                    <i class="bi bi-people"></i> Manage Drivers
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Driver Assignment Modal -->
+<div class="modal-overlay" *ngIf="showDriversModal && selectedForm">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5>Assign Drivers to {{ selectedForm.name }}</h5>
+      <button type="button" class="btn-close" (click)="closeModal()"></button>
+    </div>
+    <div class="modal-body">
+      <p>Select the drivers who should be assigned this form template:</p>
+      
+      <div class="driver-selection">
+        <div *ngFor="let driver of drivers" class="form-check driver-item">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            [id]="'driver-' + driver.id" 
+            [checked]="driver.selected"
+            (change)="toggleDriverSelection(driver.id)">
+          <label class="form-check-label driver-info" [for]="'driver-' + driver.id">
+            <span class="driver-name">{{ driver.name }}</span>
+            <span class="driver-phone">{{ driver.phone_number }}</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="selected-count mt-3">
+        <strong>{{ selectedDrivers.length }}</strong> drivers selected
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="saveFormAssignments()">
+        Save Assignments
+      </button>
+    </div>
+  </div>
+</div> 

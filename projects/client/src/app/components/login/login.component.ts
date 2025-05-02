@@ -39,13 +39,10 @@ export class LoginComponent {
     }
 
     try {
-      const driver = await this.supabaseService.findDriverByCustomId(this.customId) as Driver;
+      const driver = await this.supabaseService.loginWithCustomId(this.customId);
 
       if (driver) {
-        // Save driver data to localStorage
-        localStorage.setItem('loggedInDriver', JSON.stringify(driver));
-        
-        // Navigate to dashboard
+        // Navigate to dashboard (driver info is already saved in localStorage by the service)
         this.router.navigate(['/dashboard']);
       } else {
         this.message = 'Login failed: Invalid Custom ID.';

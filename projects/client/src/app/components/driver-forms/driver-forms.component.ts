@@ -1,138 +1,132 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
+
+interface FormAssignment {
+  id: string;
+  assignedDate?: string;
+  dueDate?: string;
+  status: string;
+  notes?: string;
+  completed_at?: string;
+  driver_id?: string;
+  driver_name?: string;
+  recurring?: boolean;
+  cooldownUntil?: string;
+  created_at?: string;
+  due_date?: string;
+  form_id?: string;
+}
 
 @Component({
   selector: 'app-driver-forms',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './driver-forms.component.html',
-  styleUrls: ['./driver-forms.component.scss']
+  styleUrls: ['./driver-forms.component.scss'],
+  standalone: true,
+  imports: [CommonModule, RouterModule]
 })
 export class DriverFormsComponent implements OnInit {
-  driverForm: FormGroup;
-  driverName: string = '';
-  currentDate: Date = new Date();
-  isSubmitting = false;
-  showFuelFields = false;
-  showDocketIssueField = false;
-  
-  constructor(
-    private fb: FormBuilder,
-    private router: Router
-  ) {
-    this.driverForm = this.fb.group({
-      driverName: [{value: '', disabled: true}],
-      date: [{value: '', disabled: true}],
-      vanRegistration: ['', Validators.required],
-      startingMileage: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
-      fuelAdded: [false],
-      fuelLitresAdded: [''],
-      fuelCardReg: [''],
-      hasFullUniform: [false],
-      hasAllSiteKeys: [false],
-      workStartTime: ['', Validators.required],
-      preloadVanTemperature: [''],
-      preloadProductTemperatureProbe: [''],
-      allAuxiliaryProductsOnBoard: [false],
-      cratesOut: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
-      vanProbeSerialNumber: [''],
-      issuesWithDockets: [false],
-      docketIssuesReason: ['']
-    });
-  }
+  forms: FormAssignment[] = [];
+  loading = true;
+  successMessage: string | null = null;
+  driverId = '';
+  driverName = '';
+  nextFormAvailableTime: Date | null = null;
 
-  ngOnInit(): void {
-    // Get driver name from localStorage
-    const savedDriverData = localStorage.getItem('loggedInDriver');
-    if (savedDriverData) {
-      try {
-        const driverData = JSON.parse(savedDriverData);
-        if (driverData && driverData.name) {
-          this.driverName = driverData.name;
-          this.driverForm.patchValue({
-            driverName: this.driverName,
-            date: this.formatDate(this.currentDate)
-          });
+  constructor(
+    private router: Router,
+    private supabaseService: SupabaseService
+  ) { }
+
+  async ngOnInit(): Promise<void> {
+    this.loading = true;
+    
+    try {
+      // Get driver info from localStorage instead of session
+      const loggedInDriverStr = localStorage.getItem('loggedInDriver');
+      
+      if (loggedInDriverStr) {
+        try {
+          const driver = JSON.parse(loggedInDriverStr);
+          this.driverId = driver.id;
+          this.driverName = driver.name;
+          
+          // Load form assignments for the driver
+          await this.loadDriverFormAssignments();
+        } catch (e) {
+          console.error('Error parsing logged in driver data', e);
+          // Redirect to login if driver data is invalid
+          this.router.navigate(['/login']);
         }
-      } catch (e) {
-        console.error('Error parsing saved driver data', e);
+      } else {
+        // Not logged in, redirect to login
+        this.router.navigate(['/login']);
       }
+    } catch (error) {
+      console.error('Error initializing driver forms:', error);
+    } finally {
+      this.loading = false;
     }
     
-    // If no driver name, redirect to login
-    if (!this.driverName) {
-      this.router.navigate(['/login']);
-    }
-
-    // Set up form value change listeners
-    this.driverForm.get('fuelAdded')?.valueChanges.subscribe(value => {
-      this.showFuelFields = value;
-      
-      if (value) {
-        this.driverForm.get('fuelLitresAdded')?.setValidators([Validators.required, Validators.pattern(/^\d+(\.\d+)?$/)]);
-        this.driverForm.get('fuelCardReg')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('fuelLitresAdded')?.clearValidators();
-        this.driverForm.get('fuelCardReg')?.clearValidators();
-      }
-      
-      this.driverForm.get('fuelLitresAdded')?.updateValueAndValidity();
-      this.driverForm.get('fuelCardReg')?.updateValueAndValidity();
-    });
-
-    this.driverForm.get('issuesWithDockets')?.valueChanges.subscribe(value => {
-      this.showDocketIssueField = value;
-      
-      if (value) {
-        this.driverForm.get('docketIssuesReason')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('docketIssuesReason')?.clearValidators();
-      }
-      
-      this.driverForm.get('docketIssuesReason')?.updateValueAndValidity();
-    });
-  }
-
-  formatDate(date: Date): string {
-    return date.toLocaleDateString('en-GB', { 
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
-  onSubmit(): void {
-    if (this.driverForm.valid) {
-      this.isSubmitting = true;
-      
-      // Prepare form data
-      const formData = {
-        ...this.driverForm.getRawValue(),
-        submissionDate: new Date().toISOString()
-      };
-      
-      // TODO: Submit form data to your backend API
-      console.log('Form submitted:', formData);
-      
-      // Mock successful submission
+    // Check for success message from query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'true') {
+      this.successMessage = 'Form submitted successfully!';
+      // Clear the success message after 5 seconds
       setTimeout(() => {
-        this.isSubmitting = false;
-        alert('Form submitted successfully!');
-        this.router.navigate(['/dashboard']);
-      }, 1000);
-    } else {
-      // Mark all fields as touched to trigger validation messages
-      Object.keys(this.driverForm.controls).forEach(key => {
-        const control = this.driverForm.get(key);
-        control?.markAsTouched();
-      });
+        this.successMessage = null;
+      }, 5000);
     }
   }
 
-  goBack(): void {
-    this.router.navigate(['/dashboard']);
+  async loadDriverFormAssignments(): Promise<void> {
+    if (!this.driverId) return;
+    
+    try {
+      const assignments = await this.supabaseService.getDriverFormAssignments(this.driverId);
+      
+      if (assignments) {
+        // Transform the data to match our interface
+        this.forms = assignments.map((assignment: any) => ({
+          id: assignment.id,
+          assignedDate: new Date(assignment.created_at).toLocaleString(),
+          dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : undefined,
+          status: assignment.status.toUpperCase(),
+          notes: assignment.notes || '',
+          completed_at: assignment.completed_at,
+          driver_id: assignment.driver_id,
+          form_id: assignment.form_id,
+          recurring: true // Default to true for now
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading driver form assignments:', error);
+    }
+  }
+
+  viewForm(formId: string): void {
+    // Navigate to form details page
+    this.router.navigate(['/form-details', formId]);
+  }
+
+  clearSuccessMessage(): void {
+    this.successMessage = null;
+  }
+  
+  getStatusBadgeClass(status: string): string {
+    switch(status.toUpperCase()) {
+      case 'COMPLETED':
+        return 'bg-success';
+      case 'PENDING':
+        return 'bg-warning';
+      case 'OVERDUE':
+        return 'bg-danger';
+      default:
+        return 'bg-secondary';
+    }
   }
 } 

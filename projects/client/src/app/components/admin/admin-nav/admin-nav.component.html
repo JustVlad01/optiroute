@@ -1,0 +1,13 @@
+<div class="admin-nav">
+  <div class="nav-header">
+    <h3>Admin Controls</h3>
+  </div>
+  <ul class="nav-list">
+    <li *ngFor="let item of navItems" class="nav-item">
+      <a [routerLink]="item.route" routerLinkActive="active">
+        <i class="bi" [ngClass]="item.icon"></i>
+        <span>{{ item.label }}</span>
+      </a>
+    </li>
+  </ul>
+</div> 

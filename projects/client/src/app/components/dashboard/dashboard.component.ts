@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Driver } from '../../models';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -41,10 +42,5 @@ export class DashboardComponent implements OnInit {
     localStorage.removeItem('loggedInDriver');
     // Redirect to login page
     this.router.navigate(['/login']);
-  }
-
-  navigateToForms(): void {
-    // Navigate to the driver forms page
-    this.router.navigate(['/driver-forms']);
   }
 }
