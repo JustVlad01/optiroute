@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "node server.js",
+    "start:prod": "npm run build:all && node server.js",
     "build": "ng build",
     "build:all": "ng build admin --configuration production && ng build client --configuration production",
     "build:client": "ng build client --configuration production",
