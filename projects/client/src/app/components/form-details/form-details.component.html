@@ -160,19 +160,15 @@
           
           <div class="row">
             <div class="col-md-6 mb-2">
-              <label for="preload_van_temp" class="form-label">Preload Van Temperature (°C) <span class="text-danger">*</span></label>
+              <label for="preload_van_temp" class="form-label">Preload Van Temperature (°C)</label>
               <input type="number" class="form-control form-control-sm" id="preload_van_temp" formControlName="preload_van_temp" step="0.01">
-              <div *ngIf="driverForm.get('preload_van_temp')?.invalid && driverForm.get('preload_van_temp')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
+              <small class="text-muted">Optional</small>
             </div>
             
             <div class="col-md-6 mb-2">
-              <label for="preload_product_temp" class="form-label">Preload Product Temperature (°C) <span class="text-danger">*</span></label>
+              <label for="preload_product_temp" class="form-label">Preload Product Temperature (°C)</label>
               <input type="number" class="form-control form-control-sm" id="preload_product_temp" formControlName="preload_product_temp" step="0.01">
-              <div *ngIf="driverForm.get('preload_product_temp')?.invalid && driverForm.get('preload_product_temp')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
+              <small class="text-muted">Optional</small>
             </div>
           </div>
           

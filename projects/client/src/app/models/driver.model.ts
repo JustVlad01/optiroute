@@ -6,4 +6,5 @@ export interface Driver {
   location:string;
   phone_number?: string;
   created_at: string;
+  selected?: boolean; // For UI selection state
 } 

@@ -1,0 +1,29 @@
+<div class="driver-form-container">
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" (click)="navigateToDashboard()">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs - Moved directly under header -->
+  <div class="nav-tabs-container">
+    <div class="nav-tabs">
+      <button [class.active]="activeTab === 'forms'" (click)="navigateTo('forms')">
+        <i class="bi bi-clipboard-check"></i> Driver Forms
+      </button>
+      <button [class.active]="activeTab === 'assignments'" (click)="navigateTo('assignments')">
+        <i class="bi bi-clipboard-data"></i> Form Assignments
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Router Outlet for Child Routes -->
+    <div class="tab-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div> 

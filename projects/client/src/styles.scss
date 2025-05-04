@@ -21,10 +21,11 @@
 .header {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
   color: white;
-  height: 60px;
+  height: 64px; /* Fixed consistent height */
   display: flex;
   align-items: center;
   padding: 0 1.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Navigation buttons styling */

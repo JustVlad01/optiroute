@@ -1,0 +1,98 @@
+<div class="route-planner-container">
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" routerLink="/dashboard">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <div class="content">
+    <h2 class="page-title">Route Planner</h2>
+
+    <div class="route-form-container">
+      <div class="form-controls">
+        <!-- Start and End Locations -->
+        <div class="locations-container">
+          <div class="form-group">
+            <label for="startLocation">Start Location</label>
+            <input type="text" id="startLocation" [(ngModel)]="startLocation" class="form-control" placeholder="Enter start location">
+          </div>
+          
+          <div class="form-group">
+            <label for="endLocation">End Location</label>
+            <input type="text" id="endLocation" [(ngModel)]="endLocation" class="form-control" placeholder="Enter end location">
+          </div>
+        </div>
+        
+        <!-- Stops -->
+        <div class="stops-container">
+          <h3>Stops</h3>
+          <div class="stops-list">
+            <div class="stop-row" *ngFor="let stop of stops; let i = index">
+              <div class="form-group">
+                <input type="text" [(ngModel)]="stops[i]" class="form-control" placeholder="Enter stop location">
+              </div>
+              <button class="remove-btn" (click)="removeStop(i)" *ngIf="stops.length > 1">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+          </div>
+          <div class="buttons-row">
+            <button class="add-stop-btn" (click)="addStop()">
+              <i class="bi bi-plus-circle"></i> Add Stop
+            </button>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="calculate-btn" (click)="calculateRoute()" [disabled]="isLoading || !apiLoaded">
+            <i class="bi bi-calculator"></i> Calculate Route
+          </button>
+          <button class="clear-btn" (click)="clearRoute()" [disabled]="!apiLoaded">
+            <i class="bi bi-trash"></i> Clear
+          </button>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div class="loading-indicator" *ngIf="isLoading">
+          <i class="bi bi-hourglass-split"></i> Calculating route...
+        </div>
+      </div>
+
+      <!-- Google Maps -->
+      <div class="map-container">
+        <!-- Maps API Loading State -->
+        <div class="maps-loading" *ngIf="!apiLoaded">
+          <div class="spinner">
+            <i class="bi bi-arrow-repeat"></i>
+          </div>
+          <p>Loading Google Maps...</p>
+        </div>
+        
+        <!-- Google Maps Component -->
+        <google-map 
+          *ngIf="apiLoaded"
+          height="100%" 
+          width="100%" 
+          [center]="center" 
+          [zoom]="zoom"
+          [options]="options"
+          (mapInitialized)="onMapInitialized($event)">
+          
+          <map-info-window></map-info-window>
+          
+          <map-marker 
+            *ngFor="let marker of markers" 
+            [position]="marker.position"
+            [title]="marker.title"
+            [options]="marker.options"
+            (mapClick)="openInfoWindow(marker, marker.info)">
+          </map-marker>
+        </google-map>
+      </div>
+    </div>
+  </div>
+</div>

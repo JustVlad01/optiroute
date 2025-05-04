@@ -6,6 +6,17 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Google Maps JavaScript API - Optimized loading -->
+  <script>
+    // Define callback function for when Maps API is fully loaded
+    function initGoogleMaps() {
+      // Maps API is ready
+      window.googleMapsLoaded = true;
+      // Dispatch event so Angular components can react
+      window.dispatchEvent(new Event('google-maps-loaded'));
+    }
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnsVzHUKFmzMl62YcJh2xOhtjeS6Z5T-U&libraries=places&callback=initGoogleMaps&v=weekly&loading=async" defer></script>
 </head>
 <body>
   <app-root></app-root>

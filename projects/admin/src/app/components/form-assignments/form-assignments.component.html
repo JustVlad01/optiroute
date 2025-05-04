@@ -1,20 +1,89 @@
-<div class="assignment-container">
-  <header class="navbar">
-    <div class="logo">OPTIROUTE</div>
-    <div class="nav-links">
-      <a class="nav-pill" (click)="navigateToDashboard()">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-      </a>
-    </div>
-  </header>
-
+<div class="compact-container">
   <div class="content">
-    <div class="header-section">
-      <h2 class="title">Driver Form Assignments</h2>
-      <button class="btn-primary" (click)="toggleAssignmentForm()">
-        <i class="bi bi-plus-circle"></i> 
-        {{ showAssignmentForm ? 'Cancel' : 'Assign New Form' }}
-      </button>
+    <!-- Unified Filters in a single row beneath header -->
+    <div class="unified-filters-container">
+      <div class="unified-filters">
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="yearFilter">Year</label>
+            <select id="yearFilter" class="filter-select" (change)="onFilterChange('yearFilter', $event)">
+              <option *ngFor="let year of availableYears" [value]="year" [selected]="year === selectedYear">
+                {{ year }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="monthFilter">Month</label>
+            <select id="monthFilter" class="filter-select" (change)="onFilterChange('monthFilter', $event)">
+              <option [value]="0" [selected]="selectedMonth === 0">All Months</option>
+              <option *ngFor="let month of availableMonths" [value]="month.value" [selected]="month.value === selectedMonth">
+                {{ month.label }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="filter-group" *ngIf="selectedMonth > 0">
+            <label for="weekFilter">Week</label>
+            <select id="weekFilter" class="filter-select" [disabled]="viewAllMonthOption" (change)="onFilterChange('weekFilter', $event)">
+              <option value="" [selected]="selectedWeek === ''">All Weeks</option>
+              <option *ngFor="let week of availableWeeks" [value]="week.value" [selected]="week.value === selectedWeek">
+                {{ week.label }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="driverFilter">Driver</label>
+            <select id="driverFilter" class="filter-select" (change)="onFilterChange('driverFilter', $event)">
+              <option value="" [selected]="selectedDriver === ''">All Drivers</option>
+              <option *ngFor="let driver of drivers" [value]="driver.id" [selected]="driver.id === selectedDriver">
+                {{ driver.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="status-options" [formGroup]="filterForm">
+          <div class="filter-option">
+            <input type="checkbox" id="needsReviewFilter" formControlName="needsReviewFilter" (change)="applyFilters()">
+            <label for="needsReviewFilter">Needs Review</label>
+          </div>
+          
+          <div class="filter-option">
+            <input type="checkbox" id="overdueFilter" formControlName="overdueFilter" (change)="applyFilters()">
+            <label for="overdueFilter">Overdue</label>
+          </div>
+          
+          <div class="filter-option">
+            <input type="checkbox" id="signedFilter" formControlName="signedFilter" (change)="applyFilters()">
+            <label for="signedFilter">Signed</label>
+          </div>
+
+          <div class="filter-option">
+            <input type="checkbox" id="submittedOnlyFilter" formControlName="submittedOnlyFilter" (change)="applyFilters()">
+            <label for="submittedOnlyFilter">Submitted</label>
+          </div>
+          
+          <div class="filter-option">
+            <input type="checkbox" id="notSubmittedOnlyFilter" formControlName="notSubmittedOnlyFilter" (change)="applyFilters()">
+            <label for="notSubmittedOnlyFilter">Not Submitted</label>
+          </div>
+          
+          <button type="button" class="btn-reset-filters" (click)="resetFilters()">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+
+          <button class="btn-assign" (click)="toggleAssignmentForm()">
+            <i class="bi bi-plus-circle"></i> 
+            {{ showAssignmentForm ? 'Cancel' : 'Assign New Form' }}
+          </button>
+        </div>
+      </div>
+      
+      <div class="filter-summary" *ngIf="filteredAssignments.length !== formAssignments.length">
+        Showing {{ filteredAssignments.length }} of {{ formAssignments.length }} assignments
+      </div>
     </div>
 
     <!-- Form Assignment Section -->
@@ -59,12 +128,8 @@
       </form>
     </div>
 
-    <!-- Assignment List Section -->
-    <div class="assignments-table-section">
-      <div class="filters">
-        <!-- We can add filters here later if needed -->
-      </div>
-      
+    <!-- Filters and Table Section -->
+    <div class="filters-table-wrapper">
       <div class="loading-indicator" *ngIf="isLoading">
         <i class="bi bi-hourglass-split"></i> Loading assignments...
       </div>
@@ -73,11 +138,17 @@
         <p>No form assignments found. Use the "Assign New Form" button to create one.</p>
       </div>
       
-      <table class="assignments-table" *ngIf="!isLoading && formAssignments.length > 0">
+      <div class="no-filtered-results" *ngIf="!isLoading && formAssignments.length > 0 && filteredAssignments.length === 0">
+        <p>No assignments match the current filters. <a href="#" (click)="resetFilters(); $event.preventDefault();">Reset filters</a>.</p>
+      </div>
+      
+      <!-- Assignment Table -->
+      <table class="assignments-table" *ngIf="!isLoading && filteredAssignments.length > 0">
         <thead>
           <tr>
             <th>Driver</th>
             <th>Assigned Date</th>
+            <th>Submission Date</th>
             <th>Reset Period</th>
             <th>Status</th>
             <th>Notes</th>
@@ -85,27 +156,45 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let assignment of formAssignments">
-            <td>{{ assignment.drivers?.name || 'Unknown' }}</td>
+          <tr *ngFor="let assignment of filteredAssignments">
+            <td class="driver-name">{{ assignment.drivers?.name || 'Unknown' }}</td>
             <td>{{ assignment.created_at | date:'short' }}</td>
+            <td>
+              <span *ngIf="assignment.completed_at">{{ assignment.completed_at | date:'short' }}</span>
+              <span *ngIf="!assignment.completed_at" class="not-submitted">Not submitted</span>
+            </td>
             <td>{{ getResetPeriodText(assignment.reset_period) }}</td>
             <td>
               <span class="status-badge" [ngClass]="getStatusClass(assignment.status)">
-                {{ assignment.status }}
+                {{ assignment.status | uppercase }}
               </span>
               <span *ngIf="assignment.status === 'completed' && assignment.driver_forms?.needs_review" 
                     class="review-badge">
-                CHECK FORM
+                NEEDS REVIEW
               </span>
             </td>
             <td>{{ assignment.notes || 'No notes' }}</td>
             <td class="actions">
+              <!-- Pending Form Actions -->
               <button class="btn-icon" *ngIf="assignment.status === 'pending'" (click)="markAsOverdue(assignment.id)" title="Mark as Overdue">
                 <i class="bi bi-exclamation-triangle"></i>
               </button>
-              <button class="btn-icon" *ngIf="assignment.status === 'completed'" (click)="viewCompletedForm(assignment.form_id)" title="View Completed Form">
+              
+              <!-- Completed Form Actions -->
+              <button class="btn-icon" *ngIf="assignment.status === 'completed'" (click)="viewCompletedForm(assignment.form_id)" title="View Form">
                 <i class="bi bi-eye"></i>
               </button>
+              <button class="btn-icon btn-sign" *ngIf="assignment.status === 'completed'" 
+                     (click)="markAsSigned(assignment.id, assignment.form_id)" title="Mark as Signed">
+                <i class="bi bi-check-circle"></i>
+              </button>
+              
+              <!-- Signed Form Actions -->
+              <button class="btn-icon" *ngIf="assignment.status === 'signed'" (click)="viewCompletedForm(assignment.form_id)" title="View Form">
+                <i class="bi bi-eye"></i>
+              </button>
+              
+              <!-- Delete Action (available for all) -->
               <button class="btn-icon btn-delete" (click)="deleteAssignment(assignment.id)" title="Delete Assignment">
                 <i class="bi bi-trash"></i>
               </button>

@@ -24,12 +24,13 @@
       </div>
 
       <!-- Route Planner Card -->
-      <div class="admin-card">
+      <div class="admin-card" (click)="navigateTo('/route-planner')">
         <div class="card-icon">
           <i class="bi bi-map"></i>
         </div>
         <div class="card-content">
           <h3>Route Planner</h3>
+          <p class="card-description">Plan and optimize delivery routes with Google Maps</p>
         </div>
       </div>
 
@@ -50,16 +51,7 @@
         </div>
         <div class="card-content">
           <h3>Driver Forms</h3>
-        </div>
-      </div>
-
-      <!-- Form Assignments Card -->
-      <div class="admin-card" (click)="navigateTo('/form-assignments')">
-        <div class="card-icon">
-          <i class="bi bi-clipboard-data"></i>
-        </div>
-        <div class="card-content">
-          <h3>Form Assignments</h3>
+          <p class="card-description">Manage driver forms and assignments</p>
         </div>
       </div>
 
@@ -70,6 +62,17 @@
         </div>
         <div class="card-content">
           <h3>News / Updates</h3>
+        </div>
+      </div>
+
+      <!-- Vehicle/Crate Tracking Card -->
+      <div class="admin-card" (click)="navigateTo('/crate-tracking')">
+        <div class="card-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="card-content">
+          <h3>Vehicle / Crate Tracking</h3>
+          <p class="card-description">Monitor crate quantities and vehicle info tracking</p>
         </div>
       </div>
     </div>

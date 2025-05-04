@@ -1,0 +1,101 @@
+<div class="crate-tracking-container">
+  <div class="header">
+    <div class="title-section">
+      <h2>Vehicle / Crate Tracking</h2>
+      <p class="subtitle">Monitor crate movements and quantities</p>
+    </div>
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Year</label>
+        <select class="filter-select" [(ngModel)]="selectedYear">
+          <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Month</label>
+        <select class="filter-select" [(ngModel)]="selectedMonth">
+          <option *ngFor="let month of months" [value]="month">{{ month }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Driver</label>
+        <select class="filter-select" [(ngModel)]="selectedDriver">
+          <option *ngFor="let driver of drivers" [value]="driver">{{ driver }}</option>
+        </select>
+      </div>
+      <button class="btn-filter" (click)="applyFilters()">Apply Filters</button>
+      <button class="btn-refresh" (click)="refreshData()" title="Import and refresh crate data">
+        <i class="bi bi-arrow-clockwise"></i> Refresh Data
+      </button>
+      <button class="btn-copy-direct" (click)="performDirectCrateCopy()" title="Directly copy ALL crate data from driver forms">
+        <i class="bi bi-files"></i> Copy All Crate Data
+      </button>
+    </div>
+  </div>
+
+  <div class="migration-status" *ngIf="migrationStatus">
+    <div class="alert">
+      <i class="bi bi-info-circle"></i> {{ migrationStatus }}
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="bi bi-box-arrow-up"></i>
+      </div>
+      <div class="card-content">
+        <h3>Total Crates Out</h3>
+        <p class="value">{{ getTotalCratesOut() }}</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="bi bi-box-arrow-in-down"></i>
+      </div>
+      <div class="card-content">
+        <h3>Total Crates In</h3>
+        <p class="value">{{ getTotalCratesIn() }}</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="bi bi-box"></i>
+      </div>
+      <div class="card-content">
+        <h3>Net Movement</h3>
+        <p class="value" [ngClass]="{'positive': getNetMovement() > 0, 'negative': getNetMovement() < 0}">
+          {{ getNetMovement() }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <div class="loading-indicator" *ngIf="isLoading">
+      <i class="bi bi-hourglass-split"></i> Loading data...
+    </div>
+    <div class="no-data" *ngIf="!isLoading && filteredCrateData.length === 0">
+      <i class="bi bi-exclamation-triangle"></i>
+      <p>No crate tracking data is available.</p>
+      <p>Try using one of these options to import data:</p>
+      <div class="no-data-actions">
+        <button class="btn-migrate" (click)="migrateDriverFormData()">Import Data from Driver Forms</button>
+        <button class="btn-copy-direct" (click)="performDirectCrateCopy()">Copy ALL Crate Data Directly</button>
+      </div>
+    </div>
+    <div *ngIf="!isLoading && filteredCrateData.length > 0">
+      <h3 class="chart-title">{{ selectedDriver === 'All Drivers' ? 'Overall Crate Movement' : 'Driver Crate Movement - ' + selectedDriver }}</h3>
+      <canvas id="crateChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Driver Summary Section - Always shown when data is available -->
+  <div class="chart-container driver-summary" *ngIf="!isLoading && allCrateData.length > 0">
+    <h3 class="chart-title">Driver Comparison</h3>
+    <p class="subtitle">Crate movements by driver</p>
+    <canvas id="driverSummaryChart"></canvas>
+  </div>
+</div> 

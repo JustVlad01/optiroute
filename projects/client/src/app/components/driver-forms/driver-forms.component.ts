@@ -3,22 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
-
-interface FormAssignment {
-  id: string;
-  assignedDate?: string;
-  dueDate?: string;
-  status: string;
-  notes?: string;
-  completed_at?: string;
-  driver_id?: string;
-  driver_name?: string;
-  recurring?: boolean;
-  cooldownUntil?: string;
-  created_at?: string;
-  due_date?: string;
-  form_id?: string;
-}
+import { FormAssignment } from '../../models/form-assignment.model';
 
 @Component({
   selector: 'app-driver-forms',
@@ -93,14 +78,17 @@ export class DriverFormsComponent implements OnInit {
         // Transform the data to match our interface
         this.forms = assignments.map((assignment: any) => ({
           id: assignment.id,
-          assignedDate: new Date(assignment.created_at).toLocaleString(),
-          dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : undefined,
-          status: assignment.status.toUpperCase(),
-          notes: assignment.notes || '',
-          completed_at: assignment.completed_at,
           driver_id: assignment.driver_id,
+          driver_name: assignment.driver_name,
+          status: assignment.status.toUpperCase(),
+          due_date: assignment.due_date || '',
+          completed_at: assignment.completed_at,
           form_id: assignment.form_id,
-          recurring: true // Default to true for now
+          notes: assignment.notes || '',
+          created_at: assignment.created_at,
+          reset_period: assignment.reset_period,
+          partial_form_data: assignment.partial_form_data,
+          partially_completed: assignment.partially_completed
         }));
       }
     } catch (error) {

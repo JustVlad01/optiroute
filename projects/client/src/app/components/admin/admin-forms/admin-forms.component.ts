@@ -3,24 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AdminNavComponent } from '../admin-nav/admin-nav.component';
-
-interface FormAssignment {
-  id: string;
-  assignedDate: string;
-  dueDate: string;
-  status: string;
-  notes: string;
-  completed_at?: string;
-  driver_name?: string;
-  driver_id?: string;
-  recurring?: boolean;
-}
-
-interface Driver {
-  id: string;
-  name: string;
-  selected?: boolean;
-}
+import { FormAssignment } from '../../../models/form-assignment.model';
+import { Driver } from '../../../models/driver.model';
 
 @Component({
   selector: 'app-admin-forms',
@@ -59,22 +43,30 @@ export class AdminFormsComponent implements OnInit {
     const mockForms: FormAssignment[] = [
       {
         id: '9e24ed84-53e6-45e0-d61c-f2d6403f2bbf',
+        created_at: '2025-05-02T10:47:00Z',
         assignedDate: '5/2/25, 10:47 AM',
+        due_date: '2025-05-02',
         dueDate: 'May 2, 2025',
         status: 'PENDING',
         notes: 'No notes',
         driver_name: 'Vlad',
         driver_id: 'driver-001',
+        form_id: null,
+        completed_at: null,
         recurring: true
       },
       {
         id: 'a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6',
+        created_at: '2025-05-01T09:30:00Z',
         assignedDate: '5/1/25, 9:30 AM',
+        due_date: '2025-05-01',
         dueDate: 'May 1, 2025',
         status: 'OVERDUE',
         notes: 'Reminder sent',
         driver_name: 'John',
-        driver_id: 'driver-002'
+        driver_id: 'driver-002',
+        form_id: null,
+        completed_at: null
       }
     ];
     
@@ -112,10 +104,10 @@ export class AdminFormsComponent implements OnInit {
   loadAvailableDrivers(): void {
     // In a real app, this would be an API call to get all drivers
     this.availableDrivers = [
-      { id: 'driver-001', name: 'Vlad' },
-      { id: 'driver-002', name: 'John' },
-      { id: 'driver-003', name: 'Sarah' },
-      { id: 'driver-004', name: 'Mike' }
+      { id: 'driver-001', name: 'Vlad', custom_id: 'D001', role: 'Driver', selected: false, location: 'London', created_at: '2025-01-01T00:00:00Z' },
+      { id: 'driver-002', name: 'John', custom_id: 'D002', role: 'Driver', selected: false, location: 'Manchester', created_at: '2025-01-02T00:00:00Z' },
+      { id: 'driver-003', name: 'Sarah', custom_id: 'D003', role: 'Driver', selected: false, location: 'Birmingham', created_at: '2025-01-03T00:00:00Z' },
+      { id: 'driver-004', name: 'Mike', custom_id: 'D004', role: 'Driver', selected: false, location: 'Leeds', created_at: '2025-01-04T00:00:00Z' }
     ];
     
     // Check localStorage for recurring settings

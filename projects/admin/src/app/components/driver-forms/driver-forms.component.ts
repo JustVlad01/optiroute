@@ -97,6 +97,9 @@ export class DriverFormsComponent implements OnInit {
           customerComplaintsReason: formData.customer_complaints_reason,
           productComplaints: formData.product_complaints,
           productComplaintsReason: formData.product_complaints_reason,
+          returnTime: formData.return_time,
+          returnMileage: formData.return_mileage,
+          numberOfCratesReturned: formData.number_of_crates_returned,
           closingMileage: formData.closing_mileage,
           recycledAllReturns: formData.recycled_all_returns,
           vanFridgeWorking: formData.van_fridge_working,
@@ -124,7 +127,7 @@ export class DriverFormsComponent implements OnInit {
   detectProblemFields(formData: any): void {
     this.problemFields = [];
     
-    // Check for issues that would have triggered the needs_review flag
+    // Issues and Complaints section
     if (formData.paperwork_issues && formData.paperwork_issues_reason?.trim()) {
       this.problemFields.push('paperworkIssuesReason');
     }
@@ -145,6 +148,7 @@ export class DriverFormsComponent implements OnInit {
       this.problemFields.push('productComplaintsReason');
     }
     
+    // Vehicle Issues and Maintenance section
     if (formData.van_issues?.trim()) {
       this.problemFields.push('vanIssues');
     }
@@ -153,6 +157,7 @@ export class DriverFormsComponent implements OnInit {
       this.problemFields.push('repairsNeeded');
     }
     
+    // Other potential issues
     if (!formData.van_fridge_working) {
       this.problemFields.push('vanFridgeWorking');
     }
@@ -195,7 +200,11 @@ export class DriverFormsComponent implements OnInit {
       customerComplaintsReason: [''],
       productComplaints: [false],
       productComplaintsReason: [''],
-      // New end of shift fields
+      // End of shift fields
+      returnTime: ['', Validators.required],
+      returnMileage: ['', Validators.required],
+      numberOfCratesReturned: ['', Validators.required],
+      // Vehicle inspection and maintenance fields
       closingMileage: [''],
       recycledAllReturns: [false],
       vanFridgeWorking: [false],
@@ -380,17 +389,19 @@ export class DriverFormsComponent implements OnInit {
   }
 
   checkIfNeedsReview(formValues: any): boolean {
-    // Check for conditions that would require review
     return (
+      // Vehicle Issues and Maintenance section
+      (formValues.vanIssues?.trim()) ||
+      (formValues.repairsNeeded?.trim()) ||
+      (!formValues.vanFridgeWorking) ||
+      (!formValues.cabCleaned && formValues.cabNotCleanedReason?.trim()) ||
+      
+      // Issues and Complaints section
       (formValues.paperworkIssues && formValues.paperworkIssuesReason?.trim()) ||
       (formValues.ordersProductsIssues && formValues.ordersProductsIssuesReason?.trim()) ||
       (formValues.siteIssues && formValues.siteIssuesReason?.trim()) ||
       (formValues.customerComplaints && formValues.customerComplaintsReason?.trim()) ||
-      (formValues.productComplaints && formValues.productComplaintsReason?.trim()) ||
-      (formValues.vanIssues?.trim()) ||
-      (formValues.repairsNeeded?.trim()) ||
-      (!formValues.vanFridgeWorking) ||
-      (!formValues.cabCleaned && formValues.cabNotCleanedReason?.trim())
+      (formValues.productComplaints && formValues.productComplaintsReason?.trim())
     );
   }
 
