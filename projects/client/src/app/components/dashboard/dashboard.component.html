@@ -1,24 +1,16 @@
 <div class="dashboard-container">
-  <!-- Header -->
-  <header class="header">
-    <div class="logo">OPTIROUTE</div>
-    <div class="badge">
-      <span class="badge bg-primary">DRIVER</span>
+  <!-- Welcome section -->
+  <div class="welcome-section">
+    <div class="user-info">
+      <i class="bi bi-person-circle"></i>
+      <span>Welcome, {{driverName}}</span>
     </div>
-  </header>
+    <button class="btn btn-danger logout-btn" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
+  </div>
 
   <div class="dashboard-content">
-    <!-- Welcome section -->
-    <div class="welcome-section">
-      <div class="user-info">
-        <i class="bi bi-person-circle"></i>
-        <span>Welcome, {{driverName}}</span>
-      </div>
-      <button class="btn btn-danger logout-btn" (click)="logout()">
-        <i class="bi bi-box-arrow-right"></i> Logout
-      </button>
-    </div>
-
     <!-- Main cards grid -->
     <div class="cards-grid">
       <!-- My Route Card -->

@@ -1,6 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import "bootstrap-icons/font/bootstrap-icons.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap');
 
 /* Add corporate theme global variables */
 :root {
@@ -28,17 +29,41 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Enhanced logo styling - global override */
+.logo, h1.logo, h2.logo, .logo-text, .header h2, .header-fullwidth h2 {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.5px !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3) !important;
+  background: linear-gradient(to right, #ffffff, #e0e0e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
 /* Navigation buttons styling */
 .btn-outline-light {
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  padding: 0.35rem 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
+  border-width: 1px;
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Ensure mobile-friendly button size */
+@media (max-width: 768px) {
+  .btn-outline-light {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    max-width: fit-content;
   }
 }
 

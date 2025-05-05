@@ -7,7 +7,6 @@ import { FormAssignmentsComponent } from './components/form-assignments/form-ass
 import { DriverDashboardComponent } from './components/driver-dashboard/driver-dashboard.component';
 import { DriverFormFillComponent } from './components/driver-form-fill/driver-form-fill.component';
 import { DriverFormContainerComponent } from './components/driver-form-container/driver-form-container.component';
-import { CrateTrackingComponent } from './components/crate-tracking/crate-tracking.component';
 import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
 
 export const routes: Routes = [
@@ -27,10 +26,6 @@ export const routes: Routes = [
     {
         path: 'roster',
         component: RosterComponent
-    },
-    {
-        path: 'crate-tracking',
-        component: CrateTrackingComponent
     },
     {
         path: 'route-planner',
