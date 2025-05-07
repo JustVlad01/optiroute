@@ -59,8 +59,8 @@
   gap: 1.5rem;
   margin-bottom: 0;
   flex: 1;
-  height: calc(100% - 4.5rem);
-  max-height: calc(100% - 4.5rem);
+  height: calc(100% - 4.5rem - 200px);
+  max-height: calc(100% - 4.5rem - 200px);
 }
 
 .form-controls {
@@ -227,6 +227,134 @@ label {
   cursor: not-allowed;
 }
 
+// Route filter styles
+.route-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filter-label {
+  font-weight: 500;
+  margin-right: 1rem;
+  color: #495057;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background-color: #e9ecef;
+}
+
+.filter-btn.active {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+// Saved routes styles
+.saved-routes {
+  margin-bottom: 1.5rem;
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.saved-routes h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: #212529;
+}
+
+.routes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.route-item {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #f8f9fa;
+}
+
+.route-item:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+.route-item.selected {
+  border: 2px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.route-item.hidden {
+  display: none;
+}
+
+.route-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.route-name {
+  font-weight: 500;
+  color: #212529;
+}
+
+.route-type {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.route-type.old-route {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.route-type.new-route {
+  background-color: #198754;
+  color: white;
+}
+
+.route-details {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.route-details div {
+  margin-bottom: 0.25rem;
+}
+
 @media (max-width: 992px) {
   .route-form-container {
     grid-template-columns: 1fr;
@@ -237,4 +365,145 @@ label {
   .map-container {
     height: 500px;
   }
+  
+  .routes-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+// View mode selector styles
+.view-mode-selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.view-mode-label {
+  font-weight: 500;
+  margin-right: 1rem;
+  color: #495057;
+}
+
+.view-mode-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.view-mode-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-mode-btn:hover {
+  background-color: #e9ecef;
+}
+
+.view-mode-btn.active {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+// Route selection styles
+.route-selection {
+  float: left;
+  margin-right: 10px;
+}
+
+/* Custom checkbox styling */
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 30px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 22px;
+  width: 22px;
+  background-color: #eee;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 7px;
+  top: 3px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+// Route items
+.route-item {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.route-content {
+  cursor: pointer;
+  flex: 1;
+}
+
+.route-item:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+.route-item.selected {
+  border: 2px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.route-item.hidden {
+  display: none;
 }

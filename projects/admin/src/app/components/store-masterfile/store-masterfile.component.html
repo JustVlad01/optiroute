@@ -25,6 +25,36 @@
         </button>
       </div>
       
+      <!-- Route filter dropdown -->
+      <div class="filter-option route-dropdown-filter">
+        <button type="button" class="filter-dropdown-btn" (click)="toggleRouteFilterDropdown()">
+          <i class="bi bi-funnel"></i> 
+          Filter by Route
+          <span *ngIf="hasSelectedRoutes" class="filter-badge">{{ getSelectedRoutesCount() }}</span>
+          <i class="bi" [ngClass]="{'bi-chevron-down': !showRouteFilter, 'bi-chevron-up': showRouteFilter}"></i>
+        </button>
+        
+        <div class="filter-dropdown" *ngIf="showRouteFilter">
+          <div class="filter-dropdown-header">
+            <span>Select routes to filter</span>
+            <button type="button" class="filter-clear-btn" (click)="clearRouteSelection()" [disabled]="!hasSelectedRoutes">
+              Clear All
+            </button>
+          </div>
+          <div class="filter-dropdown-options">
+            <label *ngFor="let route of allRoutes" class="route-checkbox-item">
+              <input type="checkbox" [checked]="selectedRoutes[route]" (change)="toggleRouteSelection(route)">
+              <span>{{ route }}</span>
+            </label>
+          </div>
+          <div class="filter-dropdown-footer">
+            <button type="button" class="apply-filter-btn" (click)="toggleRouteFilterDropdown()">
+              Apply Filter
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <!-- 24-hour filter toggle -->
       <div class="filter-option">
         <label class="filter-checkbox">
@@ -44,16 +74,16 @@
       <div class="save-btn-container">
         <button 
           class="save-btn" 
-          (click)="manualSave()" 
-          [disabled]="isSaving || (!pendingChanges && editedRows.size === 0)"
-          [class.has-changes]="pendingChanges || editedRows.size > 0"
+          (click)="saveChanges()" 
+          [disabled]="isSaving || editedRows.size === 0"
+          [class.has-changes]="editedRows.size > 0"
         >
           <i class="bi" [ngClass]="{'bi-cloud-arrow-up': !isSaving, 'bi-arrow-repeat spin': isSaving}"></i>
           Save Changes
         </button>
       </div>
       
-      <!-- Auto-save Status Indicator -->
+      <!-- Save Status Indicator -->
       <div class="save-status-container">
         <div *ngIf="isSaving" class="save-indicator saving">
           <i class="bi bi-arrow-repeat"></i> Saving changes...
@@ -65,9 +95,8 @@
         <div *ngIf="saveError && !isSaving" class="save-indicator error">
           <i class="bi bi-exclamation-circle"></i> Save failed. Please try again.
         </div>
-        <div *ngIf="pendingChanges && !isSaving && !saveSuccess && !saveError" class="save-indicator pending">
-          <i class="bi bi-clock-history"></i> Changes pending
-          <span *ngIf="lastSyncTime">• Last sync {{ lastSyncTime | date:'HH:mm:ss' }}</span>
+        <div *ngIf="editedRows.size > 0 && !isSaving && !saveSuccess && !saveError" class="save-indicator pending">
+          <i class="bi bi-clock-history"></i> Unsaved changes
         </div>
       </div>
     </div>
@@ -147,6 +176,9 @@
       <div *ngIf="!loading && filteredData.length > 0" class="pagination-container">
         <div class="pagination-info">
           Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ currentPage * itemsPerPage > filteredData.length ? filteredData.length : currentPage * itemsPerPage }} of {{ filteredData.length }} stores (Total: {{ totalStoreCount }})
+          <span *ngIf="hasSelectedRoutes && filteredData.length > 0" class="pagination-note">
+            <i class="bi bi-info-circle"></i> Showing more items per page due to active filters
+          </span>
         </div>
         
         <div class="pagination-controls">

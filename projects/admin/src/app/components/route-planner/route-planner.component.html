@@ -11,6 +11,72 @@
   <div class="content">
     <h2 class="page-title">Route Planner</h2>
 
+    <!-- Route view mode toggle -->
+    <div class="view-mode-selector">
+      <div class="view-mode-label">View Mode:</div>
+      <div class="view-mode-buttons">
+        <button class="view-mode-btn" [class.active]="viewMode === 'selection'" (click)="setViewMode('selection')">
+          Selection Mode
+        </button>
+        <button class="view-mode-btn" [class.active]="viewMode === 'filter'" (click)="setViewMode('filter')">
+          Filter Mode
+        </button>
+      </div>
+    </div>
+
+    <!-- Route filter options (shown only in filter mode) -->
+    <div class="route-filter" *ngIf="viewMode === 'filter'">
+      <div class="filter-label">Filter Routes:</div>
+      <div class="filter-buttons">
+        <button class="filter-btn" [class.active]="routeType === 'all'" (click)="setRouteTypeFilter('all')">
+          All Routes
+        </button>
+        <button class="filter-btn" [class.active]="routeType === 'old'" (click)="setRouteTypeFilter('old')">
+          Old Routes
+        </button>
+        <button class="filter-btn" [class.active]="routeType === 'new'" (click)="setRouteTypeFilter('new')">
+          New Routes
+        </button>
+      </div>
+    </div>
+
+    <!-- Saved routes list -->
+    <div class="saved-routes" *ngIf="savedRoutes.length > 0">
+      <h3>Routes <span *ngIf="viewMode === 'selection'">(Check boxes to select routes)</span></h3>
+      <div class="routes-list">
+        <div class="route-item" 
+            *ngFor="let route of savedRoutes" 
+            [class.hidden]="!shouldShowRoute(route)"
+            [class.selected]="route.selected">
+          
+          <!-- Selection checkbox - always visible -->
+          <div class="route-selection">
+            <label class="checkbox-container">
+              <input type="checkbox" 
+                    [checked]="route.selected" 
+                    (click)="toggleRouteSelection(route, $event)">
+              <span class="checkmark"></span>
+            </label>
+          </div>
+
+          <!-- Route content - clickable to load route -->
+          <div class="route-content" (click)="loadRoute(route)">
+            <div class="route-info">
+              <div class="route-name">{{ route.name }}</div>
+              <div class="route-type" [class.old-route]="route.type === 'old'" [class.new-route]="route.type === 'new'">
+                {{ route.type === 'old' ? 'Old Route' : 'New Route' }}
+              </div>
+            </div>
+            <div class="route-details">
+              <div>From: {{ route.startLocation }}</div>
+              <div>To: {{ route.endLocation }}</div>
+              <div>Stops: {{ route.stops.length }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="route-form-container">
       <div class="form-controls">
         <!-- Start and End Locations -->

@@ -50,6 +50,22 @@ export class RoutePlannerComponent implements OnInit {
   stops: string[] = [''];
   isLoading = false;
   
+  // Route filtering and selection
+  routeType: 'all' | 'old' | 'new' = 'all';
+  savedRoutes: Array<{
+    id: string;
+    name: string;
+    type: 'old' | 'new';
+    startLocation: string;
+    endLocation: string;
+    stops: string[];
+    routeData?: any;
+    selected?: boolean;
+  }> = [];
+  
+  // Display mode
+  viewMode: 'filter' | 'selection' = 'selection';
+  
   constructor(private ngZone: NgZone) {}
 
   ngOnInit(): void {
@@ -66,6 +82,9 @@ export class RoutePlannerComponent implements OnInit {
         });
       });
     }
+    
+    // Initialize with some example routes
+    this.initSampleRoutes();
   }
   
   // Initialize map services after Google Maps is loaded
@@ -197,5 +216,119 @@ export class RoutePlannerComponent implements OnInit {
     this.startLocation = 'London, UK';
     this.endLocation = 'Manchester, UK';
     this.stops = ['Birmingham, UK', 'Oxford, UK'];
+  }
+  
+  // Filter routes by type
+  setRouteTypeFilter(type: 'all' | 'old' | 'new'): void {
+    this.routeType = type;
+    this.filterRoutes();
+  }
+  
+  // Filter the routes based on selected type
+  filterRoutes(): void {
+    if (this.routeType === 'all') {
+      // Show all routes or do nothing
+      console.log('Showing all routes');
+      return;
+    }
+    
+    // Filter routes by type
+    const filteredRoutes = this.savedRoutes.filter(route => route.type === this.routeType);
+    console.log(`Showing ${this.routeType} routes:`, filteredRoutes);
+    
+    // Here you could load a specific route if needed
+    if (filteredRoutes.length > 0) {
+      // Example: load the first filtered route
+      // this.loadRoute(filteredRoutes[0]);
+    }
+  }
+  
+  // Initialize sample routes for demonstration
+  private initSampleRoutes(): void {
+    this.savedRoutes = [
+      {
+        id: '1',
+        name: 'London to Manchester (Old)',
+        type: 'old',
+        startLocation: 'London, UK',
+        endLocation: 'Manchester, UK',
+        stops: ['Birmingham, UK', 'Oxford, UK'],
+        selected: false
+      },
+      {
+        id: '2',
+        name: 'London to Manchester (New)',
+        type: 'new',
+        startLocation: 'London, UK',
+        endLocation: 'Manchester, UK',
+        stops: ['Birmingham, UK', 'Coventry, UK'],
+        selected: false
+      },
+      {
+        id: '3',
+        name: 'Edinburgh to Glasgow (Old)',
+        type: 'old',
+        startLocation: 'Edinburgh, UK',
+        endLocation: 'Glasgow, UK',
+        stops: ['Falkirk, UK'],
+        selected: false
+      },
+      {
+        id: '4',
+        name: 'Edinburgh to Glasgow (New)',
+        type: 'new',
+        startLocation: 'Edinburgh, UK',
+        endLocation: 'Glasgow, UK',
+        stops: ['Livingston, UK', 'Falkirk, UK'],
+        selected: false
+      }
+    ];
+  }
+  
+  // Load a saved route
+  loadRoute(route: any): void {
+    this.startLocation = route.startLocation;
+    this.endLocation = route.endLocation;
+    this.stops = [...route.stops];
+    
+    // Calculate the route after loading
+    this.calculateRoute();
+  }
+  
+  // Toggle selection of a route
+  toggleRouteSelection(route: any, event: Event): void {
+    event.stopPropagation(); // Prevent the click from triggering loadRoute
+    route.selected = !route.selected;
+  }
+  
+  // Check if any route is selected
+  get hasSelectedRoutes(): boolean {
+    return this.savedRoutes.some(route => route.selected);
+  }
+  
+  // Get only selected routes
+  get selectedRoutes(): any[] {
+    return this.savedRoutes.filter(route => route.selected);
+  }
+  
+  // Show only selected routes or all if none selected
+  shouldShowRoute(route: any): boolean {
+    // When in filter mode, use the routeType filter
+    if (this.viewMode === 'filter') {
+      return this.routeType === 'all' || route.type === this.routeType;
+    }
+    
+    // When in selection mode, show all if none selected or only selected routes
+    return !this.hasSelectedRoutes || route.selected;
+  }
+  
+  // Switch between filter and selection view modes
+  setViewMode(mode: 'filter' | 'selection'): void {
+    this.viewMode = mode;
+    
+    // Reset selections when switching to filter mode
+    if (mode === 'filter') {
+      this.savedRoutes.forEach(route => route.selected = false);
+    }
   }
 }

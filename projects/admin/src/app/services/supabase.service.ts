@@ -517,44 +517,66 @@ export class SupabaseService {
       const results = [];
       
       for (const update of storeUpdates) {
+        // Log the original update for debugging
+        console.log('Processing update:', JSON.stringify(update));
+        
+        // Apply column name fixing to the update before processing
+        const fixedUpdate = this.fixColumnNames(update);
+        console.log('After column name fixing:', JSON.stringify(fixedUpdate));
+        
+        // Check if this is a door_code update and ensure it's properly formatted
+        if ('door_code' in fixedUpdate) {
+          console.log('Door code update detected:', fixedUpdate.door_code);
+          // Ensure door_code is a string
+          fixedUpdate.door_code = fixedUpdate.door_code?.toString() || '';
+        }
+        
         // First priority: Use id if available
-        if (update.id) {
-          const { data, error } = await this.supabase
-            .from('store_information')
-            .update(update)
-            .eq('id', update.id)
-            .select();
-            
-          if (error) {
-            console.error('Error updating store by id:', error);
-            results.push({ success: false, error });
-          } else {
-            console.log('Store updated by id:', data);
-            results.push({ success: true, data });
+        if (fixedUpdate.id) {
+          try {
+            const { data, error } = await this.supabase
+              .from('store_information')
+              .update(fixedUpdate)
+              .eq('id', fixedUpdate.id)
+              .select();
+              
+            if (error) {
+              console.error('Error updating store by id:', error);
+              console.error('Failed update payload:', JSON.stringify(fixedUpdate));
+              results.push({ success: false, error });
+            } else {
+              console.log('Store updated by id:', data);
+              results.push({ success: true, data });
+            }
+          } catch (err) {
+            console.error('Exception during update by id:', err);
+            console.error('Failed update payload:', JSON.stringify(fixedUpdate));
+            results.push({ success: false, error: { message: err instanceof Error ? err.message : 'Unknown error' } });
           }
           continue; // Skip to the next update
         }
         
         // Second priority: Use dispatch_code and store_code combination
-        if (update.dispatch_code && update.store_code) {
+        if (fixedUpdate.dispatch_code && fixedUpdate.store_code) {
           const { data: existingRecord } = await this.supabase
             .from('store_information')
             .select('*')
-            .eq('dispatch_code', update.dispatch_code)
-            .eq('store_code', update.store_code)
+            .eq('dispatch_code', fixedUpdate.dispatch_code)
+            .eq('store_code', fixedUpdate.store_code)
             .maybeSingle();
           
           if (existingRecord) {
             // If the record exists, update it
             const { data, error } = await this.supabase
               .from('store_information')
-              .update(update)
-              .eq('dispatch_code', update.dispatch_code)
-              .eq('store_code', update.store_code)
+              .update(fixedUpdate)
+              .eq('dispatch_code', fixedUpdate.dispatch_code)
+              .eq('store_code', fixedUpdate.store_code)
               .select();
               
             if (error) {
               console.error('Error updating existing store:', error);
+              console.error('Failed update payload:', JSON.stringify(fixedUpdate));
               results.push({ success: false, error });
             } else {
               console.log('Store updated:', data);
@@ -564,7 +586,49 @@ export class SupabaseService {
             // If no record exists, insert a new one
             const { data, error } = await this.supabase
               .from('store_information')
-              .insert(update)
+              .insert(fixedUpdate)
+              .select();
+              
+            if (error) {
+              console.error('Error inserting new store:', error);
+              results.push({ success: false, error });
+            } else {
+              console.log('New store inserted:', data);
+              results.push({ success: true, data });
+            }
+          }
+          continue; // Skip to the third priority check
+        }
+        
+        // Third priority: Use store_name as fallback
+        if (fixedUpdate.store_name) {
+          const { data: existingRecord } = await this.supabase
+            .from('store_information')
+            .select('*')
+            .eq('store_name', fixedUpdate.store_name)
+            .maybeSingle();
+            
+          if (existingRecord) {
+            // If the record exists, update it
+            const { data, error } = await this.supabase
+              .from('store_information')
+              .update(fixedUpdate)
+              .eq('store_name', fixedUpdate.store_name)
+              .select();
+              
+            if (error) {
+              console.error('Error updating existing store by name:', error);
+              console.error('Failed update payload:', JSON.stringify(fixedUpdate));
+              results.push({ success: false, error });
+            } else {
+              console.log('Store updated by name:', data);
+              results.push({ success: true, data });
+            }
+          } else {
+            // If no record exists, insert a new one
+            const { data, error } = await this.supabase
+              .from('store_information')
+              .insert(fixedUpdate)
               .select();
               
             if (error) {
@@ -576,51 +640,11 @@ export class SupabaseService {
             }
           }
         } else {
-          // Third priority: Use store_name as fallback
-          if (update.store_name) {
-            const { data: existingRecord } = await this.supabase
-              .from('store_information')
-              .select('*')
-              .eq('store_name', update.store_name)
-              .maybeSingle();
-              
-            if (existingRecord) {
-              // If the record exists, update it
-              const { data, error } = await this.supabase
-                .from('store_information')
-                .update(update)
-                .eq('store_name', update.store_name)
-                .select();
-                
-              if (error) {
-                console.error('Error updating existing store by name:', error);
-                results.push({ success: false, error });
-              } else {
-                console.log('Store updated by name:', data);
-                results.push({ success: true, data });
-              }
-            } else {
-              // If no record exists, insert a new one
-              const { data, error } = await this.supabase
-                .from('store_information')
-                .insert(update)
-                .select();
-                
-              if (error) {
-                console.error('Error inserting new store:', error);
-                results.push({ success: false, error });
-              } else {
-                console.log('New store inserted:', data);
-                results.push({ success: true, data });
-              }
-            }
-          } else {
-            console.error('Cannot update store without proper identifiers:', update);
-            results.push({ 
-              success: false, 
-              error: { message: 'Missing store identifiers (id, dispatch_code, store_code, or store_name)' } 
-            });
-          }
+          console.error('Cannot update store without proper identifiers:', fixedUpdate);
+          results.push({ 
+            success: false, 
+            error: { message: 'Missing store identifiers (id, dispatch_code, store_code, or store_name)' } 
+          });
         }
       }
       
@@ -646,5 +670,48 @@ export class SupabaseService {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       return { success: false, error: { message: errorMessage } };
     }
+  }
+
+  // Fix column names to match database schema
+  private fixColumnNames(row: any): any {
+    const fixedRow = { ...row };
+    
+    // Map of frontend column names to database column names
+    const columnMapping: {[key: string]: string} = {
+      'address': 'address_line_1',
+      'store_name_1': 'store_full_name',
+      'new_route': 'new_route_15_04',
+      'date': 'date_21_04',
+      'door': 'door_code' // Fix mapping - 'door' should be 'door_code'
+      // Add any other mismatched column names here
+    };
+    
+    // Handle text fields specifically to ensure proper type conversion
+    const textFields = [
+      'door_code', 'alarm_code', 'fridge_code', 'manual', 'dispatch_code', 
+      'store_name', 'store_code', 'store_full_name', 'store_name_future',
+      'address_line_1', 'old_route', 'new_route_15_04', 'date_21_04',
+      'eircode', 'location_link', 'keys_available', 'hour_access_24',
+      'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 'earliest_delivery_time',
+      'opening_time_saturday', 'openining_time_bankholiday', 'delivery_parking_instructions'
+    ];
+    
+    // Replace any mismatched column names
+    Object.keys(columnMapping).forEach(frontendName => {
+      if (frontendName in fixedRow) {
+        const dbName = columnMapping[frontendName];
+        fixedRow[dbName] = fixedRow[frontendName];
+        delete fixedRow[frontendName]; // This line is important, it removes the original frontend key
+      }
+    });
+    
+    // Ensure all text fields are properly converted to strings
+    Object.keys(fixedRow).forEach(key => {
+      if (textFields.includes(key) && fixedRow[key] !== null && fixedRow[key] !== undefined) {
+        fixedRow[key] = String(fixedRow[key]);
+      }
+    });
+    
+    return fixedRow;
   }
 }

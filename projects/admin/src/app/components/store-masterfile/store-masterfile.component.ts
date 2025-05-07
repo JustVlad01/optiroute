@@ -1,9 +1,9 @@
-import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
-import { Subject, debounceTime, interval, Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-store-masterfile',
@@ -43,9 +43,6 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   saveError: boolean = false;
   lastSavedTime: Date | null = null;
   
-  // Auto-save functionality
-  private saveSubject = new Subject<void>();
-  
   // Column visibility modal
   showColumnModal: boolean = false;
   
@@ -57,40 +54,25 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   itemsPerPage: number = 40;
   totalPages: number = 1;
 
-  // For batch saving
-  batchSaveInterval: number = 90000; // 1.5 minutes in milliseconds
-  pendingChanges: boolean = false;
-  batchSaveTimer: Subscription | null = null;
-  manualSaveInProgress: boolean = false;
-  lastSyncTime: Date | null = null;
+  // Route filter properties
+  allRoutes: string[] = [];
+  selectedRoutes: {[key: string]: boolean} = {};
+  showRouteFilter: boolean = false; // Controls the visibility of the route filter dropdown
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private elementRef: ElementRef
+  ) {}
 
   ngOnInit(): void {
     this.loadColumnWidthsFromStorage();
     this.loadStoreData();
-    
-    // Set up debounced auto-save with a longer delay
-    this.saveSubject.pipe(
-      debounceTime(3000) // Wait 3 seconds after last edit before marking for batch save
-    ).subscribe(() => {
-      this.markForBatchSave();
-    });
-
-    // Set up periodic batch saving
-    this.setupBatchSaving();
   }
   
   ngOnDestroy(): void {
     // Clean up event listeners when component is destroyed
-    this.saveSubject.complete();
     document.removeEventListener('mousemove', this.onMouseMoveResize);
     document.removeEventListener('mouseup', this.onMouseUpResize);
-    
-    // Clean up batch save timer
-    if (this.batchSaveTimer) {
-      this.batchSaveTimer.unsubscribe();
-    }
   }
 
   // Load column widths from localStorage
@@ -234,6 +216,19 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           this.updateVisibleColumns();
         }
         
+        // Populate allRoutes with unique values from old and new route columns
+        const routeSet = new Set<string>();
+        this.storeData.forEach(row => {
+          if (row['old_route']) routeSet.add(row['old_route']);
+          if (row['new_route']) routeSet.add(row['new_route']);
+        });
+        this.allRoutes = Array.from(routeSet).filter(r => !!r).sort();
+        
+        // Initialize selectedRoutes map
+        this.allRoutes.forEach(route => {
+          this.selectedRoutes[route] = false; // Initially all routes are unselected
+        });
+        
         this.updatePagedData();
       }
     } catch (error) {
@@ -330,9 +325,6 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
       
       // Mark this row as edited
       this.editedRows.add(rowIndex);
-      
-      // Trigger auto-save
-      this.triggerAutoSave();
     }
   }
   
@@ -367,16 +359,8 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return row[column];
   }
   
-  // Auto-save trigger
-  triggerAutoSave(): void {
-    // Only trigger save if we have actual changes
-    if (this.editedRows.size > 0) {
-      this.saveSubject.next();
-    }
-  }
-  
-  // Auto-save implementation
-  async autoSaveChanges(): Promise<void> {
+  // Save changes implementation (manual only)
+  async saveChanges(): Promise<void> {
     if (this.editedRows.size === 0 || this.isSaving) {
       return;
     }
@@ -388,6 +372,16 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     try {
       // Prepare the updates by gathering all edited rows
       const updates: any[] = [];
+      
+      // List of text fields based on the schema
+      const textFields = [
+        'door_code', 'alarm_code', 'fridge_code', 'manual', 'dispatch_code', 
+        'store_name', 'store_code', 'store_full_name', 'store_name_future',
+        'address_line_1', 'old_route', 'new_route_15_04', 'date_21_04',
+        'eircode', 'location_link', 'keys_available', 'hour_access_24',
+        'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 'earliest_delivery_time',
+        'opening_time_saturday', 'openining_time_bankholiday', 'delivery_parking_instructions'
+      ];
       
       this.editedRows.forEach(rowIndex => {
         const originalRow = this.pagedData[rowIndex];
@@ -402,7 +396,16 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
             if (parseInt(cellRowIndex) === rowIndex) {
               // Only update if the value actually changed
               if (updatedRow[column] !== this.editedCells[cellKey]) {
-                updatedRow[column] = this.editedCells[cellKey];
+                // Ensure all text fields are stored as strings
+                if (textFields.includes(column)) {
+                  // Convert to string, but handle null/undefined properly
+                  updatedRow[column] = this.editedCells[cellKey] != null 
+                    ? String(this.editedCells[cellKey])
+                    : null;
+                  console.log(`Setting ${column} to: ${updatedRow[column]}`);
+                } else {
+                  updatedRow[column] = this.editedCells[cellKey];
+                }
                 hasChanges = true;
               }
             }
@@ -410,15 +413,29 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           
           // Only add to updates if actual changes were made
           if (hasChanges) {
+            // Log the row before applying column name fixes
+            console.log('Row before fixing column names:', JSON.stringify(updatedRow));
+            
             // Fix column names to match database schema
             const fixedRow = this.fixColumnNames(updatedRow);
-            updates.push(fixedRow);
+            console.log('Row after fixing column names:', JSON.stringify(fixedRow));
+            
+            // Ensure we have identifiers for the update
+            if (fixedRow.id || 
+                (fixedRow.dispatch_code && fixedRow.store_code) || 
+                fixedRow.store_name) {
+              updates.push(fixedRow);
+            } else {
+              console.error('Cannot update row without proper identifiers:', fixedRow);
+            }
           }
         }
       });
       
       // Only proceed with the update if we have changes to save
       if (updates.length > 0) {
+        console.log('Sending updates to Supabase:', JSON.stringify(updates));
+        
         // Send updates to Supabase
         const result = await this.supabaseService.updateStoreInformation(updates);
         
@@ -430,17 +447,20 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           this.editedCells = {};
           this.editedRows.clear();
           
-          // Only reload data if manual save was triggered or we have batch timer
-          if (this.manualSaveInProgress) {
-            // Reload the store data to ensure we have the latest data without duplicates
-            this.loadStoreData();
-          } else {
-            // Just update the local data to match without a full reload
-            this.updateLocalData(result.data);
-          }
+          // Reload the store data to ensure we have the latest data
+          this.loadStoreData();
         } else {
           this.saveError = true;
-          console.error('Error auto-saving changes:', result.error);
+          console.error('Error saving changes:', result.error);
+          // Display more detailed error information in the console
+          if (result.results) {
+            result.results.forEach((res: any, index: number) => {
+              if (!res.success) {
+                console.error(`Error on update #${index}:`, res.error);
+                console.error('Failed update payload:', updates[index]);
+              }
+            });
+          }
         }
       } else {
         // No actual changes to save
@@ -449,17 +469,15 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       this.saveError = true;
-      console.error('Exception during auto-save:', error);
+      console.error('Exception during save:', error);
     } finally {
       this.isSaving = false;
       
-      // Clear success/error status after a delay, but only if not a manual save
-      if (!this.manualSaveInProgress) {
-        setTimeout(() => {
-          this.saveSuccess = false;
-          this.saveError = false;
-        }, 3000);
-      }
+      // Clear success/error status after a delay
+      setTimeout(() => {
+        this.saveSuccess = false;
+        this.saveError = false;
+      }, 3000);
     }
   }
   
@@ -470,12 +488,23 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return data.map(row => {
       const standardizedRow = { ...row };
       
-      // Reverse mapping of database column names to frontend column names
-      // Only map columns that should appear differently in the UI than in the database
-      if ('address_line_1' in standardizedRow) {
-        standardizedRow['address'] = standardizedRow['address_line_1'];
-        // Keep the original for database operations
-      }
+      // Map of database column names to frontend column names
+      const columnMapping: {[key: string]: string} = {
+        'address_line_1': 'address',
+        'store_full_name': 'store_name_1',
+        'new_route_15_04': 'new_route',
+        'date_21_04': 'date',
+        'door_code': 'door' // Ensure door_code from DB maps to door in the UI
+      };
+      
+      // Replace database column names with frontend names
+      Object.keys(columnMapping).forEach(dbName => {
+        if (dbName in standardizedRow) {
+          const frontendName = columnMapping[dbName];
+          standardizedRow[frontendName] = standardizedRow[dbName];
+          // Keep the original for database operations
+        }
+      });
       
       return standardizedRow;
     });
@@ -488,6 +517,10 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     // Map of frontend column names to database column names
     const columnMapping: {[key: string]: string} = {
       'address': 'address_line_1',
+      'store_name_1': 'store_full_name',
+      'new_route': 'new_route_15_04',
+      'date': 'date_21_04',
+      'door': 'door_code' // Fix the incorrect mapping - 'door' should map to 'door_code'
       // Add any other mismatched column names here
     };
     
@@ -503,18 +536,23 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return fixedRow;
   }
   
-  // For backward compatibility
-  async saveChanges(): Promise<void> {
-    return this.autoSaveChanges();
-  }
-
   filterData(): void {
-    this.filteredData = [...this.storeData];
+    let data = [...this.storeData];
+    
+    // Filter by selected routes - only if at least one route is selected
+    const routeFiltersApplied = this.hasSelectedRoutes;
+    if (routeFiltersApplied) {
+      data = data.filter(row => {
+        // If old_route or new_route is in the selected routes, keep the row
+        return (row['old_route'] && this.selectedRoutes[row['old_route']]) || 
+               (row['new_route'] && this.selectedRoutes[row['new_route']]);
+      });
+    }
     
     // Apply search term filter
     if (this.searchTerm.trim()) {
       const searchTermLower = this.searchTerm.toLowerCase();
-      this.filteredData = this.filteredData.filter(item => {
+      data = data.filter(item => {
         return Object.keys(item).some(key => {
           const value = item[key];
           if (value === null || value === undefined) return false;
@@ -525,12 +563,17 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     
     // Apply 24-hour filter
     if (this.show24HoursOnly) {
-      this.filteredData = this.filteredData.filter(item => {
+      data = data.filter(item => {
         // Filter for stores that have "Yes", "Y", "True", "1", etc. in hour_access_24 column
         const access24Value = String(item.hour_access_24 || '').toLowerCase();
         return ['yes', 'y', 'true', '1'].includes(access24Value);
       });
     }
+    
+    this.filteredData = data;
+    
+    // Adjust items per page based on filter results
+    this.adjustItemsPerPage(data.length, routeFiltersApplied);
     
     // If we were sorting before, maintain the sort on the filtered data
     if (this.sortColumn) {
@@ -656,87 +699,72 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return column.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
-  // Set up batch saving interval
-  setupBatchSaving(): void {
-    // Create a periodic timer for batch saves
-    this.batchSaveTimer = interval(this.batchSaveInterval).subscribe(() => {
-      if (this.pendingChanges && !this.isSaving && !this.manualSaveInProgress) {
-        console.log('Batch save timer triggered - saving pending changes');
-        this.performBatchSave();
-      }
+  // Toggle route filter dropdown visibility
+  toggleRouteFilterDropdown(): void {
+    this.showRouteFilter = !this.showRouteFilter;
+  }
+  
+  // Get the count of selected routes for the badge
+  getSelectedRoutesCount(): number {
+    return Object.values(this.selectedRoutes).filter(selected => selected).length;
+  }
+  
+  // Clear all route selections
+  clearRouteSelection(): void {
+    Object.keys(this.selectedRoutes).forEach(route => {
+      this.selectedRoutes[route] = false;
     });
-  }
-
-  // Mark changes for batch saving
-  markForBatchSave(): void {
-    if (this.editedRows.size > 0) {
-      console.log('Changes marked for batch saving');
-      this.pendingChanges = true;
-      
-      // Show subtle indication that changes are pending
-      this.saveSuccess = false;
-      this.saveError = false;
-    }
-  }
-
-  // Perform the batch save
-  async performBatchSave(): Promise<void> {
-    if (!this.pendingChanges || this.isSaving) {
-      return;
-    }
-    
-    console.log('Performing batch save of pending changes');
-    await this.autoSaveChanges();
-    this.pendingChanges = false;
-    this.lastSyncTime = new Date();
-  }
-
-  // Manual save trigger for save button
-  async manualSave(): Promise<void> {
-    this.manualSaveInProgress = true;
-    try {
-      await this.performBatchSave();
-    } finally {
-      this.manualSaveInProgress = false;
-    }
-  }
-
-  // Update local data with saved data from server
-  updateLocalData(updatedRecords: any[] | undefined): void {
-    if (!updatedRecords || updatedRecords.length === 0) return;
-    
-    // Update the local data to match server data
-    updatedRecords.forEach(updatedRow => {
-      // Find matching record in our data
-      let matchIndex = -1;
-      
-      // First try to match by id
-      if (updatedRow.id) {
-        matchIndex = this.storeData.findIndex(row => row.id === updatedRow.id);
-      }
-      
-      // If not found, try to match by dispatch_code + store_code
-      if (matchIndex === -1 && updatedRow.dispatch_code && updatedRow.store_code) {
-        matchIndex = this.storeData.findIndex(row => 
-          row.dispatch_code === updatedRow.dispatch_code && 
-          row.store_code === updatedRow.store_code
-        );
-      }
-      
-      // If still not found, try by store_name
-      if (matchIndex === -1 && updatedRow.store_name) {
-        matchIndex = this.storeData.findIndex(row => row.store_name === updatedRow.store_name);
-      }
-      
-      // Update if found
-      if (matchIndex !== -1) {
-        // Standardize column names for display
-        const standardizedRow = this.standardizeColumnNames([updatedRow])[0];
-        this.storeData[matchIndex] = standardizedRow;
-      }
-    });
-    
-    // Re-apply filtering and sorting
     this.filterData();
+  }
+  
+  // Toggle a specific route selection state
+  toggleRouteSelection(route: string): void {
+    this.selectedRoutes[route] = !this.selectedRoutes[route];
+    this.filterData();
+  }
+  
+  // Check if any route is selected
+  get hasSelectedRoutes(): boolean {
+    return Object.values(this.selectedRoutes).some(selected => selected);
+  }
+
+  // Close the route filter dropdown when clicking outside of it
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Skip if the dropdown is not open
+    if (!this.showRouteFilter) return;
+    
+    // Check if the click was outside of the dropdown
+    const clickedInside = this.elementRef.nativeElement.contains(event.target);
+    if (!clickedInside) {
+      this.showRouteFilter = false;
+    }
+  }
+
+  // Add a new method to adjust items per page
+  adjustItemsPerPage(filteredCount: number, routeFiltersApplied: boolean): void {
+    const defaultItemsPerPage = 40; // Original default value
+    
+    if (routeFiltersApplied) {
+      // If routes are filtered, increase the page size based on number of results
+      if (filteredCount <= 100) {
+        // If 100 or fewer results, show all of them
+        this.itemsPerPage = filteredCount || defaultItemsPerPage;
+      } else if (filteredCount <= 200) {
+        // If between 100-200 results, show 100 per page
+        this.itemsPerPage = 100;
+      } else {
+        // If more than 200 results, show 200 per page
+        this.itemsPerPage = 200;
+      }
+    } else {
+      // Reset to default when no route filters are applied
+      this.itemsPerPage = defaultItemsPerPage;
+    }
+    
+    // Ensure we always have at least one page
+    if (this.itemsPerPage <= 0) {
+      this.itemsPerPage = defaultItemsPerPage;
+    }
   }
 } 
