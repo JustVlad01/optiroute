@@ -2,6 +2,7 @@
 @import "bootstrap-icons/font/bootstrap-icons.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap');
+@import "./app/styles/header.scss";
 
 /* Add corporate theme global variables */
 :root {
@@ -16,12 +17,82 @@
   --light-text: #6c757d;
 }
 
-/* Common header styling */
+/* COMPACT FORM STYLES - Added for smaller UI elements */
+/* Form section compact sizes */
+.form-section {
+  margin-bottom: 1rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.form-section h3 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Form row and field spacing */
+.form-row {
+  margin-bottom: 0.5rem !important;
+}
+
+.form-group {
+  margin-bottom: 0.5rem !important;
+}
+
+/* Input field sizes */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group textarea,
+.form-control {
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.9rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Label sizes */
+.form-group label {
+  margin-bottom: 0.2rem !important;
+  font-size: 0.8rem !important;
+}
+
+/* Checkbox size adjustment */
+.form-group.checkbox-group input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Adjust spacing for checkboxes */
+.form-group.checkbox-group {
+  margin-bottom: 0.3rem !important;
+}
+
+/* Compact buttons */
+.submit-btn, .btn-submit, .save-btn, .btn-back {
+  padding: 0.4rem 1rem !important;
+  font-size: 0.9rem !important;
+}
+
+/* Reduce form padding */
+.driver-form {
+  padding: 1rem !important;
+}
+
+/* Adjust spacing in title */
+.form-title {
+  font-size: 1.4rem !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Reduce form content padding */
+.form-content {
+  padding: 1rem 0.75rem !important;
+}
+
+/* Common header styling - Overridden by header.scss */
 .header-fullwidth, 
 .navbar,
 .header {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
-  color: white;
   height: 64px; /* Fixed consistent height */
   display: flex;
   align-items: center;
@@ -41,6 +112,7 @@
   color: transparent !important;
   position: relative;
   z-index: 1;
+  font-size: 1.75rem !important; /* Consistent font size for OPTIROUTE header */
 }
 
 /* Navigation buttons styling */

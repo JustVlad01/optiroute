@@ -59,6 +59,28 @@ export class SupabaseService {
     return data;
   }
 
+  // Method to save partial form data
+  async savePartialFormData(assignmentId: string, formData: any) {
+    console.log('Saving partial form data for assignment:', assignmentId);
+    
+    const { data, error } = await this.supabase
+      .from('driver_form_assignments')
+      .update({
+        partial_form_data: formData,
+        partially_completed: true
+      })
+      .eq('id', assignmentId)
+      .select();
+
+    if (error) {
+      console.error('Error saving partial form data:', error);
+      return null;
+    }
+
+    console.log('Partial form data saved:', data);
+    return data;
+  }
+
   // Get a specific driver form by ID
   async getDriverFormById(formId: string) {
     const { data, error } = await this.supabase

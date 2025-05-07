@@ -23,6 +23,7 @@ export class FormDetailsComponent implements OnInit {
   formAssignment: any = null;
   completedFormData: any = null;
   completedDate: string | null = null;
+  progressSaved = false;
   
   constructor(
     private route: ActivatedRoute,
@@ -193,12 +194,19 @@ export class FormDetailsComponent implements OnInit {
     // Check if form has been completed in Supabase
     const assignment = await this.supabaseService.getFormAssignmentById(this.formId);
     
-    if (assignment && assignment.status === 'completed' && 
-       (assignment.driver_id === this.driverId || !assignment.driver_id)) {
-      this.isViewMode = true;
+    if (assignment) {
       this.formAssignment = assignment;
-      this.completedDate = assignment.completed_at;
-      await this.loadCompletedFormData(assignment.form_id);
+      
+      if (assignment.status === 'completed' && 
+         (assignment.driver_id === this.driverId || !assignment.driver_id)) {
+        this.isViewMode = true;
+        this.completedDate = assignment.completed_at;
+        await this.loadCompletedFormData(assignment.form_id);
+      } else if (assignment.partially_completed && assignment.partial_form_data) {
+        // Load partial form data if it exists
+        console.log('Loading partial form data:', assignment.partial_form_data);
+        this.driverForm.patchValue(assignment.partial_form_data);
+      }
     }
   }
 
@@ -380,6 +388,26 @@ export class FormDetailsComponent implements OnInit {
         const control = this.driverForm.get(key);
         control?.markAsTouched();
       });
+    }
+  }
+  
+  async saveProgress(): Promise<void> {
+    if (!this.formId) {
+      alert('Error: No form ID found. Please try again later.');
+      return;
+    }
+    
+    // Save the current form state
+    const result = await this.supabaseService.savePartialFormData(this.formId, this.driverForm.value);
+    
+    if (result) {
+      this.progressSaved = true;
+      // Hide the success message after 5 seconds
+      setTimeout(() => {
+        this.progressSaved = false;
+      }, 5000);
+    } else {
+      alert('Error saving form. Please try again.');
     }
   }
 } 

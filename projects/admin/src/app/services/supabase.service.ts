@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment.development'; // Use
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
+  private totalStoreCount: number | null = null;
 
   constructor() {
     console.log('Initializing Supabase service');
@@ -452,5 +453,198 @@ export class SupabaseService {
 
     console.log('Form needs_review flag updated:', data);
     return true;
+  }
+
+  // Method to get the total store count
+  getTotalStoreCount(): number | null {
+    return this.totalStoreCount;
+  }
+
+  // Method to get store information
+  async getStoreInformation() {
+    console.log('Getting store information');
+    
+    try {
+      // First, get the total count of stores - using a separate count query
+      const { count, error: countError } = await this.supabase
+        .from('store_information')
+        .select('*', { count: 'exact', head: true });
+        
+      if (countError) {
+        console.error('Error getting store count:', countError);
+        this.totalStoreCount = null;
+      } else {
+        console.log(`Total store count from database: ${count}`);
+        // Store the total count globally to be used in the component
+        this.totalStoreCount = count;
+      }
+      
+      // Then retrieve stores with pagination
+      const { data, error } = await this.supabase
+        .from('store_information')
+        .select('*')
+        .order('store_name');
+        
+      if (error) {
+        console.error('Error fetching store information:', error);
+        return null;
+      }
+
+      console.log(`Retrieved ${data?.length || 0} store records`);
+      
+      // Attach the total count to the data array as a property
+      if (data) {
+        Object.defineProperty(data, 'totalCount', {
+          value: this.totalStoreCount || data.length,
+          writable: false,
+          enumerable: true // Changed to true so it is enumerable
+        });
+      }
+      
+      return data;
+    } catch (e) {
+      console.error('Exception while fetching stores:', e);
+      return null;
+    }
+  }
+  
+  // Method to update store information
+  async updateStoreInformation(storeUpdates: any[]) {
+    console.log('Updating store information:', storeUpdates);
+    
+    try {
+      // Process each update individually to ensure we're updating the right record
+      const results = [];
+      
+      for (const update of storeUpdates) {
+        // First priority: Use id if available
+        if (update.id) {
+          const { data, error } = await this.supabase
+            .from('store_information')
+            .update(update)
+            .eq('id', update.id)
+            .select();
+            
+          if (error) {
+            console.error('Error updating store by id:', error);
+            results.push({ success: false, error });
+          } else {
+            console.log('Store updated by id:', data);
+            results.push({ success: true, data });
+          }
+          continue; // Skip to the next update
+        }
+        
+        // Second priority: Use dispatch_code and store_code combination
+        if (update.dispatch_code && update.store_code) {
+          const { data: existingRecord } = await this.supabase
+            .from('store_information')
+            .select('*')
+            .eq('dispatch_code', update.dispatch_code)
+            .eq('store_code', update.store_code)
+            .maybeSingle();
+          
+          if (existingRecord) {
+            // If the record exists, update it
+            const { data, error } = await this.supabase
+              .from('store_information')
+              .update(update)
+              .eq('dispatch_code', update.dispatch_code)
+              .eq('store_code', update.store_code)
+              .select();
+              
+            if (error) {
+              console.error('Error updating existing store:', error);
+              results.push({ success: false, error });
+            } else {
+              console.log('Store updated:', data);
+              results.push({ success: true, data });
+            }
+          } else {
+            // If no record exists, insert a new one
+            const { data, error } = await this.supabase
+              .from('store_information')
+              .insert(update)
+              .select();
+              
+            if (error) {
+              console.error('Error inserting new store:', error);
+              results.push({ success: false, error });
+            } else {
+              console.log('New store inserted:', data);
+              results.push({ success: true, data });
+            }
+          }
+        } else {
+          // Third priority: Use store_name as fallback
+          if (update.store_name) {
+            const { data: existingRecord } = await this.supabase
+              .from('store_information')
+              .select('*')
+              .eq('store_name', update.store_name)
+              .maybeSingle();
+              
+            if (existingRecord) {
+              // If the record exists, update it
+              const { data, error } = await this.supabase
+                .from('store_information')
+                .update(update)
+                .eq('store_name', update.store_name)
+                .select();
+                
+              if (error) {
+                console.error('Error updating existing store by name:', error);
+                results.push({ success: false, error });
+              } else {
+                console.log('Store updated by name:', data);
+                results.push({ success: true, data });
+              }
+            } else {
+              // If no record exists, insert a new one
+              const { data, error } = await this.supabase
+                .from('store_information')
+                .insert(update)
+                .select();
+                
+              if (error) {
+                console.error('Error inserting new store:', error);
+                results.push({ success: false, error });
+              } else {
+                console.log('New store inserted:', data);
+                results.push({ success: true, data });
+              }
+            }
+          } else {
+            console.error('Cannot update store without proper identifiers:', update);
+            results.push({ 
+              success: false, 
+              error: { message: 'Missing store identifiers (id, dispatch_code, store_code, or store_name)' } 
+            });
+          }
+        }
+      }
+      
+      // Check if any updates failed
+      const anyFailures = results.some(result => !result.success);
+      if (anyFailures) {
+        console.error('Some store updates failed:', results.filter(r => !r.success));
+        return { 
+          success: false, 
+          error: { message: 'Some store updates failed' },
+          results 
+        };
+      }
+      
+      // All updates succeeded
+      return { 
+        success: true, 
+        data: results.map(r => r.data).flat(),
+        results
+      };
+    } catch (e) {
+      console.error('Exception while updating stores:', e);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      return { success: false, error: { message: errorMessage } };
+    }
   }
 }

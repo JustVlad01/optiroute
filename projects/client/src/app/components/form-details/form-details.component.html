@@ -21,7 +21,6 @@
         <div>
           <span *ngIf="!isViewMode" class="badge bg-warning">PENDING</span>
           <span *ngIf="isViewMode" class="badge bg-success">COMPLETED</span>
-          <span class="ms-2 text-muted">Due: May 2, 2025</span>
         </div>
         <div *ngIf="!isViewMode" class="form-progress text-end">
           <small class="text-muted">Complete all required fields (*)</small>
@@ -190,9 +189,12 @@
 
         <!-- Save Progress Button -->
         <div class="d-grid gap-2 col-md-6 mx-auto my-4">
-          <button type="button" class="btn btn-secondary">
+          <button type="button" class="btn btn-secondary" (click)="saveProgress()">
             <i class="bi bi-save me-2"></i> Save Progress
           </button>
+          <div *ngIf="progressSaved" class="text-center text-success mt-2">
+            <i class="bi bi-check-circle me-1"></i> Progress saved. You can complete this form later.
+          </div>
         </div>
 
         <hr class="mb-3">

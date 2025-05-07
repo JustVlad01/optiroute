@@ -1,0 +1,29 @@
+/* Common header styles for OptiRoute application */
+
+.header-fullwidth {
+  background-color: #1e3a8a;
+  padding: 15px 20px;
+  
+  h2 {
+    font-size: 1.75rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 1px !important;
+    margin: 0 !important;
+  }
+}
+
+.logo {
+  font-size: 1.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px !important;
+  color: white;
+  margin: 0 !important;
+}
+
+.navbar {
+  background-color: #1e3a8a;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+} 

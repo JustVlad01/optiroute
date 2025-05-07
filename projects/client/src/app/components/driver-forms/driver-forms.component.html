@@ -45,10 +45,9 @@
           <div class="form-card" *ngFor="let form of forms">
             <div class="form-header">
               <span class="badge" [ngClass]="getStatusBadgeClass(form.status)">{{form.status}}</span>
-              <p class="form-date mb-0">Due: {{form.dueDate}}</p>
             </div>
             <div class="form-body p-3">
-              <p class="mb-2"><strong>Assigned:</strong> {{form.assignedDate}}</p>
+              <p class="mb-2"><strong>Assigned:</strong> {{form.created_at | date:'medium'}}</p>
               <p *ngIf="form.notes" class="mb-2"><strong>Notes:</strong> {{form.notes}}</p>
               <p *ngIf="form.completed_at" class="completed-info mb-2">
                 <i class="bi bi-check-circle-fill text-success me-1"></i>
