@@ -25,16 +25,15 @@ export class RoutePlannerComponent implements OnInit {
   zoom = 10;
   options: google.maps.MapOptions = {
     mapTypeId: 'roadmap',
-    zoomControl: true,
+    zoomControl: false,
     scrollwheel: true,
     disableDoubleClickZoom: false,
     maxZoom: 18,
     minZoom: 5,
-    // Performance optimizations
     gestureHandling: 'cooperative',
     clickableIcons: false,
-    disableDefaultUI: false,
-    mapId: '' // Use a custom map ID for vectored maps if you have one
+    disableDefaultUI: true,
+    mapId: ''
   };
   
   // Route data
@@ -212,10 +211,10 @@ export class RoutePlannerComponent implements OnInit {
   
   // Add example locations for demonstration
   private addExampleLocations(): void {
-    // Example: London to Manchester with stops
-    this.startLocation = 'London, UK';
-    this.endLocation = 'Manchester, UK';
-    this.stops = ['Birmingham, UK', 'Oxford, UK'];
+    // No default locations
+    this.startLocation = '';
+    this.endLocation = '';
+    this.stops = [''];
   }
   
   // Filter routes by type
@@ -245,44 +244,7 @@ export class RoutePlannerComponent implements OnInit {
   
   // Initialize sample routes for demonstration
   private initSampleRoutes(): void {
-    this.savedRoutes = [
-      {
-        id: '1',
-        name: 'London to Manchester (Old)',
-        type: 'old',
-        startLocation: 'London, UK',
-        endLocation: 'Manchester, UK',
-        stops: ['Birmingham, UK', 'Oxford, UK'],
-        selected: false
-      },
-      {
-        id: '2',
-        name: 'London to Manchester (New)',
-        type: 'new',
-        startLocation: 'London, UK',
-        endLocation: 'Manchester, UK',
-        stops: ['Birmingham, UK', 'Coventry, UK'],
-        selected: false
-      },
-      {
-        id: '3',
-        name: 'Edinburgh to Glasgow (Old)',
-        type: 'old',
-        startLocation: 'Edinburgh, UK',
-        endLocation: 'Glasgow, UK',
-        stops: ['Falkirk, UK'],
-        selected: false
-      },
-      {
-        id: '4',
-        name: 'Edinburgh to Glasgow (New)',
-        type: 'new',
-        startLocation: 'Edinburgh, UK',
-        endLocation: 'Glasgow, UK',
-        stops: ['Livingston, UK', 'Falkirk, UK'],
-        selected: false
-      }
-    ];
+    this.savedRoutes = [];
   }
   
   // Load a saved route
