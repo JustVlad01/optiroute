@@ -9,6 +9,7 @@ import { DriverFormFillComponent } from './components/driver-form-fill/driver-fo
 import { DriverFormContainerComponent } from './components/driver-form-container/driver-form-container.component';
 import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
 import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
+import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -31,6 +32,10 @@ export const routes: Routes = [
     {
         path: 'route-planner',
         component: RoutePlannerComponent
+    },
+    {
+        path: 'view-orders',
+        component: ViewOrdersComponent
     },
     {
         path: 'import-orders',

@@ -741,4 +741,24 @@ export class SupabaseService {
       return { success: false, error: rpcError };
     }
   }
+
+  // Method to get all imported orders
+  async getAllImportedOrders() {
+    console.log('Getting all imported orders');
+    
+    try {
+      const { data, error } = await this.supabase.rpc('get_all_orders');
+      
+      if (error) {
+        console.error('Error fetching imported orders:', error);
+        throw error;
+      }
+      
+      console.log(`Retrieved order data with ${data?.length || 0} records`);
+      return data;
+    } catch (error) {
+      console.error('Exception during getAllImportedOrders:', error);
+      throw error;
+    }
+  }
 }
