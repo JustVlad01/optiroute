@@ -1,60 +1,91 @@
 <div class="view-orders-container">
-  <div class="page-header">
-    <h2>View Orders</h2>
-    <button class="refresh-button" (click)="refreshOrders()">
-      <i class="bi bi-arrow-clockwise"></i> Refresh
-    </button>
+  <!-- Main navigation bar -->
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" routerLink="/dashboard">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- Sub-navigation bar -->
+  <div class="sub-navbar">
+    <div class="nav-tabs">
+      <a class="nav-tab" routerLink="/route-planner">
+        <i class="bi bi-map"></i> Route Map
+      </a>
+      <a class="nav-tab" routerLink="/route-planner" [queryParams]="{import: true}">
+        <i class="bi bi-file-earmark-arrow-up"></i> Order Import
+      </a>
+      <a class="nav-tab active">
+        <i class="bi bi-list-check"></i> View Orders
+      </a>
+    </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading-spinner">
-    <p><i class="bi bi-hourglass-split"></i> Loading orders...</p>
-  </div>
+  <div class="content">
+    <div class="page-header">
+      <h2 class="page-title">View Orders</h2>
+      <button class="refresh-button" (click)="refreshOrders()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+    </div>
 
-  <div *ngIf="errorMessage" class="alert alert-danger">
-    {{ errorMessage }}
-  </div>
+    <div *ngIf="isLoading" class="loading-spinner">
+      <p><i class="bi bi-hourglass-split"></i> Loading orders...</p>
+    </div>
 
-  <div *ngIf="!isLoading && !errorMessage && orders.length === 0" class="no-orders">
-    <p>No orders found. Orders will appear here after they are imported.</p>
-  </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
 
-  <div *ngIf="orders.length > 0" class="orders-list">
-    <div *ngFor="let order of orders" class="order-card">
-      <!-- Order Header -->
-      <div class="order-header" (click)="toggleOrderExpand(order.id!)">
-        <div class="order-summary">
-          <i class="bi" [ngClass]="isOrderExpanded(order.id!) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-          <span class="file-name">{{ order.fileName }}</span>
-          <span class="date-badge">Delivery: {{ order.deliveryDate | date }}</span>
-          <span class="date-badge">Imported: {{ order.importDate | date }}</span>
-          <span class="routes-badge">{{ order.routes.length }} routes</span>
-        </div>
-      </div>
-      
-      <!-- Order Details (collapsible) -->
-      <div *ngIf="isOrderExpanded(order.id!)" class="order-details">
-        <div *ngFor="let route of order.routes" class="route-section">
-          <!-- Route Header -->
-          <div class="route-header" (click)="toggleRouteExpand(order.id!, route.id!)">
-            <div class="route-summary">
-              <i class="bi" [ngClass]="isRouteExpanded(order.id!, route.id!) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="route-name">{{ route.name }}</span>
-              <span class="route-number" *ngIf="route.routeNumber">#{{ route.routeNumber }}</span>
-              <span class="driver-name" *ngIf="route.driverName">Driver: {{ route.driverName }}</span>
-              <span class="route-stats">
-                {{ calculateTotalStores(route) }} stores, {{ calculateTotalItems(route) }} items
-              </span>
+    <div *ngIf="!isLoading && !errorMessage && orders.length === 0" class="no-orders">
+      <p>No orders found. Orders will appear here after they are imported.</p>
+    </div>
+
+    <div *ngIf="orders.length > 0" class="orders-list">
+      <div *ngFor="let order of orders" class="order-card">
+        <!-- Order Header -->
+        <div class="order-header" (click)="toggleOrderExpand(order.id!)">
+          <div class="order-summary">
+            <i class="bi" [ngClass]="isOrderExpanded(order.id!) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="file-name">{{ order.fileName }}</span>
+            <div class="order-badges">
+              <span class="date-badge">Delivery: {{ order.deliveryDate | date }}</span>
+              <span class="date-badge">Imported: {{ order.importDate | date }}</span>
+              <span class="routes-badge">{{ order.routes.length }} routes</span>
             </div>
           </div>
-          
-          <!-- Route Details (collapsible) -->
-          <div *ngIf="isRouteExpanded(order.id!, route.id!)" class="route-details">
-            <div *ngFor="let store of route.stores" class="store-item">
-              <div class="store-info">
-                <span class="store-name">{{ store.customerName }}</span>
-                <span class="store-code" *ngIf="store.customerCode">({{ store.customerCode }})</span>
-                <span class="store-items">{{ store.totalItems }} items</span>
-                <span class="store-status" [ngClass]="'status-' + store.status">{{ store.status }}</span>
+        </div>
+        
+        <!-- Order Details (collapsible) -->
+        <div *ngIf="isOrderExpanded(order.id!)" class="order-details">
+          <div *ngFor="let route of order.routes" class="route-section">
+            <!-- Route Header -->
+            <div class="route-header" (click)="toggleRouteExpand(order.id!, route.id!)">
+              <div class="route-summary">
+                <i class="bi" [ngClass]="isRouteExpanded(order.id!, route.id!) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                <span class="route-name">{{ route.name }}</span>
+                <span class="route-number" *ngIf="route.routeNumber">#{{ route.routeNumber }}</span>
+                <span class="driver-name" *ngIf="route.driverName">Driver: {{ route.driverName }}</span>
+                <div class="route-metrics">
+                  <span class="stores-count">{{ calculateTotalStores(route) }} stores</span>
+                  <span class="items-count">{{ calculateTotalItems(route) }} items</span>
+                  <span class="crate-count">{{ route.crateCount || calculateCrateCount(route) }} crates</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Route Details (collapsible) -->
+            <div *ngIf="isRouteExpanded(order.id!, route.id!)" class="route-details">
+              <div *ngFor="let store of route.stores" class="store-item">
+                <div class="store-info">
+                  <span class="store-name">{{ store.customerName }}</span>
+                  <span class="store-code" *ngIf="store.customerCode">({{ store.customerCode }})</span>
+                  <span class="store-items">{{ store.totalItems }} items</span>
+                  <span class="store-status" [ngClass]="'status-' + store.status">{{ store.status }}</span>
+                </div>
               </div>
             </div>
           </div>

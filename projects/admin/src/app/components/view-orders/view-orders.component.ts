@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 
 interface StoreOrder {
@@ -18,6 +19,7 @@ interface Route {
   deliveryDate?: string;
   status?: string;
   stores: StoreOrder[];
+  crateCount?: number;
 }
 
 interface Order {
@@ -32,7 +34,7 @@ interface Order {
 @Component({
   selector: 'app-view-orders',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './view-orders.component.html',
   styleUrls: ['./view-orders.component.scss']
 })
@@ -42,6 +44,7 @@ export class ViewOrdersComponent implements OnInit {
   errorMessage: string | null = null;
   expandedOrderIds: Set<string> = new Set();
   expandedRouteIds: Map<string, Set<string>> = new Map();
+  readonly ITEMS_PER_CRATE: number = 25;
 
   constructor(private supabaseService: SupabaseService) {}
 
@@ -106,6 +109,7 @@ export class ViewOrdersComponent implements OnInit {
           driverName: item.driver_name,
           deliveryDate: item.route_delivery_date,
           status: item.route_status || 'pending',
+          crateCount: item.crate_count,
           stores: []
         };
         order.routes.push(route);
@@ -121,6 +125,15 @@ export class ViewOrdersComponent implements OnInit {
           status: item.store_status || 'pending'
         });
       }
+    });
+
+    // Calculate crate counts for any routes where it's not already set
+    orderMap.forEach(order => {
+      order.routes.forEach(route => {
+        if (route.crateCount === undefined) {
+          route.crateCount = this.calculateCrateCount(route);
+        }
+      });
     });
     
     return Array.from(orderMap.values());
@@ -163,6 +176,11 @@ export class ViewOrdersComponent implements OnInit {
 
   calculateTotalStores(route: Route): number {
     return route.stores.length;
+  }
+
+  calculateCrateCount(route: Route): number {
+    const totalItems = this.calculateTotalItems(route);
+    return Math.ceil(totalItems / this.ITEMS_PER_CRATE);
   }
 
   refreshOrders(): void {
