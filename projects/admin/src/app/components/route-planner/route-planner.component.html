@@ -8,10 +8,31 @@
     </div>
   </header>
 
-  <div class="content">
-    <h2 class="page-title">Route Planner</h2>
+  <!-- Sub-navigation bar -->
+  <div class="sub-navbar">
+    <div class="nav-tabs">
+      <a class="nav-tab" [class.active]="!showImport" (click)="showImport = false">
+        <i class="bi bi-map"></i> Route Map
+      </a>
+      <a class="nav-tab" [class.active]="showImport" (click)="showImport = true">
+        <i class="bi bi-file-earmark-arrow-up"></i> Order Import
+      </a>
+      <a class="nav-tab" routerLink="/view-orders" routerLinkActive="active">
+        <i class="bi bi-list-check"></i> View Orders
+      </a>
+    </div>
+  </div>
 
-    <div class="route-form-container">
+  <div class="content">
+    <h2 class="page-title">{{ showImport ? 'Order Import' : 'Route Planner' }}</h2>
+
+    <!-- Import Orders Content -->
+    <div *ngIf="showImport" class="import-order-content">
+      <app-import-order></app-import-order>
+    </div>
+
+    <!-- Route Planner Map Content -->
+    <div *ngIf="!showImport" class="route-form-container">
       <!-- Google Maps -->
       <div class="map-container">
         <!-- Maps API Loading State -->

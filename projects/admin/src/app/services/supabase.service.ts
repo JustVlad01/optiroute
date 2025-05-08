@@ -714,4 +714,31 @@ export class SupabaseService {
     
     return fixedRow;
   }
+
+  // Method to save imported order data by calling the stored procedure
+  async saveImportedOrderData(parsedData: any): Promise<{ success: boolean; data?: any; error?: any }> {
+    console.log('Attempting to save imported order data via RPC:', parsedData);
+
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { success: false, error: { message: 'Supabase client not initialized.' } };
+    }
+
+    try {
+      const { data, error } = await this.supabase.rpc('import_parsed_order_data', {
+        p_parsed_data: parsedData // Ensure p_parsed_data matches your stored procedure's parameter name
+      });
+
+      if (error) {
+        console.error('Error calling import_parsed_order_data stored procedure:', error);
+        return { success: false, error };
+      }
+
+      console.log('Successfully called import_parsed_order_data:', data);
+      return { success: true, data };
+    } catch (rpcError) {
+      console.error('Exception during RPC call to import_parsed_order_data:', rpcError);
+      return { success: false, error: rpcError };
+    }
+  }
 }

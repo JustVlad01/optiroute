@@ -2,12 +2,13 @@ import { Component, OnInit, ViewChild, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GoogleMapsModule, MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { ImportOrderComponent } from '../import-order/import-order.component';
 
 @Component({
   selector: 'app-route-planner',
   standalone: true,
-  imports: [CommonModule, GoogleMapsModule, FormsModule, RouterModule],
+  imports: [CommonModule, GoogleMapsModule, FormsModule, RouterModule, ImportOrderComponent],
   templateUrl: './route-planner.component.html',
   styleUrl: './route-planner.component.scss'
 })
@@ -19,6 +20,9 @@ export class RoutePlannerComponent implements OnInit {
   
   // Google Maps loading state
   apiLoaded = false;
+  
+  // UI State
+  showImport = false;
   
   // Google Maps Configuration
   center: google.maps.LatLngLiteral = { lat: 51.5074, lng: -0.1278 }; // London as default
@@ -65,7 +69,7 @@ export class RoutePlannerComponent implements OnInit {
   // Display mode
   viewMode: 'filter' | 'selection' = 'selection';
   
-  constructor(private ngZone: NgZone) {}
+  constructor(private ngZone: NgZone, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     // Check if Google Maps API is already loaded
@@ -84,6 +88,11 @@ export class RoutePlannerComponent implements OnInit {
     
     // Initialize with some example routes
     this.initSampleRoutes();
+    
+    // Check for import query parameter
+    this.route.queryParams.subscribe(params => {
+      this.showImport = params['import'] === 'true';
+    });
   }
   
   // Initialize map services after Google Maps is loaded

@@ -33,6 +33,11 @@ export const routes: Routes = [
         component: RoutePlannerComponent
     },
     {
+        path: 'import-orders',
+        redirectTo: 'route-planner?import=true',
+        pathMatch: 'full'
+    },
+    {
         path: 'store-masterfile',
         component: StoreMasterfileComponent
     },

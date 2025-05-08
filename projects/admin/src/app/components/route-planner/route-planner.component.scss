@@ -14,6 +14,7 @@
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   height: 60px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -558,4 +559,54 @@ label {
   margin-left: 1rem;
   color: #6c757d;
   font-style: italic;
+}
+
+// Sub navigation bar
+.sub-navbar {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0 1.5rem;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 1rem;
+  height: 100%;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 100%;
+  color: #495057;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    color: #0056b3;
+    border-bottom-color: #dee2e6;
+  }
+
+  &.active {
+    color: #0056b3;
+    border-bottom-color: #0056b3;
+    font-weight: 500;
+  }
+}
+
+.import-order-content {
+  height: calc(100% - 4.5rem);
+  overflow-y: auto;
 }
