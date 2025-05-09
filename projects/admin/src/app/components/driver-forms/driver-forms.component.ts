@@ -9,7 +9,18 @@ import { SupabaseService } from '../../services/supabase.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './driver-forms.component.html',
-  styleUrls: ['./driver-forms.component.scss']
+  styleUrls: ['./driver-forms.component.scss'],
+  styles: [`
+    .form-field-value {
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+  `]
 })
 export class DriverFormsComponent implements OnInit {
   driverForm!: FormGroup;
@@ -66,6 +77,10 @@ export class DriverFormsComponent implements OnInit {
         this.completedForm = formData;
         this.driverName = formData.driver_name;
         
+        // Add debug logging for the end-of-shift fields
+        console.log('DEBUG - closing_mileage from DB:', formData.closing_mileage);
+        console.log('DEBUG - number_of_crates_in from DB:', formData.number_of_crates_in);
+        
         // Detect problem fields that triggered needs_review
         this.detectProblemFields(formData);
         
@@ -98,22 +113,50 @@ export class DriverFormsComponent implements OnInit {
           productComplaints: formData.product_complaints,
           productComplaintsReason: formData.product_complaints_reason,
           returnTime: formData.return_time,
-          returnMileage: formData.return_mileage,
-          numberOfCratesReturned: formData.number_of_crates_returned,
+          // Map closing_mileage to returnMileage if available
+          returnMileage: formData.closing_mileage || formData.return_mileage,
+          // Map number_of_crates_in to numberOfCratesReturned if available
+          numberOfCratesReturned: formData.number_of_crates_in || formData.number_of_crates_returned,
+          // Keep these for backward compatibility
           closingMileage: formData.closing_mileage,
           recycledAllReturns: formData.recycled_all_returns,
           vanFridgeWorking: formData.van_fridge_working,
           returnedVanProbe: formData.returned_van_probe,
-          cabCleaned: formData.cab_cleaned,
-          cabNotCleanedReason: formData.cab_not_cleaned_reason,
-          chemicalsUsed: formData.chemicals_used,
           vanIssues: formData.van_issues,
           repairsNeeded: formData.repairs_needed,
-          numberOfCratesIn: formData.number_of_crates_in
+          numberOfCratesIn: formData.number_of_crates_in,
+          shiftEndTime: formData.shift_end_time
+        });
+        
+        // Log the raw form values immediately before disabling
+        console.log('DEBUG - Form values before disable:', {
+          raw_data: {
+            closing_mileage: formData.closing_mileage,
+            number_of_crates_in: formData.number_of_crates_in
+          },
+          form_values: {
+            returnMileage: this.driverForm.get('returnMileage')?.value,
+            numberOfCratesReturned: this.driverForm.get('numberOfCratesReturned')?.value,
+            closingMileage: this.driverForm.get('closingMileage')?.value,
+            numberOfCratesIn: this.driverForm.get('numberOfCratesIn')?.value
+          }
         });
         
         // Disable the form when in view mode
         this.driverForm.disable();
+        
+        // Log the form value and disabled state after disabling
+        console.log('DEBUG - Form disabled state after loading:', {
+          form_disabled: this.driverForm.disabled,
+          closing_mileage_control: {
+            value: this.driverForm.get('closingMileage')?.value,
+            disabled: this.driverForm.get('closingMileage')?.disabled
+          },
+          number_of_crates_in_control: {
+            value: this.driverForm.get('numberOfCratesIn')?.value,
+            disabled: this.driverForm.get('numberOfCratesIn')?.disabled
+          }
+        });
       } else {
         console.error('Form not found');
         this.router.navigate(['/form-assignments']);
@@ -161,11 +204,6 @@ export class DriverFormsComponent implements OnInit {
     if (!formData.van_fridge_working) {
       this.problemFields.push('vanFridgeWorking');
     }
-    
-    if (!formData.cab_cleaned && formData.cab_not_cleaned_reason?.trim()) {
-      this.problemFields.push('cabCleaned');
-      this.problemFields.push('cabNotCleanedReason');
-    }
   }
 
   isFieldProblem(fieldName: string): boolean {
@@ -204,14 +242,13 @@ export class DriverFormsComponent implements OnInit {
       returnTime: ['', Validators.required],
       returnMileage: ['', Validators.required],
       numberOfCratesReturned: ['', Validators.required],
+      // Additional fields
+      shiftEndTime: [''],
       // Vehicle inspection and maintenance fields
       closingMileage: [''],
       recycledAllReturns: [false],
       vanFridgeWorking: [false],
       returnedVanProbe: [false],
-      cabCleaned: [false],
-      cabNotCleanedReason: [''],
-      chemicalsUsed: [''],
       vanIssues: [''],
       repairsNeeded: [''],
       numberOfCratesIn: ['']
@@ -286,18 +323,6 @@ export class DriverFormsComponent implements OnInit {
       const reasonControl = this.driverForm.get('productComplaintsReason');
       
       if (value) {
-        reasonControl?.setValidators([Validators.required]);
-      } else {
-        reasonControl?.clearValidators();
-      }
-      
-      reasonControl?.updateValueAndValidity();
-    });
-    
-    this.driverForm.get('cabCleaned')?.valueChanges.subscribe(value => {
-      const reasonControl = this.driverForm.get('cabNotCleanedReason');
-      
-      if (!value) {
         reasonControl?.setValidators([Validators.required]);
       } else {
         reasonControl?.clearValidators();
@@ -394,7 +419,6 @@ export class DriverFormsComponent implements OnInit {
       (formValues.vanIssues?.trim()) ||
       (formValues.repairsNeeded?.trim()) ||
       (!formValues.vanFridgeWorking) ||
-      (!formValues.cabCleaned && formValues.cabNotCleanedReason?.trim()) ||
       
       // Issues and Complaints section
       (formValues.paperworkIssues && formValues.paperworkIssuesReason?.trim()) ||

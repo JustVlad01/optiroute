@@ -309,6 +309,13 @@
           
           <div class="row">
             <div class="col-md-6 mb-2">
+              <label for="shift_end_time" class="form-label">Shift End Time</label>
+              <input type="time" class="form-control form-control-sm" id="shift_end_time" formControlName="shift_end_time">
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-2">
               <label for="closing_mileage" class="form-label">Closing Mileage</label>
               <input type="number" class="form-control form-control-sm" id="closing_mileage" formControlName="closing_mileage">
               <div *ngIf="driverForm.get('closing_mileage')?.invalid && driverForm.get('closing_mileage')?.touched" class="text-danger small mt-1">
@@ -345,27 +352,6 @@
                 <label class="form-check-label" for="returned_van_probe">Returned Van Probe issued</label>
               </div>
             </div>
-            
-            <div class="col-md-6 mb-2">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="cab_cleaned" formControlName="cab_cleaned">
-                <label class="form-check-label" for="cab_cleaned">Cab/Van/Fridge cleaned (SOP 24)</label>
-              </div>
-            </div>
-          </div>
-          
-          <div *ngIf="!driverForm.get('cab_cleaned')?.value" class="mb-3">
-            <textarea class="form-control form-control-sm" id="cab_not_cleaned_reason" 
-                      formControlName="cab_not_cleaned_reason" rows="2" 
-                      placeholder="Please state reason why cab was not cleaned (e.g. Not on Schedule)"></textarea>
-            <div *ngIf="driverForm.get('cab_not_cleaned_reason')?.invalid && driverForm.get('cab_not_cleaned_reason')?.touched" class="text-danger small mt-1">
-              Required
-            </div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="chemicals_used" class="form-label">Chemicals used (issued by Hygiene Supervisor)</label>
-            <input type="text" class="form-control form-control-sm" id="chemicals_used" formControlName="chemicals_used">
           </div>
           
           <h4 class="h6 text-muted mb-3">Vehicle Issues and Maintenance</h4>
@@ -413,7 +399,7 @@
           <button type="button" class="btn btn-outline-secondary" routerLink="/driver-forms">
             <i class="bi bi-arrow-left me-1"></i> Back
           </button>
-          <button *ngIf="!isViewMode" type="submit" class="btn btn-primary" [disabled]="submitting">
+          <button *ngIf="!isViewMode" type="button" class="btn btn-primary" [disabled]="submitting" (click)="forceSubmitForm()">
             <span *ngIf="submitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             <i class="bi bi-send me-1"></i> Submit Paperwork
           </button>

@@ -1,0 +1,38 @@
+// Registration component styles
+.sub-header {
+  .text-primary {
+    color: var(--secondary-color) !important;
+  }
+  
+  h4 {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+}
+
+// Form styling
+.form-control, .form-select {
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s;
+  
+  &:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  }
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.form-text {
+  color: var(--light-text);
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+.btn-primary {
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+}

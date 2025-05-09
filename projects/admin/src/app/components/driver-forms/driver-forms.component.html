@@ -292,30 +292,6 @@
         </div>
         
         <div class="form-row">
-          <div class="form-group checkbox-group">
-            <label for="cabCleaned">Cab Cleaned?</label>
-            <input type="checkbox" id="cabCleaned" formControlName="cabCleaned">
-          </div>
-        </div>
-        
-        <div class="form-row" *ngIf="!driverForm.get('cabCleaned')?.value">
-          <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('cabNotCleanedReason')}">
-            <label for="cabNotCleanedReason">Reason cab was not cleaned</label>
-            <textarea id="cabNotCleanedReason" formControlName="cabNotCleanedReason" rows="3"></textarea>
-            <div *ngIf="driverForm.get('cabNotCleanedReason')?.invalid && driverForm.get('cabNotCleanedReason')?.touched" class="error-message">
-              Please provide a reason
-            </div>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="chemicalsUsed">Chemicals Used (if applicable)</label>
-            <input type="text" id="chemicalsUsed" formControlName="chemicalsUsed">
-          </div>
-        </div>
-        
-        <div class="form-row">
           <div class="form-group" [ngClass]="{'problem-field': isFieldProblem('vanIssues')}">
             <label for="vanIssues">Van Issues (if any)</label>
             <textarea id="vanIssues" formControlName="vanIssues" rows="3"></textarea>
@@ -334,29 +310,21 @@
       <div class="form-section">
         <h3>Day End Information</h3>
         
+        <!-- Simple, direct display of values -->
         <div class="form-row">
           <div class="form-group">
-            <label for="returnTime">Return Time</label>
-            <input type="time" id="returnTime" formControlName="returnTime">
-            <div *ngIf="driverForm.get('returnTime')?.invalid && driverForm.get('returnTime')?.touched" class="error-message">
-              Return time is required
-            </div>
+            <label>Shift End Time</label>
+            <div class="form-field-value">{{ completedForm?.shift_end_time || '--:--' }}</div>
           </div>
           
           <div class="form-group">
-            <label for="returnMileage">Return Mileage</label>
-            <input type="number" id="returnMileage" formControlName="returnMileage">
-            <div *ngIf="driverForm.get('returnMileage')?.invalid && driverForm.get('returnMileage')?.touched" class="error-message">
-              Return mileage is required
-            </div>
+            <label>Closing Mileage</label>
+            <div class="form-field-value">{{ completedForm?.closing_mileage || completedForm?.return_mileage || 'N/A' }}</div>
           </div>
           
           <div class="form-group">
-            <label for="numberOfCratesReturned">Number of Crates Returned</label>
-            <input type="number" id="numberOfCratesReturned" formControlName="numberOfCratesReturned">
-            <div *ngIf="driverForm.get('numberOfCratesReturned')?.invalid && driverForm.get('numberOfCratesReturned')?.touched" class="error-message">
-              Number of crates returned is required
-            </div>
+            <label>Number of Crates In</label>
+            <div class="form-field-value">{{ completedForm?.number_of_crates_in || completedForm?.number_of_crates_returned || 'N/A' }}</div>
           </div>
         </div>
       </div>

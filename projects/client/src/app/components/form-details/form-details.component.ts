@@ -32,20 +32,21 @@ export class FormDetailsComponent implements OnInit {
     private supabaseService: SupabaseService
   ) {
     this.driverForm = this.fb.group({
+      driver_name: [this.driverName, Validators.required],
       date: [this.formatDate(this.currentDate), Validators.required],
       time: [this.currentTime, Validators.required],
       van_registration: ['', Validators.required],
-      starting_mileage: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
+      starting_mileage: ['', [Validators.required, Validators.pattern('[0-9]*')]],
+      work_start_time: ['', Validators.required],
+      full_uniform: [false],
+      all_site_keys: [false],
+      auxiliary_products: [false],
       fuel_added: [false],
       litres_added: [''],
       fuel_card_reg: [''],
-      full_uniform: [false, Validators.required],
-      all_site_keys: [false, Validators.required],
-      work_start_time: [this.currentTime, Validators.required],
       preload_van_temp: [''],
       preload_product_temp: [''],
-      auxiliary_products: [false, Validators.required],
-      number_of_crates_out: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
+      number_of_crates_out: ['', [Validators.required, Validators.pattern('[0-9]*')]],
       van_probe_serial_number: [''],
       paperwork_issues: [false],
       paperwork_issues_reason: [''],
@@ -57,18 +58,16 @@ export class FormDetailsComponent implements OnInit {
       customer_complaints_reason: [''],
       product_complaints: [false],
       product_complaints_reason: [''],
-      closing_mileage: ['', [Validators.pattern('^[0-9]*$')]],
+      shift_end_time: [''],
+      closing_mileage: [''],
+      number_of_crates_in: [''],
       recycled_all_returns: [false],
       van_fridge_working: [false],
       returned_van_probe: [false],
-      cab_cleaned: [false],
-      cab_not_cleaned_reason: [''],
-      chemicals_used: [''],
       has_van_issues: [false],
       van_issues: [''],
       has_repairs_needed: [false],
-      repairs_needed: [''],
-      number_of_crates_in: ['', [Validators.pattern('^[0-9]*$')]]
+      repairs_needed: ['']
     });
   }
 
@@ -157,16 +156,6 @@ export class FormDetailsComponent implements OnInit {
       this.driverForm.get('product_complaints_reason')?.updateValueAndValidity();
     });
     
-    // New conditional validation for cab not cleaned reason
-    this.driverForm.get('cab_cleaned')?.valueChanges.subscribe(value => {
-      if (!value) {
-        this.driverForm.get('cab_not_cleaned_reason')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('cab_not_cleaned_reason')?.clearValidators();
-      }
-      this.driverForm.get('cab_not_cleaned_reason')?.updateValueAndValidity();
-    });
-    
     // Add validation for van issues when has_van_issues is true
     this.driverForm.get('has_van_issues')?.valueChanges.subscribe(value => {
       if (value) {
@@ -221,19 +210,20 @@ export class FormDetailsComponent implements OnInit {
       
       // Populate the form with saved data
       this.driverForm.patchValue({
+        driver_name: completedForm.driver_name,
         date: completedForm.date,
         time: completedForm.time,
         van_registration: completedForm.van_registration,
         starting_mileage: completedForm.starting_mileage,
+        work_start_time: completedForm.work_start_time,
+        full_uniform: completedForm.full_uniform,
+        all_site_keys: completedForm.all_site_keys,
+        auxiliary_products: completedForm.auxiliary_products,
         fuel_added: completedForm.fuel_added,
         litres_added: completedForm.litres_added,
         fuel_card_reg: completedForm.fuel_card_reg,
-        full_uniform: completedForm.full_uniform,
-        all_site_keys: completedForm.all_site_keys,
-        work_start_time: completedForm.work_start_time,
         preload_van_temp: completedForm.preload_van_temp,
         preload_product_temp: completedForm.preload_product_temp,
-        auxiliary_products: completedForm.auxiliary_products,
         number_of_crates_out: completedForm.number_of_crates_out,
         van_probe_serial_number: completedForm.van_probe_serial_number,
         paperwork_issues: completedForm.paperwork_issues,
@@ -246,18 +236,16 @@ export class FormDetailsComponent implements OnInit {
         customer_complaints_reason: completedForm.customer_complaints_reason,
         product_complaints: completedForm.product_complaints,
         product_complaints_reason: completedForm.product_complaints_reason,
+        shift_end_time: completedForm.shift_end_time,
         closing_mileage: completedForm.closing_mileage,
+        number_of_crates_in: completedForm.number_of_crates_in,
         recycled_all_returns: completedForm.recycled_all_returns,
         van_fridge_working: completedForm.van_fridge_working,
         returned_van_probe: completedForm.returned_van_probe,
-        cab_cleaned: completedForm.cab_cleaned,
-        cab_not_cleaned_reason: completedForm.cab_not_cleaned_reason,
-        chemicals_used: completedForm.chemicals_used,
         has_van_issues: completedForm.has_van_issues || !!completedForm.van_issues,
         van_issues: completedForm.van_issues,
         has_repairs_needed: completedForm.has_repairs_needed || !!completedForm.repairs_needed,
-        repairs_needed: completedForm.repairs_needed,
-        number_of_crates_in: completedForm.number_of_crates_in
+        repairs_needed: completedForm.repairs_needed
       });
       
       // Disable the form when in view mode
@@ -288,8 +276,7 @@ export class FormDetailsComponent implements OnInit {
       (formValues.product_complaints && formValues.product_complaints_reason?.trim()) || 
       (formValues.has_van_issues && formValues.van_issues?.trim()) || 
       (formValues.has_repairs_needed && formValues.repairs_needed?.trim()) ||
-      !formValues.van_fridge_working ||
-      (!formValues.cab_cleaned && formValues.cab_not_cleaned_reason?.trim())
+      !formValues.van_fridge_working
     );
   }
 
@@ -322,15 +309,15 @@ export class FormDetailsComponent implements OnInit {
         time: formValues.time || this.currentTime,
         van_registration: formValues.van_registration || '',
         starting_mileage: formValues.starting_mileage || 0,
+        work_start_time: formValues.work_start_time || this.currentTime,
+        full_uniform: formValues.full_uniform || false,
+        all_site_keys: formValues.all_site_keys || false,
+        auxiliary_products: formValues.auxiliary_products || false,
         fuel_added: formValues.fuel_added || false,
         litres_added: formValues.fuel_added ? (formValues.litres_added || 0) : null,
         fuel_card_reg: formValues.fuel_added ? (formValues.fuel_card_reg || '') : null,
-        full_uniform: formValues.full_uniform || false,
-        all_site_keys: formValues.all_site_keys || false,
-        work_start_time: formValues.work_start_time || this.currentTime,
         preload_van_temp: formValues.preload_van_temp || 0,
         preload_product_temp: formValues.preload_product_temp || 0,
-        auxiliary_products: formValues.auxiliary_products || false,
         number_of_crates_out: formValues.number_of_crates_out || 0,
         van_probe_serial_number: formValues.van_probe_serial_number || null,
         paperwork_issues: formValues.paperwork_issues || false,
@@ -343,18 +330,16 @@ export class FormDetailsComponent implements OnInit {
         customer_complaints_reason: formValues.customer_complaints ? (formValues.customer_complaints_reason || '') : null,
         product_complaints: formValues.product_complaints || false,
         product_complaints_reason: formValues.product_complaints ? (formValues.product_complaints_reason || '') : null,
+        shift_end_time: formValues.shift_end_time || '',
         closing_mileage: formValues.closing_mileage || null,
+        number_of_crates_in: formValues.number_of_crates_in || null,
         recycled_all_returns: formValues.recycled_all_returns || false,
         van_fridge_working: formValues.van_fridge_working || false,
         returned_van_probe: formValues.returned_van_probe || false,
-        cab_cleaned: formValues.cab_cleaned || false,
-        cab_not_cleaned_reason: !formValues.cab_cleaned ? (formValues.cab_not_cleaned_reason || '') : null,
-        chemicals_used: formValues.chemicals_used || null,
         has_van_issues: formValues.has_van_issues || false,
         van_issues: formValues.has_van_issues ? (formValues.van_issues || '') : null,
         has_repairs_needed: formValues.has_repairs_needed || false,
         repairs_needed: formValues.has_repairs_needed ? (formValues.repairs_needed || '') : null,
-        number_of_crates_in: formValues.number_of_crates_in || null,
         needs_review: needsReview
       };
       
@@ -408,6 +393,82 @@ export class FormDetailsComponent implements OnInit {
       }, 5000);
     } else {
       alert('Error saving form. Please try again.');
+    }
+  }
+  
+  // Force submit the form regardless of validation state
+  async forceSubmitForm(): Promise<void> {
+    this.submitting = true;
+    
+    // Get form values
+    const formValues = this.driverForm.value;
+    
+    // Check if form needs review (has issues that admin should check)
+    const needsReview = this.checkIfNeedsReview(formValues);
+    
+    // Create the final form data with default values for required fields
+    const formData = {
+      driver_name: this.driverName,
+      date: formValues.date || this.formatDate(this.currentDate),
+      time: formValues.time || this.currentTime,
+      van_registration: formValues.van_registration || '',
+      starting_mileage: formValues.starting_mileage || 0,
+      work_start_time: formValues.work_start_time || this.currentTime,
+      full_uniform: formValues.full_uniform || false,
+      all_site_keys: formValues.all_site_keys || false,
+      auxiliary_products: formValues.auxiliary_products || false,
+      fuel_added: formValues.fuel_added || false,
+      litres_added: formValues.fuel_added ? (formValues.litres_added || 0) : null,
+      fuel_card_reg: formValues.fuel_added ? (formValues.fuel_card_reg || '') : null,
+      preload_van_temp: formValues.preload_van_temp || 0,
+      preload_product_temp: formValues.preload_product_temp || 0,
+      number_of_crates_out: formValues.number_of_crates_out || 0,
+      van_probe_serial_number: formValues.van_probe_serial_number || null,
+      paperwork_issues: formValues.paperwork_issues || false,
+      paperwork_issues_reason: formValues.paperwork_issues ? (formValues.paperwork_issues_reason || '') : null,
+      orders_products_issues: formValues.orders_products_issues || false,
+      orders_products_issues_reason: formValues.orders_products_issues ? (formValues.orders_products_issues_reason || '') : null,
+      site_issues: formValues.site_issues || false,
+      site_issues_reason: formValues.site_issues ? (formValues.site_issues_reason || '') : null,
+      customer_complaints: formValues.customer_complaints || false,
+      customer_complaints_reason: formValues.customer_complaints ? (formValues.customer_complaints_reason || '') : null,
+      product_complaints: formValues.product_complaints || false,
+      product_complaints_reason: formValues.product_complaints ? (formValues.product_complaints_reason || '') : null,
+      shift_end_time: formValues.shift_end_time || '',
+      closing_mileage: formValues.closing_mileage || null,
+      number_of_crates_in: formValues.number_of_crates_in || null,
+      recycled_all_returns: formValues.recycled_all_returns || false,
+      van_fridge_working: formValues.van_fridge_working || false,
+      returned_van_probe: formValues.returned_van_probe || false,
+      has_van_issues: formValues.has_van_issues || false,
+      van_issues: formValues.has_van_issues ? (formValues.van_issues || '') : null,
+      has_repairs_needed: formValues.has_repairs_needed || false,
+      repairs_needed: formValues.has_repairs_needed ? (formValues.repairs_needed || '') : null,
+      needs_review: needsReview
+    };
+    
+    console.log('Force submitting form with data:', formData);
+    
+    try {
+      // Submit the form data to Supabase
+      const submittedForm = await this.supabaseService.submitDriverForm(formData);
+      
+      if (submittedForm && this.formId) {
+        console.log('Form submitted successfully:', submittedForm);
+        // Update the form assignment status to completed
+        await this.supabaseService.updateFormAssignmentStatus(this.formId, 'completed', submittedForm[0].id);
+        
+        this.submitting = false;
+        this.router.navigate(['/driver-forms'], { 
+          queryParams: { success: true } 
+        });
+      } else {
+        throw new Error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('An error occurred while submitting the form. Please try again.');
+      this.submitting = false;
     }
   }
 } 
