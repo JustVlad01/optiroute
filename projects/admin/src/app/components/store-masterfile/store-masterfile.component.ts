@@ -192,6 +192,24 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           this.allColumns = Object.keys(this.storeData[0])
             .filter(column => !alwaysExcludedColumns.includes(column));
           
+          // Add new columns that might not be in the data yet
+          const newColumns = [
+            'manual',
+            'store_company',
+            'geolocation',
+            'new_route_08_05',
+            'route8_5_25',
+            'opening_time_sunday',
+            'keys_available',
+            'key_code'
+          ];
+          
+          newColumns.forEach(column => {
+            if (!this.allColumns.includes(column) && !alwaysExcludedColumns.includes(column)) {
+              this.allColumns.push(column);
+            }
+          });
+          
           // Initialize columns with default values if not already set
           this.allColumns.forEach(column => {
             // Only initialize column visibility if not already set
@@ -220,7 +238,8 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         const routeSet = new Set<string>();
         this.storeData.forEach(row => {
           if (row['old_route']) routeSet.add(row['old_route']);
-          if (row['new_route']) routeSet.add(row['new_route']);
+          if (row['new_route_08_05']) routeSet.add(row['new_route_08_05']);
+          if (row['route8_5_25']) routeSet.add(row['route8_5_25']);
         });
         this.allRoutes = Array.from(routeSet).filter(r => !!r).sort();
         
@@ -305,231 +324,307 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   }
   
   isEditing(rowIndex: number, column: string): boolean {
-    const cellKey = `${rowIndex}_${column}`;
-    return cellKey in this.editedCells;
+    // Always return true in edit mode - our CSS will handle showing the right controls
+    return this.editMode;
   }
   
   startEdit(rowIndex: number, column: string, value: any): void {
-    // Always allow editing regardless of editMode
-    const cellKey = `${rowIndex}_${column}`;
-    this.editedCells[cellKey] = value;
+    // In edit mode, all cells are always editable
+    if (this.editMode) {
+      return;
+    }
   }
   
   updateEditedValue(rowIndex: number, column: string, value: any): void {
-    const cellKey = `${rowIndex}_${column}`;
-    const row = this.pagedData[rowIndex];
+    const rowKey = this.getRowKey(rowIndex);
+    const cellKey = `${rowKey}:${column}`;
     
-    // Only mark as edited if the value actually changed
-    if (row[column] !== value) {
+    // Get the original cell value
+    const originalValue = this.pagedData[rowIndex][column];
+    
+    // Only track changes if the value is actually different
+    if (value !== originalValue) {
+      console.log(`Cell ${cellKey} changed from "${originalValue}" to "${value}"`);
       this.editedCells[cellKey] = value;
-      
-      // Mark this row as edited
       this.editedRows.add(rowIndex);
+    } else {
+      // If the value is the same as the original, remove it from edited cells
+      console.log(`Cell ${cellKey} reset to original value "${originalValue}"`);
+      delete this.editedCells[cellKey];
+      
+      // Check if this row has any other edited cells
+      const hasOtherEdits = Object.keys(this.editedCells).some(key => 
+        key.startsWith(`${rowKey}:`) && key !== cellKey
+      );
+      
+      // If no other cells in this row are edited, remove the row from editedRows
+      if (!hasOtherEdits) {
+        this.editedRows.delete(rowIndex);
+      }
     }
   }
   
   // Handle input events safely with proper type checking
   handleInputEvent(event: Event, rowIndex: number, column: string): void {
     const target = event.target as HTMLInputElement;
-    if (target && target.value !== undefined) {
-      // Just store the value but don't trigger save
-      const cellKey = `${rowIndex}_${column}`;
-      this.editedCells[cellKey] = target.value;
+    
+    if (this.isBooleanTextField(column)) {
+      this.handleBooleanTextInput(event, rowIndex, column);
+    } else {
+      this.updateEditedValue(rowIndex, column, target.value);
     }
   }
   
   // Handle blur event to save when user clicks away
   handleInputBlur(event: Event, rowIndex: number, column: string): void {
-    const target = event.target as HTMLInputElement;
-    if (target && target.value !== undefined) {
-      this.updateEditedValue(rowIndex, column, target.value);
-    }
+    // When input loses focus, we don't need to do anything special
+    // The handleInputEvent already updated the value
   }
   
   getCellValue(rowIndex: number, column: string): any {
-    const cellKey = `${rowIndex}_${column}`;
-    const row = this.pagedData[rowIndex];
+    // First check if there's an edited value
+    const rowKey = this.getRowKey(rowIndex);
+    const cellKey = `${rowKey}:${column}`;
     
-    // If cell is being edited, return the edited value
     if (cellKey in this.editedCells) {
       return this.editedCells[cellKey];
     }
     
-    // Otherwise return the original value
-    return row[column];
+    // Otherwise get the original value
+    const value = this.pagedData[rowIndex][column];
+    
+    // Special handling for text fields that represent boolean values
+    if (this.isBooleanTextField(column)) {
+      return this.formatBooleanTextField(value);
+    }
+    
+    return value !== null && value !== undefined ? value : '';
+  }
+  
+  // Method to identify text fields that represent boolean values
+  isBooleanTextField(column: string): boolean {
+    const booleanTextFields = ['manual', 'keys_available', 'hour_access_24'];
+    return booleanTextFields.includes(column);
+  }
+  
+  // Format boolean text fields for display
+  formatBooleanTextField(value: any): string {
+    if (value === null || value === undefined) return '';
+    
+    // Convert the value to lowercase string for comparison
+    const strValue = String(value).toLowerCase();
+    
+    // Check if the value indicates "true"
+    if (['yes', 'y', 'true', '1'].includes(strValue)) {
+      return 'Yes';
+    }
+    
+    // Check if the value indicates "false"
+    if (['no', 'n', 'false', '0'].includes(strValue)) {
+      return 'No';
+    }
+    
+    // Return the original value if it doesn't match known patterns
+    return value;
+  }
+  
+  // Method to handle input for boolean text fields
+  handleBooleanTextInput(event: Event, rowIndex: number, column: string): void {
+    const target = event.target as HTMLInputElement;
+    let value = target.value.trim();
+    
+    // Convert common boolean text inputs to standard values
+    if (['yes', 'y', 'true', '1'].includes(value.toLowerCase())) {
+      value = 'Yes';
+    } else if (['no', 'n', 'false', '0'].includes(value.toLowerCase())) {
+      value = 'No';
+    }
+    
+    // Update the cell
+    this.updateEditedValue(rowIndex, column, value);
   }
   
   // Save changes implementation (manual only)
   async saveChanges(): Promise<void> {
-    if (this.editedRows.size === 0 || this.isSaving) {
-      return;
-    }
-    
     this.isSaving = true;
     this.saveSuccess = false;
     this.saveError = false;
     
+    console.log('Starting to save changes for edited rows:', this.editedRows.size);
+    
     try {
-      // Prepare the updates by gathering all edited rows
-      const updates: any[] = [];
+      // Collect all changes into a row-based format for the API
+      const rowUpdates: {[key: string]: any} = {};
       
-      // List of text fields based on the schema
-      const textFields = [
-        'door_code', 'alarm_code', 'fridge_code', 'manual', 'dispatch_code', 
-        'store_name', 'store_code', 'store_full_name', 'store_name_future',
-        'address_line_1', 'old_route', 'new_route_15_04', 'date_21_04',
-        'eircode', 'location_link', 'keys_available', 'hour_access_24',
-        'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 'earliest_delivery_time',
-        'opening_time_saturday', 'openining_time_bankholiday', 'delivery_parking_instructions'
-      ];
-      
-      this.editedRows.forEach(rowIndex => {
-        const originalRow = this.pagedData[rowIndex];
-        if (originalRow) { // Make sure the row exists
-          const updatedRow = { ...originalRow };
-          let hasChanges = false;
-          
-          // Apply all edits for this row
-          Object.keys(this.editedCells).forEach(cellKey => {
-            const [cellRowIndex, column] = cellKey.split('_');
-            
-            if (parseInt(cellRowIndex) === rowIndex) {
-              // Only update if the value actually changed
-              if (updatedRow[column] !== this.editedCells[cellKey]) {
-                // Ensure all text fields are stored as strings
-                if (textFields.includes(column)) {
-                  // Convert to string, but handle null/undefined properly
-                  updatedRow[column] = this.editedCells[cellKey] != null 
-                    ? String(this.editedCells[cellKey])
-                    : null;
-                  console.log(`Setting ${column} to: ${updatedRow[column]}`);
-                } else {
-                  updatedRow[column] = this.editedCells[cellKey];
-                }
-                hasChanges = true;
-              }
-            }
-          });
-          
-          // Only add to updates if actual changes were made
-          if (hasChanges) {
-            // Log the row before applying column name fixes
-            console.log('Row before fixing column names:', JSON.stringify(updatedRow));
-            
-            // Fix column names to match database schema
-            const fixedRow = this.fixColumnNames(updatedRow);
-            console.log('Row after fixing column names:', JSON.stringify(fixedRow));
-            
-            // Ensure we have identifiers for the update
-            if (fixedRow.id || 
-                (fixedRow.dispatch_code && fixedRow.store_code) || 
-                fixedRow.store_name) {
-              updates.push(fixedRow);
-            } else {
-              console.error('Cannot update row without proper identifiers:', fixedRow);
-            }
-          }
+      // Process all edited cells
+      Object.entries(this.editedCells).forEach(([cellKey, newValue]) => {
+        // Parse the cell key to get row key and column
+        // Format is either "dispatch_store:D4091:ARAM006:column" or "id:123:column" or "index:1:column"
+        const parts = cellKey.split(':');
+        let rowKey: string;
+        let column: string;
+        
+        if (parts[0] === 'dispatch_store') {
+          // Format: "dispatch_store:D4091:ARAM006:column"
+          rowKey = `${parts[0]}:${parts[1]}:${parts[2]}`;
+          column = parts[3];
+        } else if (parts[0] === 'id' || parts[0] === 'index') {
+          // Format: "id:123:column" or "index:1:column"
+          rowKey = `${parts[0]}:${parts[1]}`;
+          column = parts[2];
+        } else {
+          // Legacy format or direct key
+          console.log(`Legacy cell key format: ${cellKey}, attempting direct parsing`);
+          const lastColon = cellKey.lastIndexOf(':');
+          rowKey = cellKey.substring(0, lastColon);
+          column = cellKey.substring(lastColon + 1);
         }
+        
+        console.log(`Parsed cell key "${cellKey}" -> rowKey="${rowKey}", column="${column}"`);
+        
+        // Initialize row object if not exist
+        if (!rowUpdates[rowKey]) {
+          rowUpdates[rowKey] = {};
+        }
+        
+        // Add the changed column value
+        rowUpdates[rowKey][column] = newValue;
       });
       
-      // Only proceed with the update if we have changes to save
-      if (updates.length > 0) {
-        console.log('Sending updates to Supabase:', JSON.stringify(updates));
+      // Prepare the updates array for the API
+      const updates: any[] = [];
+      
+      // Process each row update
+      for (const [rowKey, changes] of Object.entries(rowUpdates)) {
+        // Find the original row that corresponds to this key
+        let originalRow: any = null;
         
-        // Send updates to Supabase
+        // Parse the row key format to find the row
+        if (rowKey.startsWith('id:')) {
+          const id = rowKey.substring(3);
+          originalRow = this.storeData.find(row => row.store_id === parseInt(id) || row.store_id === id);
+          console.log(`Looking for row with store_id=${id}`, originalRow ? 'Found' : 'Not found');
+        } else if (rowKey.startsWith('index:')) {
+          const index = parseInt(rowKey.substring(6));
+          originalRow = this.pagedData[index];
+          console.log(`Looking for row at index=${index}`, originalRow ? 'Found' : 'Not found');
+        } else if (rowKey.startsWith('dispatch_store:')) {
+          // Handle composite keys (dispatch_code:store_code)
+          const parts = rowKey.split(':');
+          const dispatchCode = parts[1];
+          const storeCode = parts[2];
+          originalRow = this.storeData.find(row => 
+            row.dispatch_code === dispatchCode && row.store_code === storeCode
+          );
+          console.log(`Looking for row with dispatch_code=${dispatchCode} and store_code=${storeCode}`, originalRow ? 'Found' : 'Not found');
+        } else {
+          // Try to parse as a legacy format or direct key
+          console.log(`Unknown key format: ${rowKey}, attempting direct lookup`);
+          originalRow = this.storeData.find(row => 
+            row.dispatch_code === rowKey || 
+            (row.store_code && row.dispatch_code && `${row.dispatch_code}:${row.store_code}` === rowKey)
+          );
+        }
+        
+        if (!originalRow) {
+          console.error(`Could not find original row for key: ${rowKey}`);
+          continue; // Skip this update
+        }
+        
+        // Create a complete update object with all needed fields
+        const completeUpdate = {
+          ...originalRow,  // Include all original data
+          ...changes       // Override with changes
+        };
+        
+        updates.push(completeUpdate);
+      }
+      
+      console.log('Prepared updates for API:', updates);
+      
+      if (updates.length > 0) {
+        // Call the service to update the store information
         const result = await this.supabaseService.updateStoreInformation(updates);
         
         if (result.success) {
+          console.log('Successfully saved all changes:', result);
           this.saveSuccess = true;
           this.lastSavedTime = new Date();
           
-          // Clear the edited cells and rows after successful save
+          // Clear tracked changes
           this.editedCells = {};
           this.editedRows.clear();
           
-          // Reload the store data to ensure we have the latest data
+          // Refresh data after saving
           this.loadStoreData();
         } else {
-          this.saveError = true;
           console.error('Error saving changes:', result.error);
-          // Display more detailed error information in the console
-          if (result.results) {
-            result.results.forEach((res: any, index: number) => {
-              if (!res.success) {
-                console.error(`Error on update #${index}:`, res.error);
-                console.error('Failed update payload:', updates[index]);
-              }
-            });
-          }
+          this.saveError = true;
         }
       } else {
-        // No actual changes to save
-        this.editedCells = {};
-        this.editedRows.clear();
+        console.log('No changes to save');
+        this.saveSuccess = true;
       }
     } catch (error) {
+      console.error('Exception while saving changes:', error);
       this.saveError = true;
-      console.error('Exception during save:', error);
     } finally {
       this.isSaving = false;
       
-      // Clear success/error status after a delay
-      setTimeout(() => {
-        this.saveSuccess = false;
-        this.saveError = false;
-      }, 3000);
+      // Auto-hide success message after 5 seconds
+      if (this.saveSuccess) {
+        setTimeout(() => {
+          this.saveSuccess = false;
+        }, 5000);
+      }
     }
   }
   
   // Standardize column names for UI display
   private standardizeColumnNames(data: any[]): any[] {
-    if (!data || data.length === 0) return data;
-    
-    return data.map(row => {
-      const standardizedRow = { ...row };
-      
-      // Map of database column names to frontend column names
-      const columnMapping: {[key: string]: string} = {
-        'address_line_1': 'address',
-        'store_full_name': 'store_name_1',
-        'new_route_15_04': 'new_route',
-        'date_21_04': 'date',
-        'door_code': 'door' // Ensure door_code from DB maps to door in the UI
-      };
-      
-      // Replace database column names with frontend names
-      Object.keys(columnMapping).forEach(dbName => {
-        if (dbName in standardizedRow) {
-          const frontendName = columnMapping[dbName];
-          standardizedRow[frontendName] = standardizedRow[dbName];
-          // Keep the original for database operations
-        }
-      });
-      
-      return standardizedRow;
-    });
+    return data.map(row => this.fixColumnNames(row));
   }
 
   // Fix column names to match database schema
   private fixColumnNames(row: any): any {
     const fixedRow = { ...row };
     
-    // Map of frontend column names to database column names
+    // Map standard column names
     const columnMapping: {[key: string]: string} = {
-      'address': 'address_line_1',
-      'store_name_1': 'store_full_name',
-      'new_route': 'new_route_15_04',
-      'date': 'date_21_04',
-      'door': 'door_code' // Fix the incorrect mapping - 'door' should map to 'door_code'
-      // Add any other mismatched column names here
+      'address_line': 'address_line',
+      'address_line_1': 'address_line',
+      'store_full_name': 'store_name',
+      'new_route_15_04': 'new_route_08_05',
+      'route8_5_25': 'route8_5_25',
+      'dispatch': 'dispatch_code',
+      'store': 'store_code',
+      'name': 'store_name',
+      'company': 'store_company',
+      'geolocation': 'geolocation',
+      'eircode': 'eircode',
+      'old route': 'old_route',
+      'new route': 'new_route_08_05',
+      'hour_access_24': 'hour_access_24',
+      'earliest_delivery': 'earliest_delivery_time',
+      'opening_time_sat': 'opening_time_saturday',
+      'opening_time_sun': 'opening_time_sunday',
+      'openining_time_bh': 'openining_time_bankholiday',
+      'door_code': 'door_code',
+      'alarm': 'alarm_code',
+      'fridge': 'fridge_code',
+      'keys': 'keys_available',
+      'key_code': 'key_code',
+      'manual': 'manual'
     };
     
-    // Replace any mismatched column names
-    Object.keys(columnMapping).forEach(frontendName => {
-      if (frontendName in fixedRow) {
-        const dbName = columnMapping[frontendName];
-        fixedRow[dbName] = fixedRow[frontendName];
-        delete fixedRow[frontendName];
+    // Apply mappings for any keys that need to be standardized
+    Object.keys(columnMapping).forEach(displayName => {
+      if (displayName in row) {
+        const dbName = columnMapping[displayName];
+        fixedRow[dbName] = row[displayName];
+        if (displayName !== dbName) {
+          delete fixedRow[displayName];
+        }
       }
     });
     
@@ -537,51 +632,64 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   }
   
   filterData(): void {
-    let data = [...this.storeData];
-    
-    // Filter by selected routes - only if at least one route is selected
-    const routeFiltersApplied = this.hasSelectedRoutes;
-    if (routeFiltersApplied) {
-      data = data.filter(row => {
-        // If old_route or new_route is in the selected routes, keep the row
-        return (row['old_route'] && this.selectedRoutes[row['old_route']]) || 
-               (row['new_route'] && this.selectedRoutes[row['new_route']]);
-      });
+    if (!this.storeData || this.storeData.length === 0) {
+      this.filteredData = [];
+      this.updatePagedData();
+      return;
     }
     
-    // Apply search term filter
-    if (this.searchTerm.trim()) {
-      const searchTermLower = this.searchTerm.toLowerCase();
-      data = data.filter(item => {
-        return Object.keys(item).some(key => {
-          const value = item[key];
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(searchTermLower);
+    // Start with all data
+    let filtered = [...this.storeData];
+    
+    // Apply search filter if there's a search term
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      const search = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(row => {
+        // Search across all fields
+        return Object.keys(row).some(key => {
+          const value = row[key];
+          // Check if value exists and convert to string for comparison
+          return value !== null && 
+                 value !== undefined && 
+                 String(value).toLowerCase().includes(search);
         });
       });
     }
     
-    // Apply 24-hour filter
+    // Apply 24-hour access filter if enabled
     if (this.show24HoursOnly) {
-      data = data.filter(item => {
-        // Filter for stores that have "Yes", "Y", "True", "1", etc. in hour_access_24 column
-        const access24Value = String(item.hour_access_24 || '').toLowerCase();
-        return ['yes', 'y', 'true', '1'].includes(access24Value);
+      filtered = filtered.filter(row => {
+        const access24 = row['hour_access_24'];
+        // Check if the value is a string that indicates 24-hour access
+        return typeof access24 === 'string' && 
+               (access24.toLowerCase() === 'yes' || 
+                access24.toLowerCase() === 'true' || 
+                access24 === '1' || 
+                access24 === 'y');
       });
     }
     
-    this.filteredData = data;
-    
-    // Adjust items per page based on filter results
-    this.adjustItemsPerPage(data.length, routeFiltersApplied);
-    
-    // If we were sorting before, maintain the sort on the filtered data
-    if (this.sortColumn) {
-      this.applySorting();
+    // Apply route filters if any are selected
+    const activeRoutes = Object.keys(this.selectedRoutes).filter(route => this.selectedRoutes[route]);
+    if (activeRoutes.length > 0) {
+      filtered = filtered.filter(row => {
+        return activeRoutes.some(route => 
+          row['old_route'] === route || 
+          row['new_route_08_05'] === route ||
+          row['route8_5_25'] === route
+        );
+      });
     }
     
-    // Reset to first page when filtering
-    this.currentPage = 1;
+    this.filteredData = filtered;
+    
+    // Auto-adjust items per page based on filter results
+    const routeFiltersApplied = activeRoutes.length > 0;
+    this.adjustItemsPerPage(filtered.length, routeFiltersApplied);
+    
+    // Update pagination
+    this.totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
+    this.currentPage = 1; // Reset to first page when filter changes
     this.updatePagedData();
   }
 
@@ -696,7 +804,44 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   
   // Helper to format column name for display
   formatColumnName(column: string): string {
-    return column.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Handle special cases first
+    const specialCases: Record<string, string> = {
+      'store_id': 'Store ID',
+      'image_storage_url': 'Image URL',
+      'manual': 'Manual',
+      'dispatch_code': 'Dispatch Code',
+      'store_code': 'Store Code',
+      'store_company': 'Store Company',
+      'store_name': 'Store Name',
+      'address_line': 'Address',
+      'geolocation': 'Geolocation',
+      'eircode': 'Eircode',
+      'old_route': 'Old Route',
+      'new_route_08_05': 'New Route (08/05)',
+      'route8_5_25': 'Route (8.5.25)',
+      'location_link': 'Location Link',
+      'door_code': 'Door Code',
+      'alarm_code': 'Alarm Code',
+      'fridge_code': 'Fridge Code',
+      'keys_available': 'Keys Available',
+      'key_code': 'Key Code',
+      'hour_access_24': '24 Hour Access',
+      'earliest_delivery_time': 'Earliest Delivery Time',
+      'opening_time_saturday': 'Opening Time (Saturday)',
+      'opening_time_sunday': 'Opening Time (Sunday)',
+      'openining_time_bankholiday': 'Opening Time (Bank Holiday)'
+    };
+    
+    // Return special case if it exists
+    if (column in specialCases) {
+      return specialCases[column];
+    }
+    
+    // Otherwise, apply standard formatting (capitalize first letter of each word, replace underscores with spaces)
+    return column
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   // Toggle route filter dropdown visibility
@@ -766,5 +911,23 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     if (this.itemsPerPage <= 0) {
       this.itemsPerPage = defaultItemsPerPage;
     }
+  }
+
+  // Get a unique key for a row to use with edited cells tracking
+  getRowKey(rowIndex: number): string {
+    const row = this.pagedData[rowIndex];
+    
+    // Try to use a stable identifier if available
+    if (row.store_id) {
+      return `id:${row.store_id}`;
+    }
+    
+    // Otherwise use a composite key
+    if (row.store_code && row.dispatch_code) {
+      return `dispatch_store:${row.dispatch_code}:${row.store_code}`;
+    }
+    
+    // Fallback to rowIndex if no stable identifiers are available
+    return `index:${rowIndex}`;
   }
 } 

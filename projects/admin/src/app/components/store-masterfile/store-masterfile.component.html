@@ -234,6 +234,57 @@
               <span class="column-name">{{ formatColumnName(column) }}</span>
             </label>
           </div>
+          <!-- Add specific checkboxes for new columns to ensure they're available -->
+          <div *ngIf="allColumns.indexOf('manual') === -1" class="column-item">
+            <label class="column-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="columnVisibility['manual']" 
+                (change)="toggleColumnVisibility('manual')"
+              >
+              <span class="column-name">Manual</span>
+            </label>
+          </div>
+          <div *ngIf="allColumns.indexOf('new_route_08_05') === -1" class="column-item">
+            <label class="column-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="columnVisibility['new_route_08_05']" 
+                (change)="toggleColumnVisibility('new_route_08_05')"
+              >
+              <span class="column-name">New Route (08/05)</span>
+            </label>
+          </div>
+          <div *ngIf="allColumns.indexOf('route8_5_25') === -1" class="column-item">
+            <label class="column-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="columnVisibility['route8_5_25']" 
+                (change)="toggleColumnVisibility('route8_5_25')"
+              >
+              <span class="column-name">Route 8.5.25</span>
+            </label>
+          </div>
+          <div *ngIf="allColumns.indexOf('opening_time_sunday') === -1" class="column-item">
+            <label class="column-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="columnVisibility['opening_time_sunday']" 
+                (change)="toggleColumnVisibility('opening_time_sunday')"
+              >
+              <span class="column-name">Opening Time Sunday</span>
+            </label>
+          </div>
+          <div *ngIf="allColumns.indexOf('key_code') === -1" class="column-item">
+            <label class="column-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="columnVisibility['key_code']" 
+                (change)="toggleColumnVisibility('key_code')"
+              >
+              <span class="column-name">Key Code</span>
+            </label>
+          </div>
         </div>
       </div>
       <div class="modal-footer">

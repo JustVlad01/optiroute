@@ -467,7 +467,7 @@ export class SupabaseService {
     try {
       // First, get the total count of stores - using a separate count query
       const { count, error: countError } = await this.supabase
-        .from('store_information')
+        .from('stores')
         .select('*', { count: 'exact', head: true });
         
       if (countError) {
@@ -481,7 +481,7 @@ export class SupabaseService {
       
       // Then retrieve stores with pagination
       const { data, error } = await this.supabase
-        .from('store_information')
+        .from('stores')
         .select('*')
         .order('store_name');
         
@@ -535,7 +535,7 @@ export class SupabaseService {
         if (fixedUpdate.id) {
           try {
             const { data, error } = await this.supabase
-              .from('store_information')
+              .from('stores')
               .update(fixedUpdate)
               .eq('id', fixedUpdate.id)
               .select();
@@ -559,7 +559,7 @@ export class SupabaseService {
         // Second priority: Use dispatch_code and store_code combination
         if (fixedUpdate.dispatch_code && fixedUpdate.store_code) {
           const { data: existingRecord } = await this.supabase
-            .from('store_information')
+            .from('stores')
             .select('*')
             .eq('dispatch_code', fixedUpdate.dispatch_code)
             .eq('store_code', fixedUpdate.store_code)
@@ -568,7 +568,7 @@ export class SupabaseService {
           if (existingRecord) {
             // If the record exists, update it
             const { data, error } = await this.supabase
-              .from('store_information')
+              .from('stores')
               .update(fixedUpdate)
               .eq('dispatch_code', fixedUpdate.dispatch_code)
               .eq('store_code', fixedUpdate.store_code)
@@ -585,7 +585,7 @@ export class SupabaseService {
           } else {
             // If no record exists, insert a new one
             const { data, error } = await this.supabase
-              .from('store_information')
+              .from('stores')
               .insert(fixedUpdate)
               .select();
               
@@ -603,7 +603,7 @@ export class SupabaseService {
         // Third priority: Use store_name as fallback
         if (fixedUpdate.store_name) {
           const { data: existingRecord } = await this.supabase
-            .from('store_information')
+            .from('stores')
             .select('*')
             .eq('store_name', fixedUpdate.store_name)
             .maybeSingle();
@@ -611,7 +611,7 @@ export class SupabaseService {
           if (existingRecord) {
             // If the record exists, update it
             const { data, error } = await this.supabase
-              .from('store_information')
+              .from('stores')
               .update(fixedUpdate)
               .eq('store_name', fixedUpdate.store_name)
               .select();
@@ -627,7 +627,7 @@ export class SupabaseService {
           } else {
             // If no record exists, insert a new one
             const { data, error } = await this.supabase
-              .from('store_information')
+              .from('stores')
               .insert(fixedUpdate)
               .select();
               
@@ -678,22 +678,23 @@ export class SupabaseService {
     
     // Map of frontend column names to database column names
     const columnMapping: {[key: string]: string} = {
-      'address': 'address_line_1',
+      'address': 'address_line',
       'store_name_1': 'store_full_name',
-      'new_route': 'new_route_15_04',
+      'new_route': 'new_route_08_05',
       'date': 'date_21_04',
-      'door': 'door_code' // Fix mapping - 'door' should be 'door_code'
+      'door': 'door_code',
       // Add any other mismatched column names here
     };
     
     // Handle text fields specifically to ensure proper type conversion
     const textFields = [
       'door_code', 'alarm_code', 'fridge_code', 'manual', 'dispatch_code', 
-      'store_name', 'store_code', 'store_full_name', 'store_name_future',
-      'address_line_1', 'old_route', 'new_route_15_04', 'date_21_04',
+      'store_name', 'store_code', 'store_company', 'store_name_future',
+      'address_line', 'old_route', 'new_route_08_05', 'route8_5_25',
       'eircode', 'location_link', 'keys_available', 'hour_access_24',
       'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 'earliest_delivery_time',
-      'opening_time_saturday', 'openining_time_bankholiday', 'delivery_parking_instructions'
+      'opening_time_saturday', 'opening_time_sunday', 'openining_time_bankholiday', 
+      'delivery_parking_instructions', 'geolocation', 'key_code'
     ];
     
     // Replace any mismatched column names
