@@ -10,6 +10,7 @@ import { DriverFormContainerComponent } from './components/driver-form-container
 import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
 import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
+import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -45,6 +46,10 @@ export const routes: Routes = [
     {
         path: 'store-masterfile',
         component: StoreMasterfileComponent
+    },
+    {
+        path: 'vehicle-crate-tracking',
+        component: VehicleCrateTrackingComponent
     },
     {
         path: 'driver-forms',

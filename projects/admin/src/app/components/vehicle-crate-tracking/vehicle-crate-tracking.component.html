@@ -1,0 +1,84 @@
+<div class="tracking-container">
+  <!-- Header/Navbar -->
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" routerLink="/dashboard">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <div class="content-wrapper">
+    <div class="analytics-bar">
+      <div class="page-header">
+        <h2 class="page-title">
+          <i class="bi bi-box"></i> Vehicle/Crate Tracking
+        </h2>
+      </div>
+      
+      <div class="date-controls">
+        <div class="date-filter">
+          <input 
+            type="date" 
+            id="startDate" 
+            class="form-control form-control-sm" 
+            [ngModel]="dateRange.startDate" 
+            (ngModelChange)="dateRange.startDate = $event; refreshData()"
+            aria-label="Start Date"
+          >
+          <span class="date-separator">to</span>
+          <input 
+            type="date" 
+            id="endDate" 
+            class="form-control form-control-sm" 
+            [ngModel]="dateRange.endDate" 
+            (ngModelChange)="dateRange.endDate = $event; refreshData()"
+            aria-label="End Date"
+          >
+          <button class="btn btn-sm btn-outline-primary apply-btn animate-btn" (click)="refreshData()">
+            <i class="bi bi-filter"></i> Filter
+          </button>
+        </div>
+      </div>
+      
+      <div class="metrics-row">
+        <div class="metric-card outbound" [class.pulse]="getTotalCratesOut() > 0">
+          <div class="metric-value">{{ getTotalCratesOut() }}</div>
+          <div class="metric-label"><i class="bi bi-box-arrow-right"></i> Crates Out</div>
+        </div>
+        
+        <div class="metric-card inbound" [class.pulse]="getTotalCratesIn() > 0">
+          <div class="metric-value">{{ getTotalCratesIn() }}</div>
+          <div class="metric-label"><i class="bi bi-box-arrow-in-right"></i> Crates In</div>
+        </div>
+        
+        <div class="metric-card balance" [ngClass]="{'positive': isBalancePositive(), 'negative': isBalanceNegative()}">
+          <div class="metric-value">{{ getBalance() }}</div>
+          <div class="metric-label"><i class="bi bi-calculator"></i> Balance</div>
+        </div>
+        
+        <button class="btn btn-sm btn-primary refresh-btn animate-btn" (click)="refreshData()" title="Refresh data">
+          <i class="bi bi-arrow-repeat"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-body">
+        <div *ngIf="loading" class="loading-overlay fade-in">
+          <div class="spinner-border spinner-border-sm text-primary spinner-grow" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <span class="loading-text">Loading data...</span>
+        </div>
+        
+        <div *ngIf="error" class="alert alert-danger fade-in">
+          {{ error }}
+        </div>
+        
+        <canvas #crateChart></canvas>
+      </div>
+    </div>
+  </div>
+</div> 

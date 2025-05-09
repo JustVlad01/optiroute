@@ -762,4 +762,29 @@ export class SupabaseService {
       throw error;
     }
   }
+
+  // Method to get driver forms by date range
+  async getDriverFormsByDateRange(startDate: string, endDate: string) {
+    console.log('Getting driver forms by date range:', { startDate, endDate });
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('driver_forms')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching driver forms by date range:', error);
+        return null;
+      }
+
+      console.log(`Retrieved ${data?.length || 0} driver forms for date range`);
+      return data;
+    } catch (err) {
+      console.error('Exception during fetching driver forms by date range:', err);
+      return null;
+    }
+  }
 }
