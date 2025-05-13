@@ -460,51 +460,96 @@ export class SupabaseService {
     return this.totalStoreCount;
   }
 
-  // Method to get store information
-  async getStoreInformation() {
-    console.log('Getting store information');
-    
-    try {
-      // First, get the total count of stores - using a separate count query
-      const { count, error: countError } = await this.supabase
-        .from('stores')
-        .select('*', { count: 'exact', head: true });
-        
-      if (countError) {
-        console.error('Error getting store count:', countError);
-        this.totalStoreCount = null;
-      } else {
-        console.log(`Total store count from database: ${count}`);
-        // Store the total count globally to be used in the component
-        this.totalStoreCount = count;
-      }
-      
-      // Then retrieve stores with pagination
-      const { data, error } = await this.supabase
-        .from('stores')
-        .select('*')
-        .order('store_name');
-        
-      if (error) {
-        console.error('Error fetching store information:', error);
-        return null;
-      }
+  // Method to get store information directly from store_information table
+  async getStoreInformation(): Promise<any[]> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return [];
+    }
 
-      console.log(`Retrieved ${data?.length || 0} store records`);
+    try {
+      console.log('Querying store_information table...');
       
-      // Attach the total count to the data array as a property
-      if (data) {
-        Object.defineProperty(data, 'totalCount', {
-          value: this.totalStoreCount || data.length,
-          writable: false,
-          enumerable: true // Changed to true so it is enumerable
-        });
+      // Reset the total store count to ensure we're not using cached data
+      this.totalStoreCount = null;
+      
+      // Try fetching from store_information with pagination
+      let allData: any[] = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000; // Supabase's default and likely maximum allowed
+      
+      // First try store_information table with pagination
+      while (hasMore) {
+        const { data, error } = await this.supabase
+          .from('store_information')
+          .select('*')
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+          .order('id'); // Add ordering for consistent results
+        
+        if (error) {
+          console.error(`Error querying store_information table page ${page}:`, error.message);
+          break;
+        }
+        
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          console.log(`Retrieved ${data.length} records from store_information (page ${page + 1})`);
+          
+          // Check if we've reached the end
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
       
-      return data;
-    } catch (e) {
-      console.error('Exception while fetching stores:', e);
-      return null;
+      // If no data from store_information, try stores table with pagination
+      if (allData.length === 0) {
+        console.log('No data in store_information table, falling back to stores table...');
+        
+        hasMore = true;
+        page = 0;
+        
+        while (hasMore) {
+          const { data, error } = await this.supabase
+            .from('stores')
+            .select('*')
+            .range(page * pageSize, (page + 1) * pageSize - 1)
+            .order('store_id'); // Add ordering for consistent results
+          
+          if (error) {
+            console.error(`Error querying stores table page ${page}:`, error.message);
+            break;
+          }
+          
+          if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            console.log(`Retrieved ${data.length} records from stores (page ${page + 1})`);
+            
+            // Check if we've reached the end
+            if (data.length < pageSize) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+      }
+      
+      // Set the total store count
+      this.totalStoreCount = allData.length;
+      console.log(`Retrieved ${allData.length} store records in total`);
+      
+      return allData;
+    } catch (err) {
+      console.error('Unexpected error in getStoreInformation:', err);
+      return [];
     }
   }
   
@@ -785,6 +830,298 @@ export class SupabaseService {
     } catch (err) {
       console.error('Exception during fetching driver forms by date range:', err);
       return null;
+    }
+  }
+
+  // Method to process masterfile matches for an import
+  async processMasterfileMatches(importId: number) {
+    console.log('Processing masterfile matches for import ID:', importId);
+    
+    try {
+      // Fix the API endpoint URL
+      const baseUrl = window.location.origin; // Get the base URL including protocol, domain and port
+      const url = `${baseUrl}/api/process-masterfile-matches/${importId}`;
+      console.log('Calling API endpoint:', url);
+      
+      // Use XMLHttpRequest for better error handling
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              console.log('Masterfile matches processing result:', result);
+              resolve({ success: true, data: result });
+            } catch (parseError) {
+              console.error('Error parsing success response:', parseError);
+              resolve({ success: false, error: 'Invalid response format from server' });
+            }
+          } else {
+            console.error('Error response:', xhr.status, xhr.statusText, xhr.responseText);
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              resolve({ success: false, error: errorData.error || `Failed to process matches: ${xhr.status} ${xhr.statusText}` });
+            } catch (parseError) {
+              resolve({ success: false, error: `HTTP Error: ${xhr.status} ${xhr.statusText}` });
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error('Network error during processing');
+          resolve({ success: false, error: 'Network or server error' });
+        };
+        
+        xhr.send();
+      });
+    } catch (error) {
+      console.error('Exception during masterfile matches processing:', error);
+      return { success: false, error: 'Network or server error' };
+    }
+  }
+
+  // Method to get processed masterfile matches for an import
+  async getMasterfileMatches(importId: number) {
+    console.log('Getting masterfile matches for import ID:', importId);
+    
+    try {
+      // Fix the API endpoint URL
+      const baseUrl = window.location.origin; // Get the base URL including protocol, domain and port
+      const url = `${baseUrl}/api/masterfile-matches/${importId}`;
+      console.log('Calling API endpoint:', url);
+      
+      // Use XMLHttpRequest for better error handling
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              console.log(`Retrieved ${data?.length || 0} masterfile matches`);
+              resolve({ success: true, data });
+            } catch (parseError) {
+              console.error('Error parsing success response:', parseError, xhr.responseText);
+              resolve({ success: false, error: 'Invalid response format from server' });
+            }
+          } else {
+            console.error('Error response:', xhr.status, xhr.statusText, xhr.responseText);
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              resolve({ success: false, error: errorData.error || `Failed to retrieve matches: ${xhr.status} ${xhr.statusText}` });
+            } catch (parseError) {
+              console.error('Failed to parse error response:', parseError, xhr.responseText);
+              resolve({ success: false, error: `HTTP Error: ${xhr.status} ${xhr.statusText}` });
+            }
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error('Network error during retrieval');
+          resolve({ success: false, error: 'Network or server error' });
+        };
+        
+        xhr.send();
+      });
+    } catch (error) {
+      console.error('Exception during masterfile matches retrieval:', error);
+      return { success: false, error: 'Network or server error' };
+    }
+  }
+
+  // Method to save manual store matches in the database
+  async saveManualStoreMatch(
+    orderStoreId: string, 
+    masterfileStoreId: string, 
+    customerName: string, 
+    customerCode: string
+  ): Promise<{ success: boolean; data?: any; error?: any }> {
+    console.log('Saving manual store match:', {
+      orderStoreId,
+      masterfileStoreId,
+      customerName,
+      customerCode
+    });
+
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { success: false, error: { message: 'Supabase client not initialized.' } };
+    }
+
+    try {
+      // First, disable RLS for store_matches table for this session
+      await this.supabase.rpc('disable_rls_for_table', { table_name: 'store_matches' });
+
+      // First check if we already have a persistent match for this customer name/code combination
+      const { data: existingMatches, error: lookupError } = await this.supabase
+        .from('store_matches')
+        .select('*')
+        .eq('customer_name', customerName)
+        .eq('customer_code', customerCode);
+      
+      if (lookupError) {
+        console.error('Error checking for existing manual matches:', lookupError);
+        return { success: false, error: lookupError };
+      }
+      
+      // Get the store data we're matching to so we can use it for display
+      const { data: storeData, error: storeError } = await this.supabase
+        .from('stores')
+        .select('*')
+        .eq('store_id', masterfileStoreId)
+        .single();
+        
+      if (storeError) {
+        console.error('Error fetching store data:', storeError);
+        return { success: false, error: storeError };
+      }
+      
+      console.log('Found store data for manual match:', storeData);
+      
+      // Step 1: Save or update the match in store_matches table
+      let matchData;
+      
+      // If we already have a match, update it instead of creating a new one
+      if (existingMatches && existingMatches.length > 0) {
+        const { data, error } = await this.supabase
+          .from('store_matches')
+          .update({
+            masterfile_store_id: masterfileStoreId,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', existingMatches[0].id)
+          .select();
+        
+        if (error) {
+          console.error('Error updating existing store match:', error);
+          return { success: false, error };
+        }
+        
+        console.log('Updated existing store match:', data);
+        matchData = data;
+      } else {
+        // If no existing match, insert a new one
+        console.log('Inserting new match with data:', {
+          customer_name: customerName,
+          customer_code: customerCode,
+          masterfile_store_id: masterfileStoreId
+        });
+
+        const { data, error } = await this.supabase
+          .from('store_matches')
+          .insert({
+            customer_name: customerName,
+            customer_code: customerCode,
+            masterfile_store_id: masterfileStoreId,
+            last_updated: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          })
+          .select();
+        
+        if (error) {
+          console.error('Error creating store match:', error);
+          return { success: false, error };
+        }
+        
+        console.log('Created new store match:', data);
+        matchData = data;
+      }
+      
+      // Step 2: Update any existing store orders in the database with this customer name/code
+      // This will ensure that current orders are updated with the new match
+      
+      // First, find the store order by ID to get its import_id
+      const { data: storeOrder, error: storeOrderError } = await this.supabase
+        .from('store_orders')
+        .select('*')
+        .eq('id', orderStoreId)
+        .single();
+      
+      if (storeOrderError) {
+        console.error('Error finding store order:', storeOrderError);
+        // Continue anyway since we've already saved the match
+      } else if (storeOrder) {
+        console.log('Found store order:', storeOrder);
+        
+        // Try to update any processed matches for this customer
+        try {
+          // Update processed_masterfile_matches if it exists
+          const { data: updatedMatches, error: updateError } = await this.supabase
+            .from('processed_masterfile_matches')
+            .update({
+              master_store_id: masterfileStoreId,
+              match_type: 'manual_match'
+            })
+            .eq('store_id', orderStoreId)
+            .select();
+          
+          console.log('Updated processed matches:', updatedMatches);
+          
+          // Update store_orders_masterfile_matches if it exists
+          const { data: updatedOrderMatches, error: updateOrderError } = await this.supabase
+            .from('store_orders_masterfile_matches')
+            .update({
+              store_id: masterfileStoreId,
+              match_type: 'manual_match',
+              // Update all the store fields from the store data
+              store_name: storeData.store_name,
+              store_company: storeData.store_company,
+              address_line_1: storeData.address_line_1 || storeData.address_line,
+              eircode: storeData.eircode,
+              dispatch_code: storeData.dispatch_code,
+              store_code: storeData.store_code,
+              door_code: storeData.door_code,
+              alarm_code: storeData.alarm_code,
+              fridge_code: storeData.fridge_code,
+              hour_access_24: storeData.hour_access_24,
+              earliest_delivery_time: storeData.earliest_delivery_time
+            })
+            .eq('store_order_id', orderStoreId)
+            .select();
+          
+          console.log('Updated order matches:', updatedOrderMatches);
+        } catch (updateError) {
+          console.error('Error updating existing matches in database:', updateError);
+          // Continue anyway since we've already saved the main match
+        }
+      }
+      
+      return { success: true, data: { match: matchData, store: storeData } };
+    } catch (error) {
+      console.error('Exception during store match save:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Method to get all manual store matches
+  async getManualStoreMatches(): Promise<any[]> {
+    console.log('Getting all manual store matches');
+    
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return [];
+    }
+
+    try {
+      const { data, error } = await this.supabase
+        .from('store_matches')
+        .select('*')
+        .order('customer_name');
+      
+      if (error) {
+        console.error('Error fetching manual store matches:', error);
+        return [];
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} manual store matches`);
+      return data || [];
+    } catch (error) {
+      console.error('Exception during getManualStoreMatches:', error);
+      return [];
     }
   }
 }

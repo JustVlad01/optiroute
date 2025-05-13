@@ -45,6 +45,7 @@
             <label *ngFor="let route of allRoutes" class="route-checkbox-item">
               <input type="checkbox" [checked]="selectedRoutes[route]" (change)="toggleRouteSelection(route)">
               <span>{{ route }}</span>
+              <span *ngIf="isSegregatedRoute(route)" class="segregated-badge">Segregated</span>
             </label>
           </div>
           <div class="filter-dropdown-footer">
@@ -53,6 +54,14 @@
             </button>
           </div>
         </div>
+      </div>
+      
+      <!-- Segregated Routes Filter -->
+      <div class="filter-option">
+        <label class="filter-checkbox">
+          <input type="checkbox" [(ngModel)]="showSegregatedRoutes" (change)="toggleSegregatedRoutesFilter()">
+          <span class="filter-text">Show segregated routes only</span>
+        </label>
       </div>
       
       <!-- 24-hour filter toggle -->
@@ -135,7 +144,10 @@
 
         <!-- Table Body -->
         <div class="table-body">
-          <div *ngFor="let row of pagedData; let rowIndex = index" class="data-row" [class.edited-row]="editedRows.has(rowIndex)">
+          <div *ngFor="let row of pagedData; let rowIndex = index" 
+               class="data-row" 
+               [class.edited-row]="editedRows.has(rowIndex)"
+               [class.segregated-row]="isSegregatedRow(row)">
             <div *ngFor="let column of columns" 
                  class="data-cell" 
                  [style.width.px]="columnWidths[column] || 150"

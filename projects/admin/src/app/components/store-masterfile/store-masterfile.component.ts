@@ -58,6 +58,10 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   allRoutes: string[] = [];
   selectedRoutes: {[key: string]: boolean} = {};
   showRouteFilter: boolean = false; // Controls the visibility of the route filter dropdown
+  
+  // Segregated routes tracking
+  segregatedRoutes: {[key: string]: boolean} = {};
+  showSegregatedRoutes: boolean = false;
 
   constructor(
     private supabaseService: SupabaseService,
@@ -236,16 +240,31 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         
         // Populate allRoutes with unique values from old and new route columns
         const routeSet = new Set<string>();
+        const segregatedSet = new Set<string>();
+        
         this.storeData.forEach(row => {
           if (row['old_route']) routeSet.add(row['old_route']);
           if (row['new_route_08_05']) routeSet.add(row['new_route_08_05']);
           if (row['route8_5_25']) routeSet.add(row['route8_5_25']);
+          
+          // Identify segregated routes (routes that are only in mastref files marked as segregated)
+          if (row['is_segregated'] === true || row['is_segregated'] === 'true' || row['is_segregated'] === 'yes') {
+            if (row['old_route']) segregatedSet.add(row['old_route']);
+            if (row['new_route_08_05']) segregatedSet.add(row['new_route_08_05']);
+            if (row['route8_5_25']) segregatedSet.add(row['route8_5_25']);
+          }
         });
+        
         this.allRoutes = Array.from(routeSet).filter(r => !!r).sort();
         
         // Initialize selectedRoutes map
         this.allRoutes.forEach(route => {
           this.selectedRoutes[route] = false; // Initially all routes are unselected
+        });
+        
+        // Initialize segregatedRoutes map
+        Array.from(segregatedSet).forEach(route => {
+          this.segregatedRoutes[route] = true;
         });
         
         this.updatePagedData();
@@ -632,64 +651,77 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   }
   
   filterData(): void {
-    if (!this.storeData || this.storeData.length === 0) {
-      this.filteredData = [];
-      this.updatePagedData();
-      return;
-    }
-    
     // Start with all data
     let filtered = [...this.storeData];
     
     // Apply search filter if there's a search term
-    if (this.searchTerm && this.searchTerm.trim() !== '') {
-      const search = this.searchTerm.toLowerCase().trim();
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(row => {
-        // Search across all fields
+        // Search across all columns
         return Object.keys(row).some(key => {
           const value = row[key];
-          // Check if value exists and convert to string for comparison
-          return value !== null && 
-                 value !== undefined && 
-                 String(value).toLowerCase().includes(search);
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(term);
         });
       });
     }
     
-    // Apply 24-hour access filter if enabled
+    // Apply 24-hour filter if enabled
     if (this.show24HoursOnly) {
       filtered = filtered.filter(row => {
-        const access24 = row['hour_access_24'];
-        // Check if the value is a string that indicates 24-hour access
-        return typeof access24 === 'string' && 
-               (access24.toLowerCase() === 'yes' || 
-                access24.toLowerCase() === 'true' || 
-                access24 === '1' || 
-                access24 === 'y');
+        return row['24_hour_access'] === true || 
+               row['24_hour_access'] === 'true' || 
+               row['24_hour_access'] === 'yes' || 
+               row['24_hour_access'] === 'Yes' || 
+               row['24_hour_access'] === 'YES';
       });
     }
     
-    // Apply route filters if any are selected
-    const activeRoutes = Object.keys(this.selectedRoutes).filter(route => this.selectedRoutes[route]);
-    if (activeRoutes.length > 0) {
+    // Apply route filter if any routes are selected
+    const selectedRouteCount = Object.values(this.selectedRoutes).filter(Boolean).length;
+    if (selectedRouteCount > 0) {
       filtered = filtered.filter(row => {
-        return activeRoutes.some(route => 
-          row['old_route'] === route || 
-          row['new_route_08_05'] === route ||
-          row['route8_5_25'] === route
+        // Check if any of the route columns match selected routes
+        return (
+          (row['old_route'] && this.selectedRoutes[row['old_route']]) || 
+          (row['new_route_08_05'] && this.selectedRoutes[row['new_route_08_05']]) ||
+          (row['route8_5_25'] && this.selectedRoutes[row['route8_5_25']])
         );
       });
     }
     
+    // Apply segregated routes filter if enabled
+    if (this.showSegregatedRoutes) {
+      filtered = filtered.filter(row => {
+        const isSegregated = row['is_segregated'] === true || 
+                            row['is_segregated'] === 'true' || 
+                            row['is_segregated'] === 'yes';
+        
+        const hasSegregatedRoute = 
+          (row['old_route'] && this.segregatedRoutes[row['old_route']]) || 
+          (row['new_route_08_05'] && this.segregatedRoutes[row['new_route_08_05']]) ||
+          (row['route8_5_25'] && this.segregatedRoutes[row['route8_5_25']]);
+        
+        return isSegregated || hasSegregatedRoute;
+      });
+    }
+    
+    // Update the filtered data
     this.filteredData = filtered;
     
-    // Auto-adjust items per page based on filter results
-    const routeFiltersApplied = activeRoutes.length > 0;
+    // Adjust items per page based on filter criteria
+    const routeFiltersApplied = selectedRouteCount > 0 || this.showSegregatedRoutes;
     this.adjustItemsPerPage(filtered.length, routeFiltersApplied);
+    
+    // Apply sorting
+    this.applySorting();
     
     // Update pagination
     this.totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-    this.currentPage = 1; // Reset to first page when filter changes
+    this.currentPage = Math.min(this.currentPage, this.totalPages || 1);
+    
+    // Update paged data
     this.updatePagedData();
   }
 
@@ -929,5 +961,31 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     
     // Fallback to rowIndex if no stable identifiers are available
     return `index:${rowIndex}`;
+  }
+
+  // Toggle segregated routes filter
+  toggleSegregatedRoutesFilter(): void {
+    this.showSegregatedRoutes = !this.showSegregatedRoutes;
+    this.filterData();
+  }
+  
+  // Check if a route is segregated
+  isSegregatedRoute(route: string): boolean {
+    return !!this.segregatedRoutes[route];
+  }
+  
+  // Check if a row belongs to a segregated route
+  isSegregatedRow(row: any): boolean {
+    // Check if the row itself is marked as segregated
+    if (row['is_segregated'] === true || row['is_segregated'] === 'true' || row['is_segregated'] === 'yes') {
+      return true;
+    }
+    
+    // Check if any of the route columns match a segregated route
+    return (
+      (row['old_route'] && this.segregatedRoutes[row['old_route']]) || 
+      (row['new_route_08_05'] && this.segregatedRoutes[row['new_route_08_05']]) ||
+      (row['route8_5_25'] && this.segregatedRoutes[row['route8_5_25']])
+    );
   }
 } 

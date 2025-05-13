@@ -1,0 +1,139 @@
+  <div class="stats">
+    Found {{ matchesCount }} matches out of {{ totalStores }} stores ({{ matchPercentage | number:'1.0-1' }}%)
+    
+    <div class="match-types">
+      <span class="match-type store-code" *ngIf="storeCodeMatches > 0">{{ storeCodeMatches }} store code</span>
+      <span class="match-type dispatch" *ngIf="dispatchMatches > 0">{{ dispatchMatches }} dispatch</span>
+      <span class="match-type address" *ngIf="addressMatches > 0">{{ addressMatches }} address</span>
+      <span class="match-type exact-name" *ngIf="exactNameMatches > 0">{{ exactNameMatches }} exact name</span>
+      <span class="match-type partial" *ngIf="partialMatches > 0">{{ partialMatches }} partial</span>
+      <span class="match-type similar" *ngIf="similarMatches > 0">{{ similarMatches }} similar</span>
+      <span class="match-type unmatched" *ngIf="unmatchedCount > 0">{{ unmatchedCount }} unmatched</span>
+    </div>
+  </div>
+
+  <!-- Routes Display Section -->
+  <div class="routes-container">
+    <div class="routes-section">
+      <h3>Routes</h3>
+      
+      <!-- Group stores by route and show statistics -->
+      <div class="routes-list">
+        <div *ngFor="let route of routesWithStores" class="route-item" [class.segregated]="isSegregatedRoute(route.routeName)">
+          <div class="route-header" (click)="toggleRouteExpand(route.routeName)">
+            <i class="bi" [ngClass]="isRouteExpanded(route.routeName) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="route-name">{{ route.routeName }}</span>
+            <div class="route-metrics">
+              <span class="stores-count">{{ route.stores.length }} stores</span>
+              <span class="items-count">{{ route.totalItems }} items</span>
+            </div>
+            <div *ngIf="isSegregatedRoute(route.routeName)" class="route-segregated-badge">Segregated</div>
+          </div>
+          
+          <!-- Route details (expandable) -->
+          <div *ngIf="isRouteExpanded(route.routeName)" class="route-details">
+            <div *ngFor="let store of route.stores" class="route-store-item">
+              <span class="store-name">{{ store.masterStore.store_name }}</span>
+              <span class="store-items">{{ store.orderStore.totalItems }} items</span>
+              <span class="store-match-type" [ngClass]="getMatchTypeClass(store.matchType)">
+                {{ getMatchTypeLabel(store.matchType) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Segregated Routes Section -->
+    <div *ngIf="segregatedRoutes.length > 0" class="segregated-routes-section">
+      <h3>Segregated Routes</h3>
+      <div class="segregated-routes-list">
+        <div *ngFor="let route of segregatedRoutes" class="segregated-route-item">
+          {{ route }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Matched Stores</h2>
+
+  <div class="store-matches-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Store Name</th>
+          <th>Code</th>
+          <th>Items</th>
+          <th>Master Store</th>
+          <th>Address</th>
+          <th>Codes</th>
+          <th>Routes</th>
+          <th>Match</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let match of data.matches" [class.segregated-row]="isSegregatedStore(match)">
+          <td>{{ match.orderStore.customerName }}</td>
+          <td>{{ match.orderStore.customerCode || '-' }}</td>
+          <td class="items-column">{{ match.orderStore.totalItems }}</td>
+          <td>
+            {{ match.masterStore.store_name || match.store_name }}
+            <div *ngIf="match.masterStore.store_code || match.store_code" class="store-code">{{ match.masterStore.store_code || match.store_code }}</div>
+          </td>
+          <td>
+            <!-- Check all possible address field locations -->
+            <div *ngIf="match.masterStore.address_line">{{ match.masterStore.address_line }}</div>
+            <div *ngIf="match.masterStore.address_line_1 && !match.masterStore.address_line">{{ match.masterStore.address_line_1 }}</div>
+            <div *ngIf="match.masterStore.address && !match.masterStore.address_line && !match.masterStore.address_line_1">{{ match.masterStore.address }}</div>
+            <div *ngIf="match.address_line && !match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address">{{ match.address_line }}</div>
+            <div *ngIf="match.address_line_1 && !match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address && !match.address_line">{{ match.address_line_1 }}</div>
+            <div *ngIf="!match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address && !match.address_line && !match.address_line_1" class="no-address">No address</div>
+            
+            <!-- Show eircode if available -->
+            <div *ngIf="match.masterStore.eircode || match.eircode" class="eircode">{{ match.masterStore.eircode || match.eircode }}</div>
+          </td>
+          <td class="codes-column">
+            <div class="code-tag dispatch" *ngIf="match.masterStore.dispatch_code">
+              {{ match.masterStore.dispatch_code }}
+            </div>
+            <div class="code-tag store" *ngIf="match.masterStore.store_code">
+              {{ match.masterStore.store_code }}
+            </div>
+          </td>
+          <td class="routes-column">
+            <div class="route-tags">
+              <span *ngIf="match.masterStore.old_route" 
+                    class="route-tag" 
+                    [class.segregated]="isSegregatedRoute(match.masterStore.old_route)">
+                {{ match.masterStore.old_route }}
+              </span>
+              <span *ngIf="match.masterStore.new_route_08_05" 
+                    class="route-tag" 
+                    [class.segregated]="isSegregatedRoute(match.masterStore.new_route_08_05)">
+                {{ match.masterStore.new_route_08_05 }}
+              </span>
+              <span *ngIf="match.masterStore.route8_5_25" 
+                    class="route-tag" 
+                    [class.segregated]="isSegregatedRoute(match.masterStore.route8_5_25)">
+                {{ match.masterStore.route8_5_25 }}
+              </span>
+            </div>
+          </td>
+          <td class="match-column">
+            <span 
+              class="match-type" 
+              [class.store-code]="match.matchType === 'storeCode'"
+              [class.dispatch]="match.matchType === 'dispatch'"
+              [class.address]="match.matchType === 'address'"
+              [class.exact-name]="match.matchType === 'exactName'"
+              [class.partial]="match.matchType === 'partial'"
+              [class.similar]="match.matchType === 'similar'"
+              [class.unmatched]="match.matchType === 'unmatched'"
+            >
+              {{ getMatchTypeLabel(match.matchType) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div> 

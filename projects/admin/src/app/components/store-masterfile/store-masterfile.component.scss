@@ -174,17 +174,26 @@
 .data-row {
   display: flex;
   width: 100%;
+  border-bottom: 1px solid #e0e0e0;
   
-  &:nth-child(even) {
-    background-color: #f9f9f9;
+  &.segregated-row {
+    background-color: rgba(255, 107, 107, 0.05);
+    
+    &:hover {
+      background-color: rgba(255, 107, 107, 0.1);
+    }
   }
   
   &:hover {
-    background-color: #f0f7ff;
+    background-color: rgba(0, 0, 0, 0.02);
   }
   
   &.edited-row {
-    background-color: #e6f7ff;
+    background-color: rgba(255, 252, 127, 0.2);
+    
+    &:hover {
+      background-color: rgba(255, 252, 127, 0.3);
+    }
   }
 }
 
@@ -692,16 +701,28 @@
 .route-checkbox-item {
   display: flex;
   align-items: center;
-  margin-right: 1.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-}
-
-.route-checkbox-item input[type="checkbox"] {
-  margin-right: 0.5rem;
-  width: 18px;
-  height: 18px;
-  accent-color: #0d6efd;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  
+  .segregated-badge {
+    margin-left: 8px;
+    font-size: 0.75rem;
+    background-color: #ff6b6b;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
 }
 
 /* Route filter dropdown styles */
