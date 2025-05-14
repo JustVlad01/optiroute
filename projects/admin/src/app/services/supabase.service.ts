@@ -27,26 +27,21 @@ export class SupabaseService {
   private async testConnection() {
     try {
       console.log('SupabaseService: Testing connection to stores table...');
+      
+      // Simple query to check if the connection works - don't use aggregate functions
       const { data, error } = await this.client
         .from('stores')
-        .select('count()')
+        .select('*')
         .limit(1);
         
       if (error) {
         console.error('SupabaseService: Connection test failed:', error);
       } else {
-        console.log('SupabaseService: Connection test successful, stores count:', data);
+        const count = data ? data.length : 0;
+        console.log(`SupabaseService: Connection test successful. Found ${count} sample records.`);
         
-        // Try to get a sample row
-        const { data: sampleData, error: sampleError } = await this.client
-          .from('stores')
-          .select('*')
-          .limit(1);
-          
-        if (sampleError) {
-          console.error('SupabaseService: Failed to get sample store data:', sampleError);
-        } else if (sampleData && sampleData.length > 0) {
-          console.log('SupabaseService: Sample store data:', sampleData[0]);
+        if (data && data.length > 0) {
+          console.log('SupabaseService: Sample store data:', data[0]);
         } else {
           console.log('SupabaseService: No store data found in the table');
         }
