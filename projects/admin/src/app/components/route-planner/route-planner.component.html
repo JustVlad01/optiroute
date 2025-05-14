@@ -14,23 +14,12 @@
       <a class="nav-tab" [class.active]="!showImport" (click)="showImport = false">
         <i class="bi bi-map"></i> Route Map
       </a>
-      <a class="nav-tab" [class.active]="showImport" (click)="showImport = true">
-        <i class="bi bi-file-earmark-arrow-up"></i> Order Import
-      </a>
-      <a class="nav-tab" routerLink="/view-orders" routerLinkActive="active">
-        <i class="bi bi-list-check"></i> View Orders
-      </a>
     </div>
   </div>
 
   <div class="content">
-    <!-- Import Orders Content -->
-    <div *ngIf="showImport" class="import-order-content">
-      <app-import-order></app-import-order>
-    </div>
-
-    <!-- Route Planner Map Content -->
-    <div *ngIf="!showImport" class="route-form-container">
+    <!-- Route Map Content -->
+    <div *ngIf="!showImport" class="route-map-content">
       <!-- Google Maps -->
       <div class="map-container">
         <!-- Maps API Loading State -->

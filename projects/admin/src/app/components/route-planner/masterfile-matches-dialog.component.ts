@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, Input } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 
@@ -16,7 +16,7 @@ interface RouteWithStores {
   standalone: true
 })
 export class MasterfileMatchesDialogComponent implements OnInit {
-  // Stats
+  @Input() data: any;
   matchesCount: number = 0;
   totalStores: number = 0;
   matchPercentage: number = 0;
@@ -25,8 +25,11 @@ export class MasterfileMatchesDialogComponent implements OnInit {
   addressMatches: number = 0;
   exactNameMatches: number = 0;
   partialMatches: number = 0;
-  similarMatches: number = 0;
+  fuzzyMatches: number = 0;
   unmatchedCount: number = 0;
+  
+  matches: any[] = [];
+  unmatched: any[] = [];
   
   // Added for segregated routes
   segregatedRoutes: string[] = [];
@@ -37,7 +40,7 @@ export class MasterfileMatchesDialogComponent implements OnInit {
   // Track expanded state of routes
   expandedRoutes: Set<string> = new Set();
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
+  constructor(@Inject(MAT_DIALOG_DATA) public dialogData: any) {
   }
 
   ngOnInit(): void {
@@ -56,7 +59,7 @@ export class MasterfileMatchesDialogComponent implements OnInit {
       this.addressMatches = this.data.matches.filter((match: any) => match.matchType === 'address').length;
       this.exactNameMatches = this.data.matches.filter((match: any) => match.matchType === 'exactName').length;
       this.partialMatches = this.data.matches.filter((match: any) => match.matchType === 'partial').length;
-      this.similarMatches = this.data.matches.filter((match: any) => match.matchType === 'similar').length;
+      this.fuzzyMatches = this.data.matches.filter((match: any) => match.matchType === 'similar').length;
       this.unmatchedCount = this.data.matches.filter((match: any) => match.matchType === 'unmatched').length;
       
       // Process for segregated routes
@@ -64,6 +67,9 @@ export class MasterfileMatchesDialogComponent implements OnInit {
       
       // Group matches by route
       this.groupMatchesByRoute();
+      
+      // Initialize data for the new UI
+      this.processMatches();
     }
   }
   
@@ -94,6 +100,25 @@ export class MasterfileMatchesDialogComponent implements OnInit {
         if (!match.masterStore.address_line && match.address_line_1) {
           match.masterStore.address_line = match.address_line_1;
         }
+        
+        // Make sure all code and time fields are available at masterStore level
+        const fieldsToCheck = [
+          'door_code', 'alarm_code', 'fridge_code', 'hour_access_24',
+          'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 
+          'earliest_delivery_time', 'opening_time_saturday', 'openining_time_bankholiday'
+        ];
+        
+        fieldsToCheck.forEach(field => {
+          // If field exists at root level but not at masterStore level, copy it
+          if (match[field] && !match.masterStore[field]) {
+            match.masterStore[field] = match[field];
+          }
+          
+          // Ensure the field exists (even if empty) on masterStore
+          if (!match.masterStore[field]) {
+            match.masterStore[field] = '';
+          }
+        });
       }
     });
   }
@@ -191,34 +216,69 @@ export class MasterfileMatchesDialogComponent implements OnInit {
     return isSegregatedStore || hasSegregatedRoute;
   }
   
-  // Convert match type to human-readable label
-  getMatchTypeLabel(matchType: string): string {
-    const labels: {[key: string]: string} = {
-      'storeCode': 'Store Code',
-      'dispatch': 'Dispatch',
-      'address': 'Address',
-      'exactName': 'Exact Name',
-      'partial': 'Partial',
-      'similar': 'Similar',
-      'unmatched': 'Unmatched'
-    };
+  // Method to process matches for the new UI format
+  private processMatches(): void {
+    if (!this.data || !this.data.matches) return;
     
-    return labels[matchType] || matchType;
+    // Set up counts
+    this.matchesCount = this.data.matches.length;
+    this.totalStores = this.data.totalStores || this.matchesCount;
+    if (this.totalStores > 0) {
+      this.matchPercentage = (this.matchesCount / this.totalStores) * 100;
+    }
+    
+    // Count match types
+    this.storeCodeMatches = this.data.matches.filter((m: any) => m.matchType === 'storeCode').length;
+    this.dispatchMatches = this.data.matches.filter((m: any) => m.matchType === 'dispatch').length;
+    this.addressMatches = this.data.matches.filter((m: any) => m.matchType === 'address').length;
+    this.exactNameMatches = this.data.matches.filter((m: any) => m.matchType === 'exactName').length;
+    this.partialMatches = this.data.matches.filter((m: any) => m.matchType === 'partial').length;
+    this.fuzzyMatches = this.data.matches.filter((m: any) => m.matchType === 'similar').length;
+    this.unmatchedCount = this.data.unmatched?.length || 0;
+    
+    // Set up matches and unmatched arrays
+    this.matches = this.data.matches.map((match: any) => ({
+      customerName: match.orderStore.customerName,
+      customerCode: match.orderStore.customerCode,
+      totalItems: match.orderStore.totalItems,
+      masterStore: match.masterStore,
+      matchType: match.matchType
+    }));
+    
+    this.unmatched = this.data.unmatched || [];
   }
   
-  // Get CSS class for match type
+  // Show manual match dialog for a store
+  showManualMatchDialog(match: any): void {
+    console.log('Opening manual match dialog for:', match);
+    // Implementation for manual matching would go here
+  }
+  
+  // Method to get match type label
+  getMatchTypeLabel(matchType: string): string {
+    switch (matchType) {
+      case 'storeCode': return 'Store Code';
+      case 'dispatch': return 'Dispatch Code';
+      case 'address': return 'Address Match';
+      case 'exactName': return 'Exact Name';
+      case 'partial': return 'Partial Match';
+      case 'similar': return 'Similar Name';
+      case 'unmatched': return 'Unmatched';
+      default: return matchType;
+    }
+  }
+  
+  // Method to get match type class
   getMatchTypeClass(matchType: string): string {
-    const classes: {[key: string]: string} = {
-      'storeCode': 'store-code',
-      'dispatch': 'dispatch',
-      'address': 'address',
-      'exactName': 'exact-name',
-      'partial': 'partial',
-      'similar': 'similar',
-      'unmatched': 'unmatched'
-    };
-    
-    return classes[matchType] || '';
+    switch (matchType) {
+      case 'storeCode': return 'match-exact';
+      case 'dispatch': return 'match-good';
+      case 'address': return 'match-good';
+      case 'exactName': return 'match-good';
+      case 'partial': return 'match-medium';
+      case 'similar': return 'match-fuzzy';
+      default: return '';
+    }
   }
   
   // Toggle route expansion

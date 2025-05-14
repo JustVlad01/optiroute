@@ -176,8 +176,8 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         // Standardize column names for UI display
         this.storeData = this.standardizeColumnNames(data);
         
-        // Get the total count directly from the service
-        this.totalStoreCount = this.supabaseService.getTotalStoreCount() || data.length;
+        // Set total count to the actual number of records retrieved
+        this.totalStoreCount = data.length;
         console.log('Total store count in component:', this.totalStoreCount);
         this.filteredData = [...this.storeData]; // Initialize filtered data with all data
         

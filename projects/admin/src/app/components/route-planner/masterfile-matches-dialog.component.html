@@ -1,15 +1,152 @@
-  <div class="stats">
-    Found {{ matchesCount }} matches out of {{ totalStores }} stores ({{ matchPercentage | number:'1.0-1' }}%)
-    
-    <div class="match-types">
-      <span class="match-type store-code" *ngIf="storeCodeMatches > 0">{{ storeCodeMatches }} store code</span>
-      <span class="match-type dispatch" *ngIf="dispatchMatches > 0">{{ dispatchMatches }} dispatch</span>
-      <span class="match-type address" *ngIf="addressMatches > 0">{{ addressMatches }} address</span>
-      <span class="match-type exact-name" *ngIf="exactNameMatches > 0">{{ exactNameMatches }} exact name</span>
-      <span class="match-type partial" *ngIf="partialMatches > 0">{{ partialMatches }} partial</span>
-      <span class="match-type similar" *ngIf="similarMatches > 0">{{ similarMatches }} similar</span>
-      <span class="match-type unmatched" *ngIf="unmatchedCount > 0">{{ unmatchedCount }} unmatched</span>
+  <div class="stats-container">
+    <div class="stats-header">
+      <div class="stats-title">
+        <span class="match-count">Found {{ matchesCount }} matches out of {{ totalStores }} stores</span>
+        <span class="match-percentage">{{ matchPercentage | number:'1.0-1' }}% match rate</span>
+      </div>
+      <div class="match-types-container">
+        <span class="match-type dispatch" *ngIf="dispatchMatches > 0">{{ dispatchMatches }} dispatch</span>
+        <span class="match-type address" *ngIf="addressMatches > 0">{{ addressMatches }} manual check</span>
+      </div>
     </div>
+  </div>
+
+  <div class="matches-container">
+    <h3 class="section-title">Matched Stores</h3>
+    
+    <table class="matches-table">
+      <thead>
+        <tr class="header-row">
+          <th colspan="3" class="order-header">Order Information</th>
+          <th colspan="5" class="masterfile-header">Masterfile Information</th>
+        </tr>
+        <tr class="subheader-row">
+          <th>Store Name</th>
+          <th>Code</th>
+          <th>Items</th>
+          <th>Master Store</th>
+          <th>Address</th>
+          <th>Codes</th>
+          <th>Opening Times</th>
+          <th>Match</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let match of matches; let odd = odd; let even = even" [class.odd-row]="odd" [class.even-row]="even">
+          <!-- Order Information -->
+          <td class="store-name-cell">
+            <div class="store-name">{{ match.customerName }}</div>
+          </td>
+          <td class="code-cell">
+            <div class="code-badge" *ngIf="match.customerCode">{{ match.customerCode }}</div>
+            <div class="no-code" *ngIf="!match.customerCode">-</div>
+          </td>
+          <td class="items-cell">
+            <div class="items-count">{{ match.totalItems }}</div>
+          </td>
+          
+          <!-- Masterfile Information -->
+          <td class="store-info-cell">
+            <div class="store-name">{{ match.masterStore?.store_name || 'N/A' }}</div>
+            <div class="store-company" *ngIf="match.masterStore?.store_company">{{ match.masterStore?.store_company }}</div>
+          </td>
+          <td class="address-cell">
+            <div class="address-line">{{ match.masterStore?.address_line || match.masterStore?.address_line_1 || 'No address' }}</div>
+            <div class="eircode" *ngIf="match.masterStore?.eircode">{{ match.masterStore?.eircode }}</div>
+          </td>
+          <td class="codes-column">
+            <div *ngIf="match.masterStore?.dispatch_code" class="code-tag dispatch">
+              Dispatch: {{match.masterStore?.dispatch_code}}
+            </div>
+            <div *ngIf="match.masterStore?.store_code" class="code-tag store">
+              Store: {{match.masterStore?.store_code}}
+            </div>
+            <div *ngIf="match.masterStore?.door_code" class="code-tag door">
+              Door: {{match.masterStore?.door_code}}
+            </div>
+            <div *ngIf="match.masterStore?.alarm_code" class="code-tag alarm">
+              Alarm: {{match.masterStore?.alarm_code}}
+            </div>
+            <div *ngIf="match.masterStore?.fridge_code" class="code-tag fridge">
+              Fridge: {{match.masterStore?.fridge_code}}
+            </div>
+            <div *ngIf="match.masterStore?.hour_access_24 === 'yes' || match.masterStore?.hour_access_24 === 'true'" class="code-tag access">
+              24 Hour Access
+            </div>
+          </td>
+          <td class="opening-times-column">
+            <div *ngIf="match.masterStore?.earliest_delivery_time">
+              <span class="opening-time-label">Earliest Delivery:</span> {{match.masterStore.earliest_delivery_time}}
+            </div>
+            <div *ngIf="match.masterStore?.mon">
+              <span class="opening-time-label">Mon:</span> {{match.masterStore.mon}}
+            </div>
+            <div *ngIf="match.masterStore?.tue">
+              <span class="opening-time-label">Tue:</span> {{match.masterStore.tue}}
+            </div>
+            <div *ngIf="match.masterStore?.wed">
+              <span class="opening-time-label">Wed:</span> {{match.masterStore.wed}}
+            </div>
+            <div *ngIf="match.masterStore?.thur">
+              <span class="opening-time-label">Thu:</span> {{match.masterStore.thur}}
+            </div>
+            <div *ngIf="match.masterStore?.fri">
+              <span class="opening-time-label">Fri:</span> {{match.masterStore.fri}}
+            </div>
+            <div *ngIf="match.masterStore?.sat">
+              <span class="opening-time-label">Sat:</span> {{match.masterStore.sat}}
+            </div>
+            <div *ngIf="match.masterStore?.opening_time_saturday">
+              <span class="opening-time-label">Sat Opening:</span> {{match.masterStore.opening_time_saturday}}
+            </div>
+            <div *ngIf="match.masterStore?.openining_time_bankholiday">
+              <span class="opening-time-label">Bank Holiday:</span> {{match.masterStore.openining_time_bankholiday}}
+            </div>
+          </td>
+          <td class="match-cell">
+            <button class="edit-button" (click)="showManualMatchDialog(match)">Edit</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="unmatched.length > 0" class="unmatched-container">
+    <h3 class="section-title">Unmatched Stores</h3>
+    
+    <table class="unmatched-table">
+      <thead>
+        <tr>
+          <th>Store Name</th>
+          <th>Code</th>
+          <th>Items</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let store of unmatched; let odd = odd; let even = even" [class.odd-row]="odd" [class.even-row]="even">
+          <td class="store-name-cell">
+            <div class="store-name">{{ store.customerName }}</div>
+          </td>
+          <td class="code-cell">
+            <div class="code-badge" *ngIf="store.customerCode">{{ store.customerCode }}</div>
+            <div class="no-code" *ngIf="!store.customerCode">-</div>
+          </td>
+          <td class="items-cell">
+            <div class="items-count">{{ store.totalItems }}</div>
+          </td>
+          <td class="status-cell">
+            <div class="status-badge unmatched">Unmatched</div>
+          </td>
+          <td class="actions-cell">
+            <button class="match-button" (click)="showManualMatchDialog(store)">
+              <i class="bi bi-link"></i> Match
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Routes Display Section -->
@@ -53,87 +190,4 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <h2>Matched Stores</h2>
-
-  <div class="store-matches-table">
-    <table>
-      <thead>
-        <tr>
-          <th>Store Name</th>
-          <th>Code</th>
-          <th>Items</th>
-          <th>Master Store</th>
-          <th>Address</th>
-          <th>Codes</th>
-          <th>Routes</th>
-          <th>Match</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let match of data.matches" [class.segregated-row]="isSegregatedStore(match)">
-          <td>{{ match.orderStore.customerName }}</td>
-          <td>{{ match.orderStore.customerCode || '-' }}</td>
-          <td class="items-column">{{ match.orderStore.totalItems }}</td>
-          <td>
-            {{ match.masterStore.store_name || match.store_name }}
-            <div *ngIf="match.masterStore.store_code || match.store_code" class="store-code">{{ match.masterStore.store_code || match.store_code }}</div>
-          </td>
-          <td>
-            <!-- Check all possible address field locations -->
-            <div *ngIf="match.masterStore.address_line">{{ match.masterStore.address_line }}</div>
-            <div *ngIf="match.masterStore.address_line_1 && !match.masterStore.address_line">{{ match.masterStore.address_line_1 }}</div>
-            <div *ngIf="match.masterStore.address && !match.masterStore.address_line && !match.masterStore.address_line_1">{{ match.masterStore.address }}</div>
-            <div *ngIf="match.address_line && !match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address">{{ match.address_line }}</div>
-            <div *ngIf="match.address_line_1 && !match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address && !match.address_line">{{ match.address_line_1 }}</div>
-            <div *ngIf="!match.masterStore.address_line && !match.masterStore.address_line_1 && !match.masterStore.address && !match.address_line && !match.address_line_1" class="no-address">No address</div>
-            
-            <!-- Show eircode if available -->
-            <div *ngIf="match.masterStore.eircode || match.eircode" class="eircode">{{ match.masterStore.eircode || match.eircode }}</div>
-          </td>
-          <td class="codes-column">
-            <div class="code-tag dispatch" *ngIf="match.masterStore.dispatch_code">
-              {{ match.masterStore.dispatch_code }}
-            </div>
-            <div class="code-tag store" *ngIf="match.masterStore.store_code">
-              {{ match.masterStore.store_code }}
-            </div>
-          </td>
-          <td class="routes-column">
-            <div class="route-tags">
-              <span *ngIf="match.masterStore.old_route" 
-                    class="route-tag" 
-                    [class.segregated]="isSegregatedRoute(match.masterStore.old_route)">
-                {{ match.masterStore.old_route }}
-              </span>
-              <span *ngIf="match.masterStore.new_route_08_05" 
-                    class="route-tag" 
-                    [class.segregated]="isSegregatedRoute(match.masterStore.new_route_08_05)">
-                {{ match.masterStore.new_route_08_05 }}
-              </span>
-              <span *ngIf="match.masterStore.route8_5_25" 
-                    class="route-tag" 
-                    [class.segregated]="isSegregatedRoute(match.masterStore.route8_5_25)">
-                {{ match.masterStore.route8_5_25 }}
-              </span>
-            </div>
-          </td>
-          <td class="match-column">
-            <span 
-              class="match-type" 
-              [class.store-code]="match.matchType === 'storeCode'"
-              [class.dispatch]="match.matchType === 'dispatch'"
-              [class.address]="match.matchType === 'address'"
-              [class.exact-name]="match.matchType === 'exactName'"
-              [class.partial]="match.matchType === 'partial'"
-              [class.similar]="match.matchType === 'similar'"
-              [class.unmatched]="match.matchType === 'unmatched'"
-            >
-              {{ getMatchTypeLabel(match.matchType) }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
   </div> 

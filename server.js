@@ -205,134 +205,19 @@ app.get('/api/imports', async (req, res) => {
   }
 });
 
-// API endpoint to get all orders
-app.get('/api/orders', async (req, res) => {
+// API endpoint to get all forms
+app.get('/api/forms', async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM get_all_orders()`);
+    const result = await pool.query(`
+      SELECT id, form_name, description, created_at, updated_at, status
+      FROM forms
+      ORDER BY updated_at DESC
+    `);
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Database error:', error);
     res.status(500).json({ error: 'Database error', details: error.message });
-  }
-});
-
-// API endpoint to get a specific order's details
-app.get('/api/orders/:id', async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id);
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid order ID' });
-    }
-    
-    const result = await pool.query(`SELECT * FROM get_order_details($1)`, [orderId]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    // Format the response to be more hierarchical
-    const order = {
-      id: result.rows[0].import_id,
-      fileName: result.rows[0].file_name,
-      importDate: result.rows[0].import_date,
-      deliveryDate: result.rows[0].order_delivery_date,
-      status: result.rows[0].order_status,
-      routes: []
-    };
-    
-    // Group by routes
-    const routeMap = new Map();
-    result.rows.forEach(row => {
-      if (!routeMap.has(row.route_id)) {
-        routeMap.set(row.route_id, {
-          id: row.route_id,
-          name: row.route_name,
-          routeNumber: row.route_number,
-          driverName: row.driver_name,
-          deliveryDate: row.route_delivery_date,
-          status: row.route_status,
-          stores: []
-        });
-      }
-      
-      routeMap.get(row.route_id).stores.push({
-        id: row.store_id,
-        customerName: row.customer_name,
-        customerCode: row.customer_code,
-        totalItems: row.total_items,
-        status: row.store_status
-      });
-    });
-    
-    // Convert Map to array for response
-    order.routes = Array.from(routeMap.values());
-    
-    res.json(order);
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ error: 'Database error', details: error.message });
-  }
-});
-
-// API endpoint to update order status
-app.patch('/api/orders/:id/status', async (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id);
-    const { status } = req.body;
-    
-    if (isNaN(orderId)) {
-      return res.status(400).json({ error: 'Invalid order ID' });
-    }
-    
-    if (!status || !['pending', 'processing', 'completed', 'cancelled'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
-    }
-    
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      
-      // Update order status
-      const result = await client.query(
-        'UPDATE order_imports SET status = $1 WHERE id = $2 RETURNING id',
-        [status, orderId]
-      );
-      
-      if (result.rowCount === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Order not found' });
-      }
-      
-      // Optionally update the status of all associated routes and store orders
-      if (status === 'completed' || status === 'cancelled') {
-        await client.query(
-          'UPDATE routes SET status = $1 WHERE import_id = $2',
-          [status, orderId]
-        );
-        
-        await client.query(
-          'UPDATE store_orders SET order_status = $1 WHERE route_id IN (SELECT id FROM routes WHERE import_id = $2)',
-          [status, orderId]
-        );
-      }
-      
-      await client.query('COMMIT');
-      
-      res.json({ 
-        success: true, 
-        message: `Order status updated to ${status}`,
-        orderId: orderId
-      });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Database error:', error);
-      res.status(500).json({ error: 'Database error', details: error.message });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 

@@ -3,6 +3,19 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 
+// Define interfaces for the types
+interface FormAssignment {
+  id: string;
+  driver_id: string;
+  form_template_id: string;
+  status: string;
+  due_date: string;
+  completed_at?: string;
+  form_id?: string;
+  notes?: string;
+  form_templates?: any;
+}
+
 @Component({
   selector: 'app-driver-dashboard',
   standalone: true,
@@ -13,8 +26,8 @@ import { SupabaseService } from '../../services/supabase.service';
 export class DriverDashboardComponent implements OnInit {
   driverId: string = '';
   driverName: string = '';
-  assignedForms: any[] = [];
-  completedForms: any[] = [];
+  assignedForms: FormAssignment[] = [];
+  completedForms: FormAssignment[] = [];
   isLoading = true;
 
   constructor(
@@ -61,8 +74,8 @@ export class DriverDashboardComponent implements OnInit {
       
       if (assignments) {
         // Separate pending/overdue from completed forms
-        this.assignedForms = assignments.filter(a => a.status !== 'completed');
-        this.completedForms = assignments.filter(a => a.status === 'completed');
+        this.assignedForms = assignments.filter((a: FormAssignment) => a.status !== 'completed');
+        this.completedForms = assignments.filter((a: FormAssignment) => a.status === 'completed');
       } else {
         console.error('Failed to load form assignments');
       }
@@ -78,9 +91,13 @@ export class DriverDashboardComponent implements OnInit {
     this.router.navigate(['/driver/fill-form', assignmentId]);
   }
 
-  viewForm(formId: string): void {
-    // Navigate to view a completed form
-    this.router.navigate(['/driver-forms/view', formId]);
+  viewForm(formId: string | undefined): void {
+    // Navigate to view a completed form if formId exists
+    if (formId) {
+      this.router.navigate(['/driver-forms/view', formId]);
+    } else {
+      console.error('Cannot view form: form ID is undefined');
+    }
   }
 
   getStatusClass(status: string): string {

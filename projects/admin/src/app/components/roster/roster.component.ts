@@ -8,7 +8,7 @@ declare var bootstrap: any;
 
 // Define the Driver interface
 interface Driver {
-  id: number;
+  id: string;
   name: string;
   custom_id: string;
   role: string;
