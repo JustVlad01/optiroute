@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { BehaviorSubject } from 'rxjs';
 import * as XLSX from 'xlsx';
+import { StoreImportService } from './store-import.service';
 
 export interface StoreOrder {
   routeName: string;
@@ -35,7 +36,10 @@ export class ExcelImportService {
   // Each crate can hold 25 items
   private crateCapacity = 25;
 
-  constructor(private supabaseService: SupabaseService) { }
+  constructor(
+    private supabaseService: SupabaseService,
+    private storeImportService: StoreImportService
+  ) { }
 
   /**
    * Parse Excel file and extract route and store data
@@ -189,42 +193,27 @@ export class ExcelImportService {
         return { success: false, error: 'No data to save' };
       }
       
-      // Flatten the data structure for the database
-      const storeOrders: StoreOrder[] = [];
-      
-      parsedData.forEach(route => {
-        route.stores.forEach(store => {
-          storeOrders.push({
-            routeName: route.routeName,
+      // Transform the data to the format expected by the backend
+      const transformedData = parsedData.map(route => {
+        return {
+          route_name: route.routeName,
+          total_items: route.stores.reduce((sum, store) => sum + store.totalQuantity, 0),
+          crate_count: route.stores.reduce((sum, store) => sum + store.cratesNeeded, 0),
+          full_crates: Math.floor(route.stores.reduce((sum, store) => sum + store.totalQuantity, 0) / 25),
+          remaining_items: route.stores.reduce((sum, store) => sum + store.totalQuantity, 0) % 25,
+          stores: route.stores.map(store => ({
             storeName: store.storeName,
             totalQuantity: store.totalQuantity,
             cratesNeeded: store.cratesNeeded
-          });
-        });
+          }))
+        };
       });
       
-      // Save to Supabase using an RPC function
-      const { data, error } = await this.supabaseService.client.rpc(
-        'save_excel_parsed_data',
-        { 
-          p_store_orders: storeOrders
-        }
-      );
+      // Call the simplified import stores method
+      await this.storeImportService.importStores(transformedData);
       
-      if (error) {
-        this.messageSubject.next({
-          type: 'error',
-          text: `Error saving data: ${error.message}`
-        });
-        return { success: false, error };
-      }
-      
-      this.messageSubject.next({
-        type: 'success',
-        text: `Successfully saved ${storeOrders.length} store orders. Previous data has been cleared and IDs reset.`
-      });
-      
-      return { success: true, data };
+      // The messaging will be handled by storeImportService
+      return { success: true };
     } catch (error: any) {
       console.error('Error saving to Supabase:', error);
       this.messageSubject.next({

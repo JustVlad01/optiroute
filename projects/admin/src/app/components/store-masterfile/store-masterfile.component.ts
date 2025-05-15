@@ -10,7 +10,8 @@ import { Subject, Subscription } from 'rxjs';
   templateUrl: './store-masterfile.component.html',
   styleUrls: ['./store-masterfile.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule]
+  imports: [CommonModule, RouterModule, FormsModule],
+  providers: [SupabaseService]
 })
 export class StoreMasterfileComponent implements OnInit, OnDestroy {
   storeData: any[] = [];

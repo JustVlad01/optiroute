@@ -80,6 +80,7 @@ export const routes: Routes = [
     {
         path: 'driver/fill-form/:id',
         component: DriverFormFillComponent
-    }
-    // Add other routes here
+    },
+    // Redirect to home for unknown routes
+    { path: '**', redirectTo: '' }
 ];

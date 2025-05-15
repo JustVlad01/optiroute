@@ -3,6 +3,48 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap');
 
+/* Fix for Angular Material dropdowns to prevent transparency */
+.cdk-overlay-container {
+  z-index: 10000 !important;
+}
+
+.cdk-overlay-backdrop {
+  background-color: rgba(0, 0, 0, 0.32) !important;
+}
+
+.cdk-overlay-transparent-backdrop {
+  background-color: transparent !important;
+}
+
+.cdk-overlay-pane {
+  background-color: white !important;
+}
+
+.mat-select-panel {
+  background-color: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.mat-option {
+  background-color: white !important;
+  height: auto !important;
+  line-height: 3em !important;
+}
+
+.mat-option:hover {
+  background-color: #f5f7fa !important;
+}
+
+.mat-option.mat-selected {
+  background-color: #e8f0fe !important;
+}
+
+/* Fix for button overlapping in dropdowns */
+button, .btn, .mat-button, .mat-raised-button {
+  z-index: 1 !important;
+}
+
 /* Global styles */
 html, body {
   margin: 0;

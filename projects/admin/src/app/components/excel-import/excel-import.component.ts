@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ViewEncapsulation, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,8 +11,14 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { ExcelImportService, ParsedRouteData } from '../../services/excel-import.service';
+import { StoreImportService } from '../../services/store-import.service';
+import { MatChipsModule } from '@angular/material/chips';
+import { OverlayContainer } from '@angular/cdk/overlay';
+import { FormsModule } from '@angular/forms';
 
 interface RouteGroup {
   routeName: string;
@@ -22,6 +28,22 @@ interface RouteGroup {
     totalQuantity: number;
     cratesNeeded: number;
   }[];
+}
+
+interface ImportedStore {
+  id: number;
+  route_name: string;
+  store_name: string;
+  total_quantity: number;
+  crates_needed: number;
+  import_date: string;
+  import_batch_id: number;
+}
+
+// Interface for grouped imported stores
+interface GroupedImportedRoute {
+  routeName: string;
+  stores: ImportedStore[];
 }
 
 @Component({
@@ -62,12 +84,17 @@ export class ConfirmDialogComponent {
     MatTableModule,
     MatExpansionModule,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    MatChipsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    FormsModule
   ],
   templateUrl: './excel-import.component.html',
+  encapsulation: ViewEncapsulation.None, // Allow global style overrides
   styleUrls: ['./excel-import.component.scss']
 })
-export class ExcelImportComponent implements OnInit, OnDestroy {
+export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
   loading = false;
   parsedData: ParsedRouteData[] = [];
   flattenedData: { routeName: string, storeName: string, totalQuantity: number, cratesNeeded: number }[] = [];
@@ -78,7 +105,20 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
   routeGroups: RouteGroup[] = [];
   totalRecords = 0;
   
+  // Route dropdown related properties
+  selectedRoute: string = '';
+  selectedRouteStores: { storeName: string, totalQuantity: number, cratesNeeded: number }[] = [];
+  
+  // Update to use imported stores instead of matched stores
+  importedStores: ImportedStore[] = [];
+  displayImportedStores = false;
+  
+  // Property for grouped imported stores
+  groupedImportedStores: GroupedImportedRoute[] = [];
+  
   displayedColumns: string[] = ['storeName', 'totalQuantity', 'cratesNeeded'];
+  importedColumns: string[] = ['route_name', 'store_name', 'total_quantity', 'crates_needed'];
+  storeColumns: string[] = ['store_name', 'total_quantity', 'crates_needed'];
   
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   
@@ -86,8 +126,10 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
   
   constructor(
     private excelImportService: ExcelImportService,
+    private storeImportService: StoreImportService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private overlayContainer: OverlayContainer
   ) { }
   
   ngOnInit(): void {
@@ -98,9 +140,30 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
       })
     );
     
+    // Also subscribe to the store import service loading state
+    this.subscriptions.push(
+      this.storeImportService.loading$.subscribe(loading => {
+        if (this.loading !== loading) {
+          this.loading = loading;
+        }
+      })
+    );
+    
     // Subscribe to messages
     this.subscriptions.push(
       this.excelImportService.message$.subscribe(message => {
+        if (message) {
+          this.snackBar.open(message.text, 'Close', {
+            duration: 5000,
+            panelClass: message.type === 'error' ? 'error-snackbar' : 'success-snackbar'
+          });
+        }
+      })
+    );
+    
+    // Also subscribe to store import service messages
+    this.subscriptions.push(
+      this.storeImportService.message$.subscribe(message => {
         if (message) {
           this.snackBar.open(message.text, 'Close', {
             duration: 5000,
@@ -117,11 +180,27 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
         this.processData();
       })
     );
+    
+    // Subscribe to imported stores data
+    this.subscriptions.push(
+      this.storeImportService.importedStores$.subscribe(data => {
+        this.importedStores = data;
+        this.displayImportedStores = data && data.length > 0;
+        if (data && data.length > 0) {
+          this.groupImportedStoresByRoute();
+        }
+      })
+    );
   }
   
   ngOnDestroy(): void {
     // Unsubscribe from all subscriptions
     this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  ngAfterViewInit() {
+    // Apply classes to overlay container to help with styling
+    this.overlayContainer.getContainerElement().classList.add('excel-import-overlay-container');
   }
   
   /**
@@ -227,39 +306,69 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
       return;
     }
     
+    // Use Excel Import Service's saveToSupabase method
     const result = await this.excelImportService.saveToSupabase(this.parsedData);
-    
-    if (result.success) {
-      this.snackBar.open('Data saved successfully', 'Close', {
-        duration: 5000,
-        panelClass: 'success-snackbar'
-      });
-      
-      // Reset the form after successful save
-      if (this.fileInput) {
-        this.fileInput.nativeElement.value = '';
-        this.fileName = '';
+  }
+  
+  /**
+   * Handle route selection change
+   */
+  onRouteSelectionChange(): void {
+    if (this.selectedRoute) {
+      const selectedRouteGroup = this.routeGroups.find(route => route.routeName === this.selectedRoute);
+      if (selectedRouteGroup) {
+        this.selectedRouteStores = selectedRouteGroup.stores;
+      } else {
+        this.selectedRouteStores = [];
       }
+    } else {
+      this.selectedRouteStores = [];
     }
   }
   
   /**
-   * Reset the form
+   * Get total items for a route
+   * @param route Route group
+   * @returns Total quantity of items
+   */
+  getRouteTotalItems(route: RouteGroup): number {
+    return route.stores.reduce((sum, store) => sum + store.totalQuantity, 0);
+  }
+  
+  /**
+   * Get total crates for a route
+   * @param route Route group
+   * @returns Total crates needed
+   */
+  getRouteTotalCrates(route: RouteGroup): number {
+    return route.stores.reduce((sum, store) => sum + store.cratesNeeded, 0);
+  }
+  
+  /**
+   * Reset the form and clear all data
    */
   resetForm(): void {
-    if (this.fileInput) {
+    // Clear the file input
+    if (this.fileInput?.nativeElement) {
       this.fileInput.nativeElement.value = '';
-      this.fileName = '';
-      this.parsedData = [];
-      this.flattenedData = [];
-      this.routeGroups = [];
-      this.totalRecords = 0;
-      this.showInstructions = true;
     }
+    
+    // Reset component state
+    this.fileName = '';
+    this.parsedData = [];
+    this.flattenedData = [];
+    this.routeGroups = [];
+    this.totalRecords = 0;
+    this.selectedRoute = '';
+    this.selectedRouteStores = [];
+    this.importedStores = [];
+    this.groupedImportedStores = [];
+    this.displayImportedStores = false;
+    this.showInstructions = true;
   }
   
   /**
-   * Flatten the parsed data for display in a table
+   * Flatten parsed data for simpler display
    */
   private flattenData(): void {
     this.flattenedData = [];
@@ -274,5 +383,64 @@ export class ExcelImportComponent implements OnInit, OnDestroy {
         });
       });
     });
+  }
+  
+  /**
+   * Group imported stores by route
+   */
+  private groupImportedStoresByRoute(): void {
+    // Create a map to group stores by route
+    const routeMap = new Map<string, ImportedStore[]>();
+    
+    // Group stores by route_name
+    this.importedStores.forEach(store => {
+      if (!routeMap.has(store.route_name)) {
+        routeMap.set(store.route_name, []);
+      }
+      routeMap.get(store.route_name)?.push(store);
+    });
+    
+    // Convert map to array of grouped routes
+    this.groupedImportedStores = Array.from(routeMap.entries()).map(([routeName, stores]) => ({
+      routeName,
+      stores
+    }));
+    
+    // Sort routes alphabetically
+    this.groupedImportedStores.sort((a, b) => a.routeName.localeCompare(b.routeName));
+  }
+  
+  /**
+   * Calculate total quantity for a route group
+   */
+  getTotalQuantity(route: GroupedImportedRoute): number {
+    return route.stores.reduce((sum, store) => sum + store.total_quantity, 0);
+  }
+  
+  /**
+   * Calculate total crates for a route group
+   */
+  getTotalCrates(route: GroupedImportedRoute): number {
+    return route.stores.reduce((sum, store) => sum + store.crates_needed, 0);
+  }
+  
+  /**
+   * Get total items for a route by its name
+   * @param routeName Name of the route
+   * @returns Total quantity of items
+   */
+  getRouteTotalItemsByName(routeName: string): number {
+    const route = this.routeGroups.find(r => r.routeName === routeName);
+    return route ? this.getRouteTotalItems(route) : 0;
+  }
+  
+  /**
+   * Get total crates for a route by its name
+   * @param routeName Name of the route
+   * @returns Total crates needed
+   */
+  getRouteTotalCratesByName(routeName: string): number {
+    const route = this.routeGroups.find(r => r.routeName === routeName);
+    return route ? this.getRouteTotalCrates(route) : 0;
   }
 } 

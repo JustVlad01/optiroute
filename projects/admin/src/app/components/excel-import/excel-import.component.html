@@ -1,50 +1,20 @@
 <div class="excel-import-container">
-  <!-- Navigation Bar -->
-  <header class="navbar">
+  <!-- Simple header with back button -->
+  <header class="app-header">
+    <a routerLink="/" class="back-link">
+      <i class="bi bi-arrow-left"></i>
+    </a>
     <div class="logo">OPTIROUTE</div>
-    <div class="nav-links">
-      <a routerLink="/dashboard" class="nav-pill">
-        <i class="bi bi-house"></i> Dashboard
-      </a>
-      <a routerLink="/store-masterfile" class="nav-pill">
-        <i class="bi bi-grid-3x3"></i> Store Masterfile
-      </a>
-      <a routerLink="/roster" class="nav-pill">
-        <i class="bi bi-people"></i> Roster
-      </a>
-      <a routerLink="/driver-forms" class="nav-pill">
-        <i class="bi bi-clipboard-check"></i> Driver Forms
-      </a>
-    </div>
   </header>
 
   <div class="content-wrapper">
-    <h2 class="page-title">Import Excel Data</h2>
-    
-    <mat-card class="main-card">
-      <mat-card-header>
-        <mat-card-title>Import Store Orders</mat-card-title>
-        <mat-card-subtitle>Upload and process Excel files with store order data</mat-card-subtitle>
-      </mat-card-header>
-      
-      <mat-card-content>
-        <!-- Instructions box - only visible before a file is selected or after reset -->
-        <div *ngIf="showInstructions" class="import-instructions">
-          <p>
-            Please upload an Excel file (.xlsx or .xls) containing the store orders data.
-            The system will parse through the entire file and extract the following information:
-          </p>
-          <ul>
-            <li>Routes are identified by "<strong>Driver Run</strong>" or "<strong>Driver Run:</strong>" in column A with the route name in column B</li>
-            <li>For each route, store names are found in column A</li>
-            <li>Total quantity per store is found in column D</li>
-            <li>Only stores with a quantity greater than 0 will be included</li>
-            <li>Each route ends when the next "Driver Run" is found or at the end of the file</li>
-            <li>Crates needed is automatically calculated (1 crate = 25 items)</li>
-          </ul>
-        </div>
+    <div class="card import-card">
+      <div class="card-body import-section">
+        <h2 class="section-title">Import Excel Data</h2>
+        <p class="section-description">Upload your Excel file containing store order data</p>
         
-        <div class="file-upload-section">
+        <!-- File input section -->
+        <div class="file-input-section">
           <!-- Hidden file input -->
           <input
             type="file"
@@ -56,111 +26,178 @@
             hidden
           />
           
-          <!-- Visible upload button -->
-          <div class="upload-button-group">
-            <button 
-              mat-raised-button 
-              color="primary" 
-              (click)="fileInput.click()" 
-              [disabled]="loading"
-              class="file-upload-button"
-            >
-              <mat-icon>cloud_upload</mat-icon>
-              <span>Browse for Excel File</span>
-            </button>
-            
-            <div *ngIf="fileName" class="selected-file">
-              <span>Selected file: {{ fileName }}</span>
-              <button 
-                mat-icon-button 
-                color="warn" 
-                (click)="resetForm()" 
-                [disabled]="loading"
-                class="clear-button"
-                title="Clear selected file"
-              >
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-            <div *ngIf="!fileName" class="no-file-selected">
-              No file selected
-            </div>
-          </div>
-        </div>
-        
-        <div *ngIf="loading" class="loading-indicator">
-          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-          <p>Processing Excel file, please wait...</p>
-        </div>
-        
-        <!-- Accordions for parsed data -->
-        <div *ngIf="routeGroups.length > 0" class="parsed-data-section">
-          <h3>Parsed Data ({{ totalRecords }} records)</h3>
+          <!-- Upload button -->
+          <button 
+            class="btn btn-primary upload-btn"
+            (click)="fileInput.click()" 
+            [disabled]="loading"
+          >
+            <i class="bi bi-cloud-upload-fill me-2"></i>
+            Select Excel File
+          </button>
           
-          <mat-accordion class="routes-accordion">
-            <mat-expansion-panel *ngFor="let routeGroup of routeGroups">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  {{ routeGroup.routeName }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  {{ routeGroup.storeCount }} store{{ routeGroup.storeCount !== 1 ? 's' : '' }}
-                </mat-panel-description>
-              </mat-expansion-panel-header>
-              
-              <!-- Route stores table -->
-              <div class="route-stores-table">
-                <table mat-table [dataSource]="routeGroup.stores" class="mat-elevation-z2">
-                  <!-- Store Name Column -->
-                  <ng-container matColumnDef="storeName">
-                    <th mat-header-cell *matHeaderCellDef>Store</th>
-                    <td mat-cell *matCellDef="let store">{{ store.storeName }}</td>
-                  </ng-container>
-                  
-                  <!-- Total Quantity Column -->
-                  <ng-container matColumnDef="totalQuantity">
-                    <th mat-header-cell *matHeaderCellDef>Quantity</th>
-                    <td mat-cell *matCellDef="let store">{{ store.totalQuantity }}</td>
-                  </ng-container>
-                  
-                  <!-- Crates Needed Column -->
-                  <ng-container matColumnDef="cratesNeeded">
-                    <th mat-header-cell *matHeaderCellDef>Crates Needed</th>
-                    <td mat-cell *matCellDef="let store">{{ store.cratesNeeded }}</td>
-                  </ng-container>
-                  
-                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-                </table>
-              </div>
-            </mat-expansion-panel>
-          </mat-accordion>
-          
-          <div class="action-buttons">
+          <!-- Selected file display -->
+          <div *ngIf="fileName" class="selected-file-container">
+            <span class="selected-file-name">{{ fileName }}</span>
             <button 
-              mat-raised-button 
-              color="accent" 
-              (click)="openConfirmDialog()" 
-              [disabled]="loading || routeGroups.length === 0"
-              class="save-button"
-            >
-              <mat-icon class="button-icon">save</mat-icon>
-              <span>Save to Database</span>
-            </button>
-            
-            <button 
-              mat-stroked-button 
-              color="warn" 
+              class="btn btn-sm btn-light clear-btn" 
               (click)="resetForm()" 
               [disabled]="loading"
-              class="reset-button"
             >
-              <mat-icon class="button-icon">refresh</mat-icon>
-              <span>Reset</span>
+              <i class="bi bi-x"></i>
             </button>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
+
+        <!-- Loading indicator -->
+        <div *ngIf="loading" class="loading-indicator mt-4">
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+          </div>
+          <p class="text-center text-muted mt-2">Processing data, please wait...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Route Selection Section -->
+    <div *ngIf="routeGroups.length > 0 && !displayImportedStores" class="card mt-4">
+      <div class="card-body">
+        <h2 class="section-title">Route Selection</h2>
+        <p class="section-description">Select a route to view its stores:</p>
+        
+        <div class="form-group mb-4">
+          <select 
+            class="form-select route-select" 
+            [(ngModel)]="selectedRoute" 
+            (change)="onRouteSelectionChange()"
+          >
+            <option value="" disabled selected>Select Route</option>
+            <option *ngFor="let route of routeGroups" [value]="route.routeName">
+              {{ route.routeName }} ({{ route.storeCount }} stores)
+            </option>
+          </select>
+        </div>
+        
+        <!-- Selected route stores table -->
+        <div *ngIf="selectedRouteStores.length > 0" class="selected-route-details">
+          <div class="route-header d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h4 class="route-title mb-0">{{ selectedRoute }}</h4>
+            <div class="route-stats d-flex gap-3">
+              <div class="stat-badge" title="{{ selectedRouteStores.length }} stores">
+                <i class="bi bi-shop me-1"></i> {{ selectedRouteStores.length }}
+              </div>
+              <div class="stat-badge" title="{{ getRouteTotalItemsByName(selectedRoute) }} items">
+                <i class="bi bi-box-seam me-1"></i> {{ getRouteTotalItemsByName(selectedRoute) }}
+              </div>
+              <div class="stat-badge" title="{{ getRouteTotalCratesByName(selectedRoute) }} crates">
+                <i class="bi bi-grid-3x3 me-1"></i> {{ getRouteTotalCratesByName(selectedRoute) }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-hover data-table">
+              <thead>
+                <tr>
+                  <th>Store</th>
+                  <th class="text-end">Quantity</th>
+                  <th class="text-end">Crates</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let store of selectedRouteStores">
+                  <td title="{{store.storeName}}">{{ store.storeName }}</td>
+                  <td class="text-end" title="{{store.totalQuantity}}">{{ store.totalQuantity }}</td>
+                  <td class="text-end" title="{{store.cratesNeeded}}">{{ store.cratesNeeded }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Action buttons section -->
+        <div class="action-buttons mt-4 d-flex justify-content-end gap-3">
+          <button 
+            class="btn btn-primary save-btn"
+            (click)="openConfirmDialog()" 
+            [disabled]="loading || routeGroups.length === 0"
+          >
+            <i class="bi bi-database-fill me-2"></i>
+            Save to Database
+          </button>
+          
+          <button 
+            class="btn btn-outline-secondary reset-btn"
+            (click)="resetForm()" 
+            [disabled]="loading"
+          >
+            <i class="bi bi-arrow-counterclockwise me-2"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Imported stores section -->
+    <div *ngIf="displayImportedStores" class="card mt-4">
+      <div class="card-body">
+        <h2 class="section-title">Imported Stores by Route</h2>
+        <p class="section-description">Your data has been successfully imported and organized by routes</p>
+
+        <!-- Route groups with accordion -->
+        <div class="accordion accordion-flush" id="routeAccordion">
+          <div class="accordion-item" *ngFor="let route of groupedImportedStores; let i = index">
+            <h2 class="accordion-header" id="heading{{i}}">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" [attr.data-bs-target]="'#collapse'+i" aria-expanded="false" [attr.aria-controls]="'collapse'+i">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                  <span class="route-accordion-title">{{ route.routeName }}</span>
+                  <div class="route-stats-badges d-flex gap-3">
+                    <div class="stat-badge"><i class="bi bi-shop me-1"></i> {{ route.stores.length }}</div>
+                    <div class="stat-badge"><i class="bi bi-box-seam me-1"></i> {{ getTotalQuantity(route) }}</div>
+                    <div class="stat-badge"><i class="bi bi-grid-3x3 me-1"></i> {{ getTotalCrates(route) }}</div>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            
+            <div id="collapse{{i}}" class="accordion-collapse collapse" [attr.aria-labelledby]="'heading'+i" data-bs-parent="#routeAccordion">
+              <div class="accordion-body">
+                <!-- Table for stores within this route -->
+                <div class="table-responsive">
+                  <table class="table table-hover data-table">
+                    <thead>
+                      <tr>
+                        <th>Store Name</th>
+                        <th class="text-end">Quantity</th>
+                        <th class="text-end">Crates</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let store of route.stores">
+                        <td>{{ store.store_name }}</td>
+                        <td class="text-end">{{ store.total_quantity }}</td>
+                        <td class="text-end">{{ store.crates_needed }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Button to reset after viewing imported data -->
+        <div class="mt-4 d-flex justify-content-end">
+          <button 
+            class="btn btn-primary"
+            (click)="resetForm()" 
+            [disabled]="loading"
+          >
+            <i class="bi bi-plus-circle me-2"></i>
+            Import New File
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div> 
