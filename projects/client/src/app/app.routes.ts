@@ -5,6 +5,7 @@ import { DriverFormsComponent } from './components/driver-forms/driver-forms.com
 import { FormDetailsComponent } from './components/form-details/form-details.component';
 import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.component';
 import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
+import { StoreLibraryComponent } from './components/store-library/store-library.component';
 
 export const routes: Routes = [
     {
@@ -27,6 +28,10 @@ export const routes: Routes = [
     {
         path: 'form-details/:id',
         component: FormDetailsComponent
+    },
+    {
+        path: 'store-library',
+        component: StoreLibraryComponent
     },
     {
         path: 'admin/forms',

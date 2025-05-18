@@ -1,0 +1,152 @@
+// Navbar styling
+.navbar {
+  margin-bottom: 0;
+  
+  .navbar-brand {
+    font-weight: 600;
+  }
+  
+  .navbar-toggler {
+    border: none;
+    padding: 8px;
+    
+    i {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+// Main container
+.store-library-container {
+  padding: 1rem;
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 56px); // Account for navbar height
+  
+  // Search section
+  .search-section {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    
+    .input-group {
+      display: flex;
+      
+      .form-control {
+        flex: 1;
+        height: 46px;
+        border-radius: 4px 0 0 4px;
+        border: 1px solid #ddd;
+        font-size: 1rem;
+      }
+      
+      .search-btn, .clear-btn {
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        i {
+          font-size: 1.2rem;
+        }
+      }
+      
+      .search-btn {
+        border-radius: 0;
+      }
+      
+      .clear-btn {
+        border-radius: 0 4px 4px 0;
+      }
+    }
+  }
+  
+  // Store details
+  .store-details {
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin: 1rem 0;
+      padding: 0 0.5rem;
+    }
+    
+    // Info cards
+    .info-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      
+      h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 0.8rem 1rem;
+        margin: 0;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .info-table {
+        .info-row {
+          display: flex;
+          border-bottom: 1px solid #eee;
+          
+          &:last-child {
+            border-bottom: none;
+          }
+          
+          .info-label {
+            width: 40%;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            color: #555;
+            background-color: #fafafa;
+          }
+          
+          .info-value {
+            width: 60%;
+            padding: 0.75rem 1rem;
+            word-break: break-word;
+          }
+        }
+      }
+      
+      .manual-content {
+        padding: 1rem;
+        white-space: pre-line;
+        font-size: 0.9rem;
+      }
+    }
+    
+    // Action buttons
+    .action-buttons {
+      margin: 1rem 0;
+      
+      .btn-block {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 500;
+        border-radius: 8px;
+      }
+    }
+  }
+  
+  // No results message
+  .no-results {
+    background-color: white;
+    padding: 2rem 1rem;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    p {
+      color: #666;
+      margin: 0;
+    }
+  }
+} 

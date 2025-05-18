@@ -234,6 +234,35 @@ export class SupabaseService {
     return data;
   }
 
+  // Method to get store information by store code or dispatch code
+  async getStoreByCode(code: string) {
+    // First try to find by store_code
+    let { data, error } = await this.supabase
+      .from('stores')
+      .select('*')
+      .eq('store_code', code)
+      .single();
+    
+    if (error && error.code === 'PGRST116') { // No rows found for store_code
+      // Try to find by dispatch_code
+      const result = await this.supabase
+        .from('stores')
+        .select('*')
+        .eq('dispatch_code', code)
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error && error.code !== 'PGRST116') { // Real error, not just "no rows found"
+      console.error('Error fetching store information:', error);
+      return null;
+    }
+
+    return data; // Returns the store object or null if not found
+  }
+
   // Login with custom ID (without Supabase auth)
   async loginWithCustomId(customId: string) {
     console.log('Logging in with custom ID:', customId);

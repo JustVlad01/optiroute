@@ -16,6 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { ExcelImportService, ParsedRouteData } from '../../services/excel-import.service';
 import { StoreImportService } from '../../services/store-import.service';
+import { StoreMatcherService, StoreMatchSummary } from '../../services/store-matcher.service';
 import { MatChipsModule } from '@angular/material/chips';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { FormsModule } from '@angular/forms';
@@ -44,6 +45,7 @@ interface ImportedStore {
 interface GroupedImportedRoute {
   routeName: string;
   stores: ImportedStore[];
+  startTime?: string;
 }
 
 @Component({
@@ -113,6 +115,10 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
   importedStores: ImportedStore[] = [];
   displayImportedStores = false;
   
+  // New properties for store matching
+  displayMatchedStores = false;
+  matchResults: StoreMatchSummary | null = null;
+  
   // Property for grouped imported stores
   groupedImportedStores: GroupedImportedRoute[] = [];
   
@@ -127,6 +133,7 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private excelImportService: ExcelImportService,
     private storeImportService: StoreImportService,
+    private storeMatcherService: StoreMatcherService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private overlayContainer: OverlayContainer
@@ -143,6 +150,15 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
     // Also subscribe to the store import service loading state
     this.subscriptions.push(
       this.storeImportService.loading$.subscribe(loading => {
+        if (this.loading !== loading) {
+          this.loading = loading;
+        }
+      })
+    );
+
+    // Subscribe to store matcher service loading state
+    this.subscriptions.push(
+      this.storeMatcherService.loading$.subscribe(loading => {
         if (this.loading !== loading) {
           this.loading = loading;
         }
@@ -172,6 +188,18 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       })
     );
+
+    // Subscribe to store matcher service messages
+    this.subscriptions.push(
+      this.storeMatcherService.message$.subscribe(message => {
+        if (message) {
+          this.snackBar.open(message.text, 'Close', {
+            duration: 5000,
+            panelClass: message.type === 'error' ? 'error-snackbar' : 'success-snackbar'
+          });
+        }
+      })
+    );
     
     // Subscribe to parsed data
     this.subscriptions.push(
@@ -189,6 +217,14 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
         if (data && data.length > 0) {
           this.groupImportedStoresByRoute();
         }
+      })
+    );
+
+    // Subscribe to match results
+    this.subscriptions.push(
+      this.storeMatcherService.matchResults$.subscribe(results => {
+        this.matchResults = results;
+        this.displayMatchedStores = results !== null;
       })
     );
   }
@@ -348,23 +384,27 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
    * Reset the form and clear all data
    */
   resetForm(): void {
-    // Clear the file input
-    if (this.fileInput?.nativeElement) {
-      this.fileInput.nativeElement.value = '';
-    }
-    
-    // Reset component state
     this.fileName = '';
     this.parsedData = [];
     this.flattenedData = [];
     this.routeGroups = [];
-    this.totalRecords = 0;
     this.selectedRoute = '';
     this.selectedRouteStores = [];
-    this.importedStores = [];
-    this.groupedImportedStores = [];
+    this.totalRecords = 0;
     this.displayImportedStores = false;
+    this.displayMatchedStores = false;
+    this.matchResults = null;
+    
+    // Reset the file input
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+    
+    // Show instructions again
     this.showInstructions = true;
+    
+    // Clear match results
+    this.storeMatcherService.clearMatchResults();
   }
   
   /**
@@ -442,5 +482,38 @@ export class ExcelImportComponent implements OnInit, OnDestroy, AfterViewInit {
   getRouteTotalCratesByName(routeName: string): number {
     const route = this.routeGroups.find(r => r.routeName === routeName);
     return route ? this.getRouteTotalCrates(route) : 0;
+  }
+
+  /**
+   * Match imported stores with master store database
+   */
+  async matchStores(): Promise<void> {
+    if (!this.importedStores || this.importedStores.length === 0) {
+      this.snackBar.open('No imported stores to match', 'Close', {
+        duration: 5000,
+        panelClass: 'error-snackbar'
+      });
+      return;
+    }
+
+    // Call the store matcher service
+    await this.storeMatcherService.matchStores();
+  }
+
+  /**
+   * Match imported stores with improved algorithm
+   * This uses fuzzy matching with a lower threshold to catch more matches
+   */
+  async matchStoresImproved(): Promise<void> {
+    if (!this.importedStores || this.importedStores.length === 0) {
+      this.snackBar.open('No imported stores to match', 'Close', {
+        duration: 5000,
+        panelClass: 'error-snackbar'
+      });
+      return;
+    }
+
+    // Call the improved store matcher function
+    await this.storeMatcherService.matchStoresImproved();
   }
 } 

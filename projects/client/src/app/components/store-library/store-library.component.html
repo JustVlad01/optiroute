@@ -1,0 +1,163 @@
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-primary">
+  <div class="container-fluid">
+    <span class="navbar-brand">Store Library</span>
+    <button class="navbar-toggler" type="button" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+  </div>
+</nav>
+
+<div class="store-library-container">
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="input-group">
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Enter store/dispatch code" 
+        [(ngModel)]="searchCode"
+        (keyup.enter)="searchStore()"
+      >
+      <button class="btn btn-primary search-btn" (click)="searchStore()" [disabled]="loading">
+        <i class="bi bi-search"></i>
+      </button>
+      <button class="btn btn-outline-secondary clear-btn" (click)="clearSearch()" *ngIf="searchPerformed">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    
+    <div class="alert alert-danger mt-2" *ngIf="error">
+      {{ error }}
+    </div>
+  </div>
+  
+  <!-- Store Details Section -->
+  <div class="store-details" *ngIf="store">
+    <h3>{{ store.store_name || store.store_company + ' - ' + store.dispatch_code }}</h3>
+    
+    <!-- Basic Information Card -->
+    <div class="info-card">
+      <h4>Basic Information</h4>
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-label">Store ID</div>
+          <div class="info-value">{{ store.store_id }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Store Code</div>
+          <div class="info-value">{{ store.store_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Dispatch Code</div>
+          <div class="info-value">{{ store.dispatch_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Store Company</div>
+          <div class="info-value">{{ store.store_company }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Address</div>
+          <div class="info-value">{{ store.address_line }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Eircode</div>
+          <div class="info-value">{{ store.eircode }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Route Information Card -->
+    <div class="info-card">
+      <h4>Route Information</h4>
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-label">Old Route</div>
+          <div class="info-value">{{ store.old_route }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">New Route (08/05)</div>
+          <div class="info-value">{{ store.new_route_08_05 }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Route 8.5.25</div>
+          <div class="info-value">{{ store.route8_5_25 }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Access Information Card -->
+    <div class="info-card">
+      <h4>Access Information</h4>
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-label">Door Code</div>
+          <div class="info-value">{{ store.door_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Alarm Code</div>
+          <div class="info-value">{{ store.alarm_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Fridge Code</div>
+          <div class="info-value">{{ store.fridge_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Keys Available</div>
+          <div class="info-value">{{ store.keys_available }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Key Code</div>
+          <div class="info-value">{{ store.key_code }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">24 Hour Access</div>
+          <div class="info-value">{{ store.hour_access_24 }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Delivery Information Card -->
+    <div class="info-card">
+      <h4>Delivery Information</h4>
+      <div class="info-table">
+        <div class="info-row">
+          <div class="info-label">Earliest Delivery</div>
+          <div class="info-value">{{ store.earliest_delivery_time }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Saturday Opening</div>
+          <div class="info-value">{{ store.opening_time_saturday }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Sunday Opening</div>
+          <div class="info-value">{{ store.opening_time_sunday }}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Bank Holiday</div>
+          <div class="info-value">{{ store.openining_time_bank_holiday }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Location Link -->
+    <div class="action-buttons" *ngIf="store.location_link">
+      <a [href]="store.location_link" target="_blank" class="btn btn-info btn-block">
+        <i class="bi bi-geo-alt"></i> View on Map
+      </a>
+    </div>
+    
+    <!-- Store Manual -->
+    <div class="info-card" *ngIf="store.manual">
+      <h4>Store Manual</h4>
+      <div class="manual-content">
+        {{ store.manual }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- No Results Message -->
+  <div class="no-results" *ngIf="searchPerformed && !store && !error">
+    <p>No store found with the provided code. Please try another code.</p>
+  </div>
+</div> 

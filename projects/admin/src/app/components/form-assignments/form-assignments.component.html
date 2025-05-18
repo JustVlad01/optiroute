@@ -163,12 +163,12 @@
               <span *ngIf="assignment.completed_at">{{ assignment.completed_at | date:'short' }}</span>
               <span *ngIf="!assignment.completed_at" class="not-submitted">Not submitted</span>
             </td>
-            <td>{{ getResetPeriodText(assignment.reset_period) }}</td>
+            <td>{{ getResetPeriodText(assignment.reset_period || 0) }}</td>
             <td>
-              <span class="status-badge" [ngClass]="getStatusClass(assignment.status)">
+              <span class="status-badge" [ngClass]="getStatusClass(assignment.status || 'unknown')">
                 {{ assignment.status | uppercase }}
               </span>
-              <span *ngIf="assignment.status === 'completed' && assignment.driver_forms?.needs_review" 
+              <span *ngIf="assignment.status === 'completed' && assignment.needs_review" 
                     class="review-badge">
                 NEEDS REVIEW
               </span>

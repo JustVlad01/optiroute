@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
@@ -12,13 +12,14 @@ import { FormAssignment } from '../../models/form-assignment.model';
   standalone: true,
   imports: [CommonModule, RouterModule]
 })
-export class DriverFormsComponent implements OnInit {
+export class DriverFormsComponent implements OnInit, OnDestroy {
   forms: FormAssignment[] = [];
   loading = true;
   successMessage: string | null = null;
   driverId = '';
   driverName = '';
   nextFormAvailableTime: Date | null = null;
+  refreshInterval: any;
 
   constructor(
     private router: Router,
@@ -65,6 +66,18 @@ export class DriverFormsComponent implements OnInit {
       setTimeout(() => {
         this.successMessage = null;
       }, 5000);
+    }
+    
+    // Set up periodic refresh to catch deleted assignments
+    this.refreshInterval = setInterval(() => {
+      this.loadDriverFormAssignments();
+    }, 30000); // Refresh every 30 seconds
+  }
+
+  ngOnDestroy(): void {
+    // Clear the interval when component is destroyed
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
     }
   }
 

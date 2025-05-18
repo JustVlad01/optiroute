@@ -233,15 +233,29 @@ export class FormAssignmentsComponent implements OnInit {
 
   loadFormAssignments(): void {
     this.isLoading = true;
+    console.log('Loading form assignments...');
+    
     this.supabaseService.getAllFormAssignments().then(assignments => {
       this.isLoading = false;
-      if (assignments) {
+      console.log('Assignments received from service:', assignments ? assignments.length : 0);
+      
+      if (assignments && assignments.length > 0) {
+        // The drivers information is already attached to each assignment in the service
         this.formAssignments = assignments;
+        
+        console.log('First assignment after mapping:', this.formAssignments[0]);
         this.filteredAssignments = [...this.formAssignments];
         this.applyFilters();
       } else {
-        console.error('Failed to load form assignments');
+        console.error('Failed to load form assignments or no assignments found');
+        this.formAssignments = [];
+        this.filteredAssignments = [];
       }
+    }).catch(error => {
+      this.isLoading = false;
+      console.error('Exception loading form assignments:', error);
+      this.formAssignments = [];
+      this.filteredAssignments = [];
     });
   }
 
@@ -310,135 +324,97 @@ export class FormAssignmentsComponent implements OnInit {
 
   // Apply all filters to the assignments
   applyFilters(): void {
-    const filterValues = this.filterForm.value;
+    if (!this.formAssignments || this.formAssignments.length === 0) {
+      this.filteredAssignments = [];
+      return;
+    }
     
-    // Log filter values for debugging
-    console.log('Filter values:', {
-      year: filterValues.yearFilter,
-      month: filterValues.monthFilter,
-      week: filterValues.weekFilter,
-      viewAllMonth: filterValues.viewAllMonthOption,
-      needsReview: filterValues.needsReviewFilter,
-      overdue: filterValues.overdueFilter,
-      signed: filterValues.signedFilter,
-      submitted: filterValues.submittedOnlyFilter,
-      notSubmitted: filterValues.notSubmittedOnlyFilter
+    // Get filter values
+    const driverFilter = this.filterForm.get('driverFilter')?.value || '';
+    const needsReview = this.filterForm.get('needsReviewFilter')?.value || false;
+    const overdue = this.filterForm.get('overdueFilter')?.value || false;
+    const signed = this.filterForm.get('signedFilter')?.value || false;
+    const submittedOnly = this.filterForm.get('submittedOnlyFilter')?.value || false;
+    const notSubmittedOnly = this.filterForm.get('notSubmittedOnlyFilter')?.value || false;
+    
+    console.log('Applying filters with values:', {
+      year: this.selectedYear,
+      month: this.selectedMonth,
+      week: this.selectedWeek,
+      driver: driverFilter,
+      needsReview,
+      overdue,
+      signed,
+      submittedOnly,
+      notSubmittedOnly
     });
     
+    // Apply filters
     this.filteredAssignments = this.formAssignments.filter(assignment => {
-      // Date filter (Year/Month/Week)
-      let passesDateFilter = true;
-      const assignmentDate = new Date(assignment.created_at);
-      const submissionDate = assignment.completed_at ? new Date(assignment.completed_at) : null;
+      // Safe access to properties
+      const assignmentDate = assignment.created_at ? new Date(assignment.created_at) : null;
+      const status = assignment.status || '';
+      const driverId = assignment.driver_id || '';
       
-      // For debugging
-      const assignmentMonth = assignmentDate.getMonth() + 1; // +1 because getMonth() is 0-indexed
-      const submissionMonth = submissionDate ? submissionDate.getMonth() + 1 : null;
-      
-      // Log dates for debugging
-      if (filterValues.monthFilter === 5) { // If filtering by May (5)
-        console.log('Assignment:', {
-          id: assignment.id,
-          created: assignment.created_at,
-          assignmentMonth,
-          completed: assignment.completed_at,
-          submissionMonth
-        });
-      }
+      // Skip items without a valid date
+      if (!assignmentDate) return false;
       
       // Year filter
-      if (filterValues.yearFilter) {
-        // Check both assignment and submission date years
-        const assignmentYear = assignmentDate.getFullYear();
-        const submissionYear = submissionDate ? submissionDate.getFullYear() : null;
-        
-        // Pass if either date matches the filter year
-        passesDateFilter = assignmentYear === filterValues.yearFilter || 
-                           (submissionDate !== null && submissionYear === filterValues.yearFilter);
+      if (this.selectedYear && assignmentDate.getFullYear() !== this.selectedYear) {
+        return false;
       }
       
-      // Month filter - fixed to properly handle month as a number
-      if (passesDateFilter && filterValues.monthFilter > 0) {
-        // Check both assignment and submission date months
-        const monthMatches = assignmentMonth === filterValues.monthFilter ||
-                           (submissionDate !== null && submissionMonth === filterValues.monthFilter);
-                           
-        // Log month comparison for debugging
-        if (filterValues.monthFilter === 5) {
-          console.log('Month comparison:', {
-            assignmentMonth,
-            submissionMonth, 
-            filterMonth: filterValues.monthFilter,
-            matches: monthMatches
-          });
-        }
-        
-        passesDateFilter = monthMatches;
+      // Month filter (if not "All Months")
+      if (this.selectedMonth > 0 && assignmentDate.getMonth() + 1 !== this.selectedMonth) {
+        return false;
       }
       
       // Week filter
-      if (passesDateFilter && filterValues.weekFilter && !filterValues.viewAllMonthOption) {
-        const weekStart = new Date(filterValues.weekFilter);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
+      if (this.selectedWeek && !this.viewAllMonthOption) {
+        const [year, month, startDay, endDay] = this.selectedWeek.split('-').map(Number);
+        const assignmentDay = assignmentDate.getDate();
         
-        // Check if either assignment date or submission date falls within the selected week
-        passesDateFilter = (assignmentDate >= weekStart && assignmentDate <= weekEnd) ||
-                           (submissionDate !== null && submissionDate >= weekStart && submissionDate <= weekEnd);
+        if (
+          assignmentDate.getFullYear() !== year ||
+          assignmentDate.getMonth() + 1 !== month ||
+          assignmentDay < startDay ||
+          assignmentDay > endDay
+        ) {
+          return false;
+        }
       }
       
       // Driver filter
-      let passesDriverFilter = true;
-      if (filterValues.driverFilter) {
-        passesDriverFilter = assignment.driver_id === filterValues.driverFilter;
+      if (driverFilter && driverId !== driverFilter) {
+        return false;
       }
       
-      // Needs review filter
-      let passesReviewFilter = true;
-      if (filterValues.needsReviewFilter) {
-        passesReviewFilter = assignment.status === 'completed' && 
-                            assignment.driver_forms?.needs_review === true;
+      // Status filters
+      if (needsReview && (!assignment.driver_forms || !assignment.driver_forms.needs_review)) {
+        return false;
       }
       
-      // Overdue filter
-      let passesOverdueFilter = true;
-      if (filterValues.overdueFilter) {
-        passesOverdueFilter = assignment.status === 'overdue';
+      if (overdue && status !== 'overdue') {
+        return false;
       }
       
-      // Signed filter
-      let passesSignedFilter = true;
-      if (filterValues.signedFilter) {
-        passesSignedFilter = assignment.status === 'signed';
+      if (signed && status !== 'signed') {
+        return false;
       }
       
-      // Submitted/Not Submitted filter
-      let passesSubmissionFilter = true;
-      if (filterValues.submittedOnlyFilter) {
-        passesSubmissionFilter = !!assignment.completed_at;
-      } else if (filterValues.notSubmittedOnlyFilter) {
-        passesSubmissionFilter = !assignment.completed_at;
+      // Submitted/not submitted filters
+      if (submittedOnly && !assignment.completed_at) {
+        return false;
       }
       
-      const result = passesDateFilter && 
-             passesDriverFilter && 
-             passesReviewFilter && 
-             passesOverdueFilter &&
-             passesSignedFilter &&
-             passesSubmissionFilter;
-             
-      // Log final result for debugging
-      if (filterValues.monthFilter === 5 && result) {
-        console.log('Assignment passes filter:', assignment.id);
+      if (notSubmittedOnly && assignment.completed_at) {
+        return false;
       }
       
-      return result;
+      return true;
     });
     
-    console.log(`Filtered to ${this.filteredAssignments.length} of ${this.formAssignments.length} assignments`);
-    
-    // Force change detection
-    this.cdr.detectChanges();
+    console.log(`Filtered ${this.formAssignments.length} assignments down to ${this.filteredAssignments.length}`);
   }
 
   // Reset all filters
@@ -475,7 +451,9 @@ export class FormAssignmentsComponent implements OnInit {
   }
 
   getStatusClass(status: string): string {
-    switch (status) {
+    if (!status) return 'status-unknown';
+    
+    switch (status.toLowerCase()) {
       case 'pending':
         return 'status-pending';
       case 'completed':
@@ -485,7 +463,7 @@ export class FormAssignmentsComponent implements OnInit {
       case 'signed':
         return 'status-signed';
       default:
-        return '';
+        return 'status-unknown';
     }
   }
 
@@ -499,15 +477,25 @@ export class FormAssignmentsComponent implements OnInit {
   assignForm(): void {
     if (this.assignmentForm.valid) {
       const { driverId, resetPeriod, notes } = this.assignmentForm.value;
+      const today = new Date();
+      const dueDate = this.formatDate(today);
       
-      this.supabaseService.assignFormToDriver(driverId, null, notes, resetPeriod)
+      console.log('Assigning form with data:', { driverId, resetPeriod, notes, dueDate });
+      
+      this.supabaseService.assignFormToDriver(driverId, null, notes, dueDate)
         .then(result => {
-          if (result) {
+          if (result && result.success) {
+            console.log('Form assigned successfully:', result.data);
             this.loadFormAssignments();
             this.toggleAssignmentForm();
           } else {
+            console.error('Failed to assign form:', result?.error);
             alert('Failed to assign form. Please try again.');
           }
+        })
+        .catch(error => {
+          console.error('Exception assigning form:', error);
+          alert('An error occurred while assigning the form.');
         });
     } else {
       Object.keys(this.assignmentForm.controls).forEach(key => {
@@ -518,7 +506,10 @@ export class FormAssignmentsComponent implements OnInit {
   }
 
   getResetPeriodText(hours: number): string {
-    if (!hours) return 'N/A';
+    if (!hours && hours !== 0) return 'N/A';
+    
+    if (hours === 0) return 'No reset';
+    if (hours === 1) return '1 Hour';
     return `${hours} Hours`;
   }
 

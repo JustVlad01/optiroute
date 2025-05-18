@@ -1,8 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
+@import "bootstrap/scss/bootstrap";
 @import "bootstrap-icons/font/bootstrap-icons.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap');
+@import "./app/styles/login.scss";
+@import "./app/styles/dashboard.scss";
+@import "./app/styles/forms.scss";
+@import "./app/styles/admin.scss";
 @import "./app/styles/header.scss";
+@import "./app/styles/store-library.scss";
 
 /* Add corporate theme global variables */
 :root {

@@ -496,13 +496,17 @@ export class SupabaseService {
   }
   
   /**
-   * Get all form assignments for a specific driver
+   * Get driver form assignments
    */
   async getDriverFormAssignments(driverId: string): Promise<any[]> {
     try {
       const { data, error } = await this.client
         .from('driver_form_assignments')
-        .select('*, form_templates(*)')
+        .select(`
+          *,
+          drivers(*),
+          form_templates!inner(*)
+        `)
         .eq('driver_id', driverId)
         .order('due_date', { ascending: false });
         
@@ -523,14 +527,57 @@ export class SupabaseService {
    */
   async getAllFormAssignments(): Promise<any[]> {
     try {
+      console.log('Fetching all form assignments...');
+      
+      // First check if the tables exist
+      const { data: tableCheck, error: tableError } = await this.client
+        .from('driver_form_assignments')
+        .select('id')
+        .limit(1);
+        
+      if (tableError) {
+        console.error('Error checking driver_form_assignments table:', tableError);
+        return [];
+      }
+      
+      // Use a simpler query without relationships to avoid foreign key issues
       const { data, error } = await this.client
         .from('driver_form_assignments')
-        .select('*, form_templates(*), drivers(*)')
+        .select('*')
         .order('due_date', { ascending: false });
         
       if (error) {
         console.error('Error getting all form assignments:', error);
         return [];
+      }
+      
+      // If we successfully got assignments, fetch the related driver information separately
+      if (data && data.length > 0) {
+        // Get unique driver IDs
+        const driverIds = [...new Set(data.map(item => item.driver_id))];
+        
+        // Fetch all drivers in a single query
+        const { data: driversData, error: driversError } = await this.client
+          .from('drivers')
+          .select('*')
+          .in('id', driverIds);
+          
+        if (driversError) {
+          console.error('Error fetching drivers:', driversError);
+        } else if (driversData) {
+          // Create a map of driver data for quick lookup
+          const driversMap = new Map(driversData.map(driver => [driver.id, driver]));
+          
+          // Attach driver data to each assignment
+          data.forEach(assignment => {
+            assignment.drivers = driversMap.get(assignment.driver_id) || { name: 'Unknown' };
+          });
+        }
+      }
+      
+      console.log('Form assignments fetched:', data ? data.length : 0, 'records');
+      if (data && data.length > 0) {
+        console.log('Sample assignment:', data[0]);
       }
       
       return data || [];
@@ -547,7 +594,11 @@ export class SupabaseService {
     try {
       const { data, error } = await this.client
         .from('driver_form_assignments')
-        .select('*, form_templates(*), drivers(*)')
+        .select(`
+          *,
+          drivers(*),
+          form_templates!inner(*)
+        `)
         .eq('id', assignmentId)
         .single();
         
@@ -570,7 +621,7 @@ export class SupabaseService {
     try {
       const formData = {
         driver_id: driverId,
-        form_template_id: templateId,
+        form_id: templateId,
         notes: notes,
         due_date: dueDate,
         status: 'pending'
@@ -628,6 +679,22 @@ export class SupabaseService {
    */
   async deleteFormAssignment(assignmentId: string): Promise<boolean> {
     try {
+      console.log('Deleting form assignment with ID:', assignmentId);
+      
+      // First, get the assignment to log what's being deleted
+      const { data: assignment, error: getError } = await this.client
+        .from('driver_form_assignments')
+        .select('*')
+        .eq('id', assignmentId)
+        .single();
+        
+      if (getError) {
+        console.error('Error getting form assignment before deletion:', getError);
+      } else {
+        console.log('Deleting assignment:', assignment);
+      }
+      
+      // Then delete the assignment
       const { error } = await this.client
         .from('driver_form_assignments')
         .delete()
@@ -636,6 +703,21 @@ export class SupabaseService {
       if (error) {
         console.error('Error deleting form assignment:', error);
         return false;
+      }
+      
+      // Verify the deletion was successful
+      const { data: checkData, error: checkError } = await this.client
+        .from('driver_form_assignments')
+        .select('id')
+        .eq('id', assignmentId);
+        
+      if (checkError) {
+        console.error('Error verifying form assignment deletion:', checkError);
+      } else if (checkData && checkData.length > 0) {
+        console.error('Form assignment still exists after deletion attempt');
+        return false;
+      } else {
+        console.log('Form assignment successfully deleted');
       }
       
       return true;
@@ -789,6 +871,29 @@ export class SupabaseService {
     } catch (error) {
       console.error('Exception updating store information:', error);
       return { success: false, error };
+    }
+  }
+
+  /**
+   * Get form template by id
+   */
+  async getFormTemplateById(templateId: string): Promise<any> {
+    try {
+      const { data, error } = await this.client
+        .from('form_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+        
+      if (error) {
+        console.error('Error getting form template:', error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Exception getting form template:', error);
+      return null;
     }
   }
 }

@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -13,23 +11,10 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent implements OnInit {
   title = 'OptiRoute';
-  updateAvailable = false;
 
-  constructor(private swUpdate: SwUpdate) {}
+  constructor() {}
 
   ngOnInit() {
-    // Check for service worker updates
-    if (this.swUpdate.isEnabled) {
-      this.swUpdate.versionUpdates
-        .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
-        .subscribe(() => {
-          this.updateAvailable = true;
-          console.log('New version available. Reload the page to update.');
-        });
-    }
-  }
-
-  updateApp() {
-    window.location.reload();
+    // No service worker functionality needed
   }
 }

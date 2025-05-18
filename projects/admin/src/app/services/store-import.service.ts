@@ -31,12 +31,28 @@ export class StoreImportService {
     this.importedStoresSubject.next([]);
     
     try {
-      // Simply truncate the table
+      // Check if there are any pending matches that could cause constraint errors
+      const { data: existingMatches, error: matchCheckError } = await this.supabaseService.client
+        .from('matched_stores')
+        .select('id')
+        .limit(1);
+        
+      if (matchCheckError) {
+        console.warn('Error checking for existing matches:', matchCheckError);
+        // Continue anyway, the truncate with CASCADE should handle this
+      }
+      
+      // Truncate the table using our safe function
       const { error: truncateError } = await this.supabaseService.client
         .rpc('truncate_excel_import_routes_safe', {});
 
       if (truncateError) {
-        throw new Error(`Error truncating table: ${truncateError.message}`);
+        // If there's a foreign key constraint error, provide a more helpful message
+        if (truncateError.message.includes('foreign key constraint')) {
+          throw new Error('Cannot truncate the existing imported stores due to database constraints. This might be because there are matched stores referring to them. Please try again later or contact support.');
+        } else {
+          throw new Error(`Error truncating table: ${truncateError.message}`);
+        }
       }
       
       // Generate a simple numeric batch ID
@@ -86,6 +102,9 @@ export class StoreImportService {
         type: 'error',
         text: `Error importing stores: ${error.message || 'Unknown error'}`
       });
+      
+      // Clear imported stores on error
+      this.importedStoresSubject.next([]);
     } finally {
       this.loadingSubject.next(false);
     }
