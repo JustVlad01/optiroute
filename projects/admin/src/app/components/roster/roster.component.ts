@@ -106,4 +106,11 @@ export class RosterComponent implements OnInit {
       this.selectedDriver = null;
     }
   }
+
+  // Placeholder for logout functionality
+  logout(): void {
+    // Implement logout logic here, e.g., navigate to login page or clear session
+    console.log('Logout clicked');
+    // Example: this.router.navigate(['/login']);
+  }
 } 

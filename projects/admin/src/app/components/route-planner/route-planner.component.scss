@@ -69,7 +69,7 @@
 // Route Planner specific styles
 .route-planner-container {
   display: grid;
-  grid-template-columns: 600px 1fr;
+  grid-template-columns: 650px 1fr;
   height: 100%;
   overflow: hidden;
 }
@@ -792,4 +792,78 @@ table {
       background-color: #cbd5e0;
     }
   }
+}
+
+// Route filter styles
+.route-filter {
+  margin-bottom: 1rem;
+}
+
+.route-dropdown {
+  position: relative;
+  
+  select {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 0.85rem;
+    color: #2d3748;
+    appearance: none;
+    cursor: pointer;
+    
+    &:disabled {
+      background-color: #edf2f7;
+      cursor: not-allowed;
+    }
+  }
+  
+  i {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4a5568;
+    pointer-events: none;
+  }
+}
+
+.route-legend {
+  margin-top: 0.5rem;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.legend-title {
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.25rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 90px;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.route-name {
+  font-size: 0.75rem;
 } 

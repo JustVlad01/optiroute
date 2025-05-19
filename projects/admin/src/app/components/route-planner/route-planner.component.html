@@ -1,3 +1,51 @@
+<style>
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 4px;
+    padding: 3px 0;
+  }
+  .checkbox-container input[type="checkbox"] {
+    margin-right: 6px;
+  }
+  .legend-items {
+    margin-top: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .legend-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .route-setting-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #eaeaea;
+  }
+  .route-start-time {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+    padding-left: 22px; /* Align with checkbox content */
+  }
+  .small-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-right: 6px;
+  }
+  .small-time-input {
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    width: 85px;
+  }
+</style>
+
 <!-- Header/Navbar -->
 <header class="navbar">
   <div class="logo">OPTIROUTE</div>
@@ -72,15 +120,17 @@
                 <i class="bi bi-geo-alt"></i>
               </button>
             </div>
-          </div>
-          <div class="form-group">
-            <label for="startTime">Starting Time:</label>
-            <input 
-              type="time" 
-              id="startTime" 
-              [(ngModel)]="startTime" 
-              [disabled]="isLoading"
-            >
+            <div class="form-group checkbox-container" *ngIf="startingPointMarker">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="applyStartingPointToAllRoutes" 
+                       [disabled]="isLoading"
+                       (change)="updateVisibleRoutes()">
+                <span>Apply starting point to all routes</span>
+              </label>
+              <div class="checkbox-hint">
+                When checked, the starting point will be applied to all routes. Uncheck to have each route start from its first location.
+              </div>
+            </div>
           </div>
           <div class="form-group checkbox-container">
             <label class="checkbox-label">
@@ -133,6 +183,48 @@
           </button>
         </div>
         
+        <!-- Route Filter Dropdown -->
+        <div *ngIf="availableRoutes.length > 1" class="route-filter">
+          <div class="route-dropdown">
+            <select [(ngModel)]="selectedRoute" (change)="changeRoute(selectedRoute)" [disabled]="isLoading">
+              <option *ngFor="let route of availableRoutes" [value]="route">{{ route }}</option>
+            </select>
+            <i class="bi bi-funnel"></i>
+          </div>
+          
+          <!-- Route Color Legend -->
+          <div class="route-legend" *ngIf="selectedRoute === 'All Routes' && availableRoutes.length > 2">
+            <div class="legend-title">Route Settings:</div>
+            <div class="legend-items">
+              <div *ngFor="let route of availableRoutes" class="legend-item" [style.display]="route === 'All Routes' ? 'none' : 'flex'">
+                <div class="route-setting-container">
+                  <!-- Route visibility checkbox -->
+                  <label class="checkbox-container">
+                    <input type="checkbox" 
+                      [checked]="selectedRoutes.has(route)" 
+                      (change)="onRouteCheckboxChange(route, $event)"
+                    >
+                    <span class="color-dot" [style.background-color]="routeColorMap.get(route) || '#2c5282'"></span>
+                    <span class="route-name">{{ route }}</span>
+                  </label>
+                  
+                  <!-- Route-specific start time -->
+                  <div class="route-start-time">
+                    <label class="small-label">Start time:</label>
+                    <input 
+                      type="time" 
+                      class="small-time-input"
+                      [ngModel]="getRouteStartTime(route)" 
+                      (ngModelChange)="setRouteStartTime(route, $event)"
+                      [disabled]="isLoading"
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Missing locations section -->
         <div *ngIf="getMissingLocations().length > 0" class="missing-locations-container alert alert-warning mt-2 mb-2">
           <div class="missing-header">
@@ -297,7 +389,9 @@
           mapTypeControl: true,
           fullscreenControl: true,
           streetViewControl: true,
-          mapTypeId: 'roadmap'
+          mapTypeId: 'roadmap',
+          maxZoom: 18,
+          minZoom: 6
         }"
       >
         <map-marker 
@@ -307,18 +401,28 @@
         ></map-marker>
         
         <map-marker
-          *ngFor="let marker of markers; let i = index"
+          *ngFor="let marker of getVisibleMarkers(); trackBy: trackByPosition"
           [position]="marker.position"
-          [options]="getMarkerOptions(i)"
+          [options]="getMarkerOptions(markers.indexOf(marker))"
           (mapClick)="openInfoWindow(mapMarker, marker.info)"
           #mapMarker="mapMarker"
         ></map-marker>
         
+        <!-- Single route polyline (when not showing multiple route polylines) -->
         <map-polyline
-          *ngIf="pathCoordinates.length > 0"
+          *ngIf="pathCoordinates.length > 0 && !showMultipleRoutePolylines"
           [path]="pathCoordinates"
           [options]="polylineOptions"
         ></map-polyline>
+        
+        <!-- Multiple route polylines (for different routes) -->
+        <ng-container *ngIf="showMultipleRoutePolylines">
+          <map-polyline
+            *ngFor="let entry of getVisibleRoutePolylines() | keyvalue"
+            [path]="entry.value.path"
+            [options]="entry.value.options"
+          ></map-polyline>
+        </ng-container>
         
         <map-info-window></map-info-window>
       </google-map>

@@ -62,4 +62,11 @@ export class RegistrationComponent {
         console.error('Registration onSubmit error:', error);
     }
   }
+
+  // Placeholder for logout functionality
+  logout(): void {
+    // Implement logout logic here, e.g., navigate to login page or clear session
+    console.log('Logout clicked');
+    // Example: this.router.navigate(['/login']);
+  }
 }

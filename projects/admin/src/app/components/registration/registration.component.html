@@ -1,60 +1,59 @@
-<div class="corporate-theme">
-  <div class="header-fullwidth text-white d-flex justify-content-between align-items-center shadow-sm">
-    <div class="d-flex align-items-center">
-      <h2 class="mb-0">OPTIROUTE</h2>
-    </div>
-    <a routerLink="/roster" class="btn btn-outline-light">
-      <i class="bi bi-arrow-left me-1"></i> BACK TO ROSTER
+<header class="navbar">
+  <div class="logo">OPTIROUTE</div>
+  <div class="nav-links">
+    <a class="nav-pill" routerLink="/dashboard">
+      <i class="bi bi-house"></i> DASHBOARD
+    </a>
+    <a class="nav-pill" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i> LOGOUT
     </a>
   </div>
+</header>
 
-  <div class="sub-header bg-light p-3 d-flex justify-content-between align-items-center shadow-sm">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-person-plus-fill fs-4 me-2 text-primary"></i>
-      <h4 class="mb-0">Register New Driver</h4>
-    </div>
+<div class="container mt-4">
+  <div class="d-flex align-items-center mb-3">
+    <i class="bi bi-person-plus-fill fs-4 me-2 text-primary"></i>
+    <h4 class="mb-0">Register New Driver</h4>
   </div>
 
-  <div class="container mt-4">
-    <form (ngSubmit)="onSubmit()" #registrationForm="ngForm">
-      <div class="mb-3">
-        <label for="driverName" class="form-label">Driver Name</label>
-        <input type="text" id="driverName" name="driverName" class="form-control" [(ngModel)]="driverName" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="customId" class="form-label">Custom ID</label>
-        <input type="text" id="customId" name="customId" class="form-control" [(ngModel)]="customId" required>
-        <div class="form-text">This is the ID the driver will use to log in.</div>
-      </div>
-
-      <div class="mb-3">
-        <label for="role" class="form-label">Role</label>
-        <select id="role" name="role" class="form-select" [(ngModel)]="role" required>
-          <option value="driver">Driver</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-
-      <div class="mb-3">
-        <label for="location" class="form-label">Driver Location</label>
-        <select id="location" name="location" class="form-select" [(ngModel)]="location" required>
-          <option value="Cork">Cork</option>
-          <option value="Dublin">Dublin</option>
-          <option value="Newry">Newry</option>
-        </select>
-      </div>
-
-      <div class="mb-3">
-        <label for="phoneNumber" class="form-label">Phone Number (Optional)</label>
-        <input type="text" id="phoneNumber" name="phoneNumber" class="form-control" [(ngModel)]="phoneNumber">
-      </div>
-
-      <button type="submit" class="btn btn-primary" [disabled]="!registrationForm.form.valid">Register Driver</button>
-    </form>
-
-    <div *ngIf="message" class="alert mt-3" [ngClass]="isError ? 'alert-danger' : 'alert-success'" role="alert">
-      {{ message }}
+  <form (ngSubmit)="onSubmit()" #registrationForm="ngForm">
+    <div class="mb-3">
+      <label for="driverName" class="form-label">Driver Name</label>
+      <input type="text" id="driverName" name="driverName" class="form-control" [(ngModel)]="driverName" required>
     </div>
+
+    <div class="mb-3">
+      <label for="customId" class="form-label">Custom ID</label>
+      <input type="text" id="customId" name="customId" class="form-control" [(ngModel)]="customId" required>
+      <div class="form-text">This is the ID the driver will use to log in.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="role" class="form-label">Role</label>
+      <select id="role" name="role" class="form-select" [(ngModel)]="role" required>
+        <option value="driver">Driver</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="location" class="form-label">Driver Location</label>
+      <select id="location" name="location" class="form-select" [(ngModel)]="location" required>
+        <option value="Cork">Cork</option>
+        <option value="Dublin">Dublin</option>
+        <option value="Newry">Newry</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="phoneNumber" class="form-label">Phone Number (Optional)</label>
+      <input type="text" id="phoneNumber" name="phoneNumber" class="form-control" [(ngModel)]="phoneNumber">
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!registrationForm.form.valid">Register Driver</button>
+  </form>
+
+  <div *ngIf="message" class="alert mt-3" [ngClass]="isError ? 'alert-danger' : 'alert-success'" role="alert">
+    {{ message }}
   </div>
 </div>
