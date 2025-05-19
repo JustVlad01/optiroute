@@ -10,82 +10,238 @@
   </header>
 
   <div class="dashboard-content">
-    <h2 class="dashboard-title">Driver Dashboard</h2>
+    <h2 class="dashboard-title">Welcome, {{ driverName }}</h2>
     
-    <!-- Forms Cards Section -->
-    <div class="driver-cards-grid">
-      <!-- Assigned Forms Card -->
-      <div class="driver-card assigned-forms-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <i class="bi bi-clipboard-check"></i>
-          </div>
-          <h3>Forms To Complete</h3>
+    <!-- Main Navigation Cards -->
+    <div class="nav-cards-grid">
+      <!-- My Route Card -->
+      <div class="nav-card">
+        <div class="card-icon">
+          <i class="bi bi-truck"></i>
         </div>
-        
-        <div class="loading-indicator" *ngIf="isLoading">
-          <i class="bi bi-hourglass-split"></i> Loading forms...
-        </div>
-        
-        <div class="card-content" *ngIf="!isLoading">
-          <div class="empty-state" *ngIf="assignedForms.length === 0">
-            <p>You have no pending forms to complete.</p>
-          </div>
-          
-          <ul class="form-list" *ngIf="assignedForms.length > 0">
-            <li *ngFor="let form of assignedForms" 
-                class="form-item" 
-                [ngClass]="getStatusClass(form.status)"
-                (click)="fillOutForm(form.id)">
-              <div class="form-item-content">
-                <h4>Daily Driver Form</h4>
-                <span class="due-date">
-                  <i class="bi bi-calendar-date"></i> 
-                  Due: {{ formatDueDate(form.due_date) }}
-                </span>
-                <p class="notes" *ngIf="form.notes">{{ form.notes }}</p>
-                <span class="status-badge" [ngClass]="getStatusClass(form.status)">
-                  {{ form.status }}
-                </span>
-              </div>
-              <div class="form-item-action">
-                <i class="bi bi-chevron-right"></i>
-              </div>
-            </li>
-          </ul>
-        </div>
+        <h3>My Route</h3>
+        <p>View and complete your assigned delivery route</p>
       </div>
       
-      <!-- Completed Forms Card -->
-      <div class="driver-card completed-forms-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <i class="bi bi-check-circle"></i>
-          </div>
-          <h3>Completed Forms</h3>
+      <!-- My Driving Performance Card -->
+      <div class="nav-card" (click)="toggleDrivingPerformanceSection()" [class.active-card]="showDrivingPerformanceSection">
+        <div class="card-icon">
+          <i class="bi bi-graph-up"></i>
+        </div>
+        <h3>My Driving Performance</h3>
+        <p>View performance metrics uploaded by your supervisor</p>
+      </div>
+      
+      <!-- My Driving Dashboard Card -->
+      <div class="nav-card" (click)="togglePerformanceSection()" [class.active-card]="showPerformanceSection">
+        <div class="card-icon">
+          <i class="bi bi-speedometer2"></i>
+        </div>
+        <h3>My Driving Dashboard</h3>
+        <p>Performance metrics and driving statistics</p>
+      </div>
+      
+      <!-- My Forms Card -->
+      <div class="nav-card" (click)="toggleFormsSection()" [class.active-card]="showFormsSection">
+        <div class="card-icon">
+          <i class="bi bi-clipboard-check"></i>
+        </div>
+        <h3>My Forms</h3>
+        <p>View and complete your assigned forms</p>
+      </div>
+      
+      <!-- News/Updates Card -->
+      <div class="nav-card">
+        <div class="card-icon">
+          <i class="bi bi-newspaper"></i>
+        </div>
+        <h3>News / Updates</h3>
+        <p>Latest company news and important updates</p>
+      </div>
+      
+      <!-- Staff Roster Card -->
+      <div class="nav-card">
+        <div class="card-icon">
+          <i class="bi bi-calendar-week"></i>
+        </div>
+        <h3>Staff Roster</h3>
+        <p>View your schedule and team assignments</p>
+      </div>
+    </div>
+    
+    <!-- Debug Info -->
+    <div class="debug-section">
+      <h4>Debug Information</h4>
+      <p>Driver ID: {{ driverId || 'Not loaded' }}</p>
+      <p>Performance Section Visible: {{ showPerformanceSection ? 'Yes' : 'No' }}</p>
+      <p>Driving Performance Visible: {{ showDrivingPerformanceSection ? 'Yes' : 'No' }}</p>
+      <p>Performance Images: {{ performanceImages.length }} found</p>
+      <p>Loading Status: {{ isLoadingPerformance ? 'Loading...' : 'Completed' }}</p>
+      <button class="btn btn-primary" (click)="loadPerformanceImages()">
+        Refresh Images
+      </button>
+      <button class="btn btn-secondary" (click)="toggleDrivingPerformanceSection()">
+        Show Driving Performance
+      </button>
+    </div>
+    
+    <!-- Performance Section (Expanded when My Driving Dashboard is clicked) -->
+    <div class="section-container performance-section" [style.display]="showPerformanceSection ? 'block' : 'none'">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-speedometer2"></i> My Driving Dashboard
+        </h2>
+        <button class="close-btn" (click)="togglePerformanceSection()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="loading-indicator" *ngIf="isLoadingPerformance">
+        <i class="bi bi-hourglass-split"></i> Loading performance data...
+      </div>
+      
+      <div class="content-area" *ngIf="!isLoadingPerformance">
+        <div class="empty-state" *ngIf="performanceImages.length === 0">
+          <i class="bi bi-exclamation-circle"></i>
+          <p>No performance data available yet.</p>
+          <small>Your supervisor will upload driving performance data that will appear here.</small>
         </div>
         
-        <div class="card-content" *ngIf="!isLoading">
-          <div class="empty-state" *ngIf="completedForms.length === 0">
-            <p>You have no completed forms.</p>
+        <div class="performance-grid" *ngIf="performanceImages.length > 0">
+          <div class="performance-image-container" *ngFor="let image of performanceImages">
+            <img [src]="image.url" class="performance-image" alt="Performance Data" (click)="openPerformanceImage(image)">
+            <div class="image-date">{{ image.created_at | date:'mediumDate' }}</div>
           </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Driving Performance Section -->
+    <div class="section-container performance-section" [style.display]="showDrivingPerformanceSection ? 'block' : 'none'">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-graph-up"></i> My Driving Performance
+        </h2>
+        <button class="close-btn" (click)="toggleDrivingPerformanceSection()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="loading-indicator" *ngIf="isLoadingPerformance">
+        <i class="bi bi-hourglass-split"></i> Loading performance data...
+      </div>
+      
+      <div class="content-area" *ngIf="!isLoadingPerformance">
+        <div class="empty-state" *ngIf="performanceImages.length === 0">
+          <i class="bi bi-exclamation-circle"></i>
+          <p>No performance data available yet.</p>
+          <small>Your supervisor will upload driving performance images that will appear here.</small>
+        </div>
+        
+        <div class="performance-images-list" *ngIf="performanceImages.length > 0">
+          <h3 class="section-subtitle">Your Performance Reports</h3>
+          <p class="section-description">Click on any image to view full size.</p>
           
-          <ul class="form-list" *ngIf="completedForms.length > 0">
-            <li *ngFor="let form of completedForms" 
-                class="form-item"
-                (click)="viewForm(form.form_id)">
-              <div class="form-item-content">
-                <h4>Daily Driver Form</h4>
-                <span class="date">
-                  <i class="bi bi-calendar-check"></i> 
-                  Completed: {{ form.completed_at | date:'mediumDate' }}
-                </span>
+          <div class="performance-grid-large">
+            <div class="performance-image-card" *ngFor="let image of performanceImages">
+              <div class="image-header">
+                <span class="image-title">Performance Report</span>
+                <span class="image-date">{{ image.created_at | date:'medium' }}</span>
               </div>
-              <div class="form-item-action">
-                <i class="bi bi-chevron-right"></i>
-              </div>
-            </li>
-          </ul>
+              <img [src]="image.url" class="performance-image-large" alt="Performance Data" (click)="openPerformanceImage(image)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Forms Section (Expanded when My Forms is clicked) -->
+    <div class="section-container" *ngIf="showFormsSection">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-clipboard-check"></i> My Forms
+        </h2>
+        <button class="close-btn" (click)="toggleFormsSection()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="forms-tabs">
+        <button [class.active]="activeFormsTab === 'pending'" (click)="setFormsTab('pending')">
+          Pending Forms
+        </button>
+        <button [class.active]="activeFormsTab === 'completed'" (click)="setFormsTab('completed')">
+          Completed Forms
+        </button>
+      </div>
+      
+      <div class="loading-indicator" *ngIf="isLoading">
+        <i class="bi bi-hourglass-split"></i> Loading forms...
+      </div>
+      
+      <!-- Pending Forms Tab -->
+      <div class="content-area" *ngIf="!isLoading && activeFormsTab === 'pending'">
+        <div class="empty-state" *ngIf="assignedForms.length === 0">
+          <i class="bi bi-clipboard"></i>
+          <p>You have no pending forms to complete.</p>
+        </div>
+        
+        <ul class="form-list" *ngIf="assignedForms.length > 0">
+          <li *ngFor="let form of assignedForms" 
+              class="form-item" 
+              [ngClass]="getStatusClass(form.status)"
+              (click)="fillOutForm(form.id)">
+            <div class="form-item-content">
+              <h4>Daily Driver Form</h4>
+              <span class="due-date">
+                <i class="bi bi-calendar-date"></i> 
+                Due: {{ formatDueDate(form.due_date) }}
+              </span>
+              <p class="notes" *ngIf="form.notes">{{ form.notes }}</p>
+              <span class="status-badge" [ngClass]="getStatusClass(form.status)">
+                {{ form.status }}
+              </span>
+            </div>
+            <div class="form-item-action">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Completed Forms Tab -->
+      <div class="content-area" *ngIf="!isLoading && activeFormsTab === 'completed'">
+        <div class="empty-state" *ngIf="completedForms.length === 0">
+          <i class="bi bi-clipboard-check"></i>
+          <p>You have no completed forms.</p>
+        </div>
+        
+        <ul class="form-list" *ngIf="completedForms.length > 0">
+          <li *ngFor="let form of completedForms" 
+              class="form-item"
+              (click)="viewForm(form.form_id)">
+            <div class="form-item-content">
+              <h4>Daily Driver Form</h4>
+              <span class="date">
+                <i class="bi bi-calendar-check"></i> 
+                Completed: {{ form.completed_at | date:'mediumDate' }}
+              </span>
+            </div>
+            <div class="form-item-action">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Performance Image Modal -->
+    <div class="modal" *ngIf="selectedPerformanceImage" (click)="closePerformanceImage()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <span class="close-btn" (click)="closePerformanceImage()">&times;</span>
+        <img [src]="selectedPerformanceImage.url" class="full-size-image" alt="Performance Data">
+        <div class="modal-footer">
+          <div class="image-date">Uploaded: {{ selectedPerformanceImage.created_at | date:'medium' }}</div>
         </div>
       </div>
     </div>

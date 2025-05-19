@@ -12,6 +12,11 @@ export class SupabaseService {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
 
+  // Method to access the Supabase client instance
+  getSupabase(): SupabaseClient {
+    return this.supabase;
+  }
+
   // Get the current session
   async getSession() {
     const { data, error } = await this.supabase.auth.getSession();

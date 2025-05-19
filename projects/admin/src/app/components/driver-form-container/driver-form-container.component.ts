@@ -20,6 +20,8 @@ export class DriverFormContainerComponent {
     const currentUrl = this.router.url;
     if (currentUrl.includes('/assignments')) {
       this.activeTab = 'assignments';
+    } else if (currentUrl.includes('/performance')) {
+      this.activeTab = 'performance';
     } else if (currentUrl.includes('/forms') || currentUrl === '/driver-forms') {
       this.activeTab = 'forms';
     }

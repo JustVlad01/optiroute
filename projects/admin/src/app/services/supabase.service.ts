@@ -34,6 +34,52 @@ export class SupabaseService {
       environment.supabaseKey,
       options
     );
+    
+    // Initialize Supabase storage buckets
+    this.initializeStorageBuckets();
+  }
+  
+  // Initialize storage buckets
+  private async initializeStorageBuckets() {
+    try {
+      // Check if driver-performance bucket exists
+      const { data: buckets, error } = await this.supabase.storage.listBuckets();
+      
+      if (error) {
+        console.error('Error listing buckets:', error);
+        return;
+      }
+      
+      console.log('Available buckets:', buckets);
+      
+      // Create driver-performance bucket if it doesn't exist
+      const driverPerfBucket = buckets?.find(b => b.name === 'driver-performance');
+      
+      if (!driverPerfBucket) {
+        console.log('Creating driver-performance bucket');
+        
+        const { data, error: createError } = await this.supabase.storage.createBucket('driver-performance', {
+          public: false,
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (createError) {
+          console.error('Error creating driver-performance bucket:', createError);
+        } else {
+          console.log('Created driver-performance bucket:', data);
+        }
+      } else {
+        console.log('Driver performance bucket already exists');
+      }
+    } catch (err) {
+      console.error('Exception initializing storage buckets:', err);
+    }
+  }
+
+  // Add method to get Supabase client
+  getSupabase(): SupabaseClient {
+    return this.supabase;
   }
 
   // Method to add a new driver

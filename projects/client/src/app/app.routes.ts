@@ -6,6 +6,7 @@ import { FormDetailsComponent } from './components/form-details/form-details.com
 import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.component';
 import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
+import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 
 export const routes: Routes = [
     {
@@ -24,6 +25,10 @@ export const routes: Routes = [
     {
         path: 'driver-forms',
         component: DriverFormsComponent
+    },
+    {
+        path: 'driver-performance',
+        component: DriverPerformanceComponent
     },
     {
         path: 'form-details/:id',

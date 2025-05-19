@@ -1,0 +1,79 @@
+<div class="driver-performance-container">
+  <!-- Improved Header/Nav Bar -->
+  <div class="nav-bar">
+    <h1 class="title">My Driving Performance</h1>
+    <button class="home-button" (click)="goBack()">
+      <i class="bi bi-house-fill"></i>
+    </button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your performance data...</p>
+  </div>
+
+  <!-- No Images Message -->
+  <div class="no-data-container" *ngIf="!isLoading && performanceImages.length === 0">
+    <i class="bi bi-exclamation-circle"></i>
+    <h2>No Performance Data Available</h2>
+    <p>Your supervisor has not uploaded any performance reports yet.</p>
+  </div>
+
+  <!-- Performance Images List -->
+  <div class="performance-content" *ngIf="!isLoading && performanceImages.length > 0">
+    <div class="section-info">
+      <p>Click on any image to view full size</p>
+    </div>
+
+    <div class="performance-grid">
+      <div class="performance-card" *ngFor="let image of performanceImages">
+        <div class="card-header">
+          <span class="report-title">Performance Report</span>
+          <span class="report-date">{{ image.created_at | date:'medium' }}</span>
+        </div>
+        <div class="image-container">
+          <img [src]="image.url" [alt]="image.name" (click)="openImage(image)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Image Modal with Fullscreen, Rotate, and Zoom support -->
+  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImage()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-controls">
+        <button class="control-button" (click)="zoomOut()" title="Zoom Out">
+          <i class="bi bi-zoom-out"></i>
+        </button>
+        <button class="control-button" (click)="zoomIn()" title="Zoom In">
+          <i class="bi bi-zoom-in"></i>
+        </button>
+        <button class="control-button" (click)="rotateLeft()" title="Rotate Left">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button class="control-button" (click)="rotateRight()" title="Rotate Right">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="control-button" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+          <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'"></i>
+        </button>
+        <button class="control-button close-button" (click)="closeImage()" title="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-image-wrapper">
+        <img [src]="selectedImage.url" 
+             [alt]="selectedImage.name" 
+             class="modal-image" 
+             #imageElement 
+             [style.transform]="'rotate(' + currentRotation + 'deg) scale(' + currentZoom + ')'">
+      </div>
+      <div class="modal-footer">
+        <p>Uploaded: {{ selectedImage.created_at | date:'medium' }}</p>
+      </div>
+    </div>
+  </div>
+</div>

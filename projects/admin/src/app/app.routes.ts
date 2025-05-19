@@ -10,6 +10,8 @@ import { DriverFormContainerComponent } from './components/driver-form-container
 import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
+import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
+import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -32,6 +34,10 @@ export const routes: Routes = [
     {
         path: 'view-orders',
         component: ViewOrdersComponent
+    },
+    {
+        path: 'route-planner',
+        component: RoutePlannerComponent
     },
     {
         path: 'import-orders',
@@ -62,6 +68,10 @@ export const routes: Routes = [
             {
                 path: 'assignments',
                 component: FormAssignmentsComponent
+            },
+            {
+                path: 'performance',
+                component: DriverPerformanceComponent
             },
             {
                 path: 'view/:id',

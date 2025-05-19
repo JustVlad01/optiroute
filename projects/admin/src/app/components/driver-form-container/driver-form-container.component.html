@@ -14,6 +14,9 @@
       <button [class.active]="activeTab === 'forms'" (click)="navigateTo('forms')">
         <i class="bi bi-clipboard-check"></i> Driver Forms
       </button>
+      <button [class.active]="activeTab === 'performance'" (click)="navigateTo('performance')">
+        <i class="bi bi-graph-up-arrow"></i> Driver Performance
+      </button>
       <button [class.active]="activeTab === 'assignments'" (click)="navigateTo('assignments')">
         <i class="bi bi-clipboard-data"></i> Form Assignments
       </button>
