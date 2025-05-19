@@ -22,6 +22,7 @@ interface StoreLocation {
   priority?: boolean; // Whether this store is a priority
   hasKeys?: boolean; // Whether this store has keys
   openingTimeObj?: Date; // Parsed opening time as Date object
+  displayOrder?: number; // Display order for UI
 }
 
 // Interface for distance matrix results
@@ -36,6 +37,8 @@ interface DistanceMatrixResult {
 interface RouteSettings {
   startTime: string;
   visible: boolean;
+  showPath: boolean;
+  showPoints: boolean;
 }
 
 declare global {
@@ -59,6 +62,14 @@ export class RoutePlannerComponent implements OnInit {
   apiLoaded = false;
   center: google.maps.LatLngLiteral = { lat: 53.3498, lng: -6.2603 }; // Dublin center
   zoom = 10;
+  mapOptions: google.maps.MapOptions = {
+    mapTypeControl: true,
+    fullscreenControl: true,
+    streetViewControl: true,
+    mapTypeId: 'roadmap',
+    maxZoom: 25,
+    minZoom: 6
+  };
   mapMarkerOptions = {
     draggable: false,
     animation: null // Remove drop animation
@@ -66,21 +77,17 @@ export class RoutePlannerComponent implements OnInit {
   markers: { position: google.maps.LatLngLiteral, info: string }[] = [];
   pathCoordinates: google.maps.LatLngLiteral[] = [];
   polylineOptions = {
-    strokeColor: '#2c5282', 
-    strokeOpacity: 1.0,
-    strokeWeight: 6,
+    strokeColor: '#2c5282',
+    strokeOpacity: 0.85,
+    strokeWeight: 5,
+    clickable: false,
+    draggable: false,
+    editable: false,
+    visible: true,
+    zIndex: 1,
     geodesic: true,
-    icons: [{
-      icon: {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        scale: 3.5,
-        strokeColor: '#FFFFFF',
-        fillColor: '#FFFFFF',
-        fillOpacity: 1
-      },
-      offset: '0',
-      repeat: '120px'
-    }]
+    strokeLinecap: 'round',
+    strokeLineJoin: 'round'
   };
 
   // Multiple route polylines
@@ -181,6 +188,20 @@ export class RoutePlannerComponent implements OnInit {
     ['Dublin 10', '#b83280'], // Darker Pink
   ]);
   
+  // Default route colors array for cycling through colors
+  routeColors: string[] = [
+    '#2c5282', // blue (primary color)
+    '#c05621', // orange 
+    '#38a169', // green
+    '#805ad5', // purple
+    '#d53f8c', // pink
+    '#dd6b20', // dark orange
+    '#2b6cb0', // darker blue
+    '#2f855a', // darker green
+    '#6b46c1', // darker purple
+    '#b83280', // darker pink
+  ];
+  
   // Properties for route visibility checkboxes
   selectedRoutes: Set<string> = new Set();
   
@@ -189,6 +210,9 @@ export class RoutePlannerComponent implements OnInit {
   
   // Cache for route marker icons to improve performance
   private routeMarkerIcons: Map<string, google.maps.Symbol> = new Map();
+  
+  // Track expanded route sections in the table
+  private expandedRoutes: Set<string> = new Set();
 
   constructor(private ngZone: NgZone, private mapsApiService: MapsApiService) {}
 
@@ -355,50 +379,43 @@ export class RoutePlannerComponent implements OnInit {
         if (!this.routeSettings.has(route)) {
           this.routeSettings.set(route, {
             startTime: this.startTime, // Default to global start time
-            visible: true
+            visible: true,
+            showPath: true,
+            showPoints: true
           });
         }
       }
     });
     
-    // Define default colors to use
-    const routeColors = [
-      '#2c5282', // blue (primary color)
-      '#c05621', // orange 
-      '#38a169', // green
-      '#805ad5', // purple
-      '#d53f8c', // pink
-      '#dd6b20', // dark orange
-      '#2b6cb0', // darker blue
-      '#2f855a', // darker green
-      '#6b46c1', // darker purple
-      '#b83280', // darker pink
-    ];
+    // Initialize marker icons with the new circle style
+    this.initializeRouteMarkerIcons();
     
-    this.availableRoutes.forEach((route, index) => {
-      if (route !== 'All Routes') {
-        // Use modulo to cycle through colors if we have more routes than colors
-        const colorIndex = (index - 1) % routeColors.length;
-        const routeColor = routeColors[colorIndex];
-        this.routeColorMap.set(route, routeColor);
-        
-        // Pre-create marker icons for each route
-        this.routeMarkerIcons.set(route, {
-          path: 'M0,0 C-2,-20 -10,-22 -10,-30 A10,10 0 1,1 10,-30 C10,-22 2,-20 0,0 Z',
-          fillColor: routeColor,
-          fillOpacity: 1,
-          strokeWeight: 1, // Adjusted for pin shape
-          strokeColor: '#ffffff',
-          scale: 1 // Adjusted for SVG path
-        });
+    // Expand the first few routes by default (for better UX)
+    this.expandedRoutes.clear();
+    const routesToExpandByDefault = Math.min(3, this.availableRoutes.length - 1); // Expand up to 3 routes
+    
+    for (let i = 1; i <= routesToExpandByDefault; i++) {
+      if (this.availableRoutes[i]) {
+        this.expandedRoutes.add(this.availableRoutes[i]);
       }
-    });
+    }
   }
 
-  // Change selected route
+  // Change selected route - now supports multiple routes
   changeRoute(route: string): void {
-    this.selectedRoute = route;
-    this.updateMapForRoute();
+    // We keep this method for backward compatibility
+    
+    if (route === 'All Routes') {
+      // When 'All Routes' is selected, select all routes
+      this.selectAllRoutes();
+    } else {
+      // When a specific route is selected, select only that route
+      this.selectedRoutes.clear();
+      this.selectedRoutes.add(route);
+    }
+    
+    // Update map to show selected routes
+    this.applySelectedRoutes();
   }
 
   // Update map to show only markers for the selected route
@@ -461,11 +478,13 @@ export class RoutePlannerComponent implements OnInit {
 
   // Update to filter stores by selected route
   getSortedLocations(): StoreLocation[] {
-    // Filter by selected route if not "All Routes"
+    // Filter by selected routes
     let filteredLocations = this.storeLocations;
-    if (this.selectedRoute !== 'All Routes') {
+    
+    // If we have specific routes selected, filter to only show those
+    if (this.selectedRoutes.size > 0 && this.selectedRoutes.size < this.availableRoutes.length - 1) {
       filteredLocations = this.storeLocations.filter(store => 
-        store.route === this.selectedRoute
+        this.selectedRoutes.has(store.route)
       );
     }
     
@@ -475,7 +494,7 @@ export class RoutePlannerComponent implements OnInit {
     }
     
     // Create a copy to sort
-    return [...filteredLocations].sort((a, b) => {
+    const sorted = [...filteredLocations].sort((a, b) => {
       // Items with routeOrder property come first, sorted by order
       if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
         return a.routeOrder - b.routeOrder;
@@ -487,52 +506,131 @@ export class RoutePlannerComponent implements OnInit {
         return 0; // preserve original order for unoptimized items
       }
     });
+    
+    // For each route, ensure display order starts from 1
+    if (this.selectedRoutes.size > 0) {
+      // Group by route
+      const routeGroups: Map<string, StoreLocation[]> = new Map();
+      
+      sorted.forEach(store => {
+        if (!routeGroups.has(store.route)) {
+          routeGroups.set(store.route, []);
+        }
+        routeGroups.get(store.route)!.push(store);
+      });
+      
+      // For each route, set displayOrder
+      routeGroups.forEach(stores => {
+        stores.sort((a, b) => {
+          if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
+            return a.routeOrder - b.routeOrder;
+          }
+          return 0;
+        });
+        
+        // Assign display order starting from 1 for each route
+        stores.forEach((store, index) => {
+          store.displayOrder = index + 1;
+        });
+      });
+    } else {
+      // If no specific routes selected, use the global routeOrder
+      sorted.forEach(store => {
+        store.displayOrder = store.routeOrder;
+      });
+    }
+    
+    return sorted;
   }
 
   // Get route-specific marker options - optimized for performance
   getMarkerOptions(index: number): google.maps.MarkerOptions {
-    // If this is the highlighted marker, return highlighted options
-    if (index === this.highlightedMarkerIndex) {
-      return this.highlightedMarkerOptions;
-    }
-    
     // If index is valid for a store location
     if (index >= 0 && index < this.storeLocations.length) {
       const store = this.storeLocations[index];
       const route = store.route;
       
-      // If we have a cached icon for this route, use it
-      if (route && this.routeMarkerIcons.has(route)) {
-        return {
-          ...this.normalMarkerOptions,
-          icon: this.routeMarkerIcons.get(route)
-        };
+      // Base marker options
+      let markerOptions: google.maps.MarkerOptions = { ...this.normalMarkerOptions };
+      
+      // If we have a route and this is a highlighted marker
+      if (index === this.highlightedMarkerIndex) {
+        markerOptions = { ...this.highlightedMarkerOptions };
+      } 
+      // Regular marker with route-specific color
+      else if (route && this.routeMarkerIcons.has(route)) {
+        markerOptions.icon = this.routeMarkerIcons.get(route);
       }
+      
+      // Add the sequence number as a centered label if route is optimized
+      if (this.optimizedRoute.length > 0 && store.routeOrder !== undefined) {
+        // Always use displayOrder for consistency with the table
+        let sequenceNumber;
+        if (this.selectedRoutes.has(route)) {
+          // Always use displayOrder for route-specific view
+          sequenceNumber = store.displayOrder;
+        } else {
+          // Don't show sequence number for stores not in selected routes
+          sequenceNumber = null;
+        }
+        
+        if (sequenceNumber !== null && sequenceNumber !== undefined) {
+          markerOptions.label = {
+            text: sequenceNumber.toString(),
+            color: '#000000', // Black text for better visibility
+            fontWeight: 'bold',
+            fontSize: '12px',
+            className: 'marker-label'
+          };
+        }
+      }
+      
+      return markerOptions;
     }
     
-    // Otherwise return normal options
+    // For any other markers (like starting point)
     return this.normalMarkerOptions;
   }
 
-  // Update visible markers based on selected route
+  // Update visible markers based on selected routes and point visibility settings
   getVisibleMarkers(): { position: google.maps.LatLngLiteral, info: string }[] {
-    if (this.selectedRoute === 'All Routes') {
-      return this.markers;
+    // If no routes are selected, return an empty array
+    if (this.selectedRoutes.size === 0) {
+      return [];
     }
     
-    // Filter markers that correspond to the selected route
+    // If all routes are selected and all have points visible, return all markers
+    if (this.selectedRoutes.size === this.availableRoutes.length - 1) { // -1 for "All Routes"
+      const allPointsVisible = Array.from(this.selectedRoutes).every(route => {
+        const settings = this.routeSettings.get(route);
+        return settings && settings.showPoints;
+      });
+      
+      if (allPointsVisible) {
+        return this.markers;
+      }
+    }
+    
+    // Filter markers that correspond to the selected routes with visible points
     return this.markers.filter((_, idx) => {
       // First check if this is a marker for a store (could be starting point marker)
       if (idx < this.storeLocations.length) {
-        return this.storeLocations[idx].route === this.selectedRoute;
+        const route = this.storeLocations[idx].route;
+        const settings = this.routeSettings.get(route);
+        
+        // Show if route is selected AND points are visible for that route
+        return this.selectedRoutes.has(route) && 
+               settings && 
+               settings.showPoints;
       }
       return false;
     });
   }
 
-  // Check if store should be shown based on selected route
+  // Check if store should be shown based on selected routes
   shouldShowStore(store: StoreLocation): boolean {
-    return this.selectedRoute === 'All Routes' || store.route === this.selectedRoute;
+    // Show store if its route is in the selectedRoutes set
+    return this.selectedRoutes.has(store.route);
   }
 
   geocodeAddresses(): void {
@@ -714,6 +812,10 @@ export class RoutePlannerComponent implements OnInit {
 
   openInfoWindow(marker: MapMarker, info: string): void {
     if (this.infoWindow && this.infoWindow.infoWindow) {
+      // Always refresh the marker info before showing the info window
+      // to ensure we display the latest sequence numbers
+      this.updateMarkerInfo();
+      
       this.infoWindow.infoWindow.setContent(info);
       this.infoWindow.open(marker);
     }
@@ -736,543 +838,249 @@ export class RoutePlannerComponent implements OnInit {
   }
 
   optimizeRoute(): void {
-    try {
-      if (!this.apiLoaded) {
-        this.errorMessage = 'Map service not available. Please try refreshing the page.';
-        return;
-      }
-      
-      if (this.markers.length < 1) {
-        this.errorMessage = 'At least one location is needed to optimize a route.';
-        return;
-      }
-
-      this.isLoading = true;
-      this.isOptimizing = true;
-      this.errorMessage = '';
-      this.optimizedRoute = [];
-      this.pathCoordinates = [];
-      this.routePolylines.clear();
-      this.showMultipleRoutePolylines = false;
-
-      // Check if we have multiple routes and log routes for debugging
-      const uniqueRoutes = this.availableRoutes.filter(route => route !== 'All Routes');
-      console.log(`Optimizing route with ${uniqueRoutes.length} different routes:`, uniqueRoutes);
-      
-      // Use a web worker or setTimeout to prevent UI blocking
-      setTimeout(() => {
-        this.ngZone.run(() => {
-          try {
-            // Check if we should use the enhanced optimization with Distance Matrix
-            if (this.markers.length > this.MAX_WAYPOINTS_PER_REQUEST) {
-              console.log(`Using enhanced optimization for ${this.markers.length} locations`);
-              this.optimizeWithDistanceMatrix();
-            } else {
-              // For smaller routes, use the original approach
-              console.log(`Using standard optimization for ${this.markers.length} locations`);
-              this.buildDistanceMatrix()
-                .then(() => this.optimizeRouteWithDistanceMatrix())
-                .then(() => {
-                  // Calculate ETAs
-                  this.calculateETAs();
-                  
-                  // Update marker info windows with ETAs
-                  this.updateMarkerInfo();
-                  
-                  // Make sure multiple route polylines are created
-                  this.createMultiRoutePolylines();
-                  const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-                  this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-                  
-                  // Force recalculation of driving directions for all selected routes
-                  this.recalculateSelectedRoutesDirections();
-                  
-                  this.isLoading = false;
-                  this.isOptimizing = false;
-                }).catch(error => {
-                  console.error('Route optimization error:', error);
-                  this.errorMessage = 'Error optimizing route. Please try again.';
-                  this.isLoading = false;
-                  this.isOptimizing = false;
-                  
-                  // Fallback to simple optimization if distance matrix fails
-                  this.optimizeRouteWorker().then(() => {
-                    this.calculateETAs();
-                    this.updateMarkerInfo();
-                    
-                    // Last attempt to create route polylines
-                    this.createMultiRoutePolylines();
-                    const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-                    this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-                    
-                    // Force recalculation of driving directions
-                    this.recalculateSelectedRoutesDirections();
-                  }).catch((err: Error) => console.error('Fallback optimization error:', err));
-                });
-            }
-          } catch (error) {
-            console.error('Route optimization error:', error);
-            this.errorMessage = 'Error optimizing route. Please try again.';
-            this.isLoading = false;
-            this.isOptimizing = false;
-          }
-        });
-      }, 100);
-    } catch (error) {
-      console.error('Error starting route optimization:', error);
-      this.errorMessage = 'Error optimizing route. Please try again.';
-      this.isLoading = false;
+    if (this.isOptimizing) {
+      return;
+    }
+    
+    this.isOptimizing = true;
+    
+    // Reset optimization results
+    this.optimizedRoute = [];
+    this.pathCoordinates = [];
+    
+    // Don't display only markers during optimization
+    this.displayMarkersOnly = false;
+    
+    // Setup for each route
+    if (this.storeLocations.length === 0) {
+      this.errorMessage = 'Please import store locations first';
       this.isOptimizing = false;
-    }
-  }
-
-  /**
-   * Enhanced optimization with Google's Distance Matrix API and proper TSP solver
-   * Handles routes with more than 23 waypoints
-   */
-  private optimizeWithDistanceMatrix(): void {
-    // Create locations array for our TSP solver
-    const locations: TspLocation[] = [];
-    
-    // Add all marker locations with metadata
-    this.markers.forEach((marker, idx) => {
-      const storeLocation = idx < this.storeLocations.length ? this.storeLocations[idx] : null;
-      
-      locations.push({
-        index: idx,
-        lat: marker.position.lat,
-        lng: marker.position.lng,
-        priority: storeLocation?.priority || false,
-        openingTime: storeLocation?.openingTimeObj
-      });
-    });
-    
-    // Create starting location object if we have a custom starting point
-    let startingPoint: google.maps.LatLngLiteral | null = null;
-    let startNodeIndex = -1;
-    
-        if (this.startingPointMarker) {
-      startingPoint = this.startingPointMarker.position;
-      startNodeIndex = 0;
-      
-      // Add starting point to beginning of locations array
-      locations.unshift({
-        index: 0,
-        lat: startingPoint.lat,
-        lng: startingPoint.lng
-      });
-      
-      // Adjust indices for the rest of the locations
-      for (let i = 1; i < locations.length; i++) {
-        locations[i].index = i;
-      }
+      return;
     }
     
-    // Get all points for distance matrix
-    const allPoints = locations.map(loc => ({
-      lat: loc.lat,
-      lng: loc.lng
-    }));
+    // Check if we have a starting point
+    const hasStartingPoint = this.startingPointMarker !== null;
     
-    // Parse starting time
-    const [startHours, startMinutes] = this.startTime.split(':').map(Number);
-    const startTimeDate = new Date();
-    startTimeDate.setHours(startHours, startMinutes, 0, 0);
-    
-    // Create TSP solver options
-    const tspOptions: TspOptions = {
-      considerOpeningTimes: this.considerOpeningTimes,
-      considerPriorities: true,
-      startTime: startTimeDate,
-      averageStopDurationMinutes: this.averageStopTimeMinutes
-    };
-    
-    // Use our Maps API service to create the distance matrix
-    if (this.googleMapsApiKey) {
-      // Use HTTP API
-      this.mapsApiService.buildFullDistanceMatrix(allPoints, this.googleMapsApiKey)
-        .subscribe(
-          distanceMatrix => {
-            this.processOptimizedRoute(distanceMatrix, locations, startNodeIndex, allPoints, tspOptions);
-          },
-          error => {
-            console.error('Error getting distance matrix:', error);
-            this.errorMessage = 'Error getting distance data. Falling back to simple optimization.';
-            
-            // Fall back to our client-side implementation
-            this.buildDistanceMatrix()
-              .then(() => this.optimizeRouteWithDistanceMatrix())
-              .then(() => {
-                this.calculateETAs();
-                this.updateMarkerInfo();
-                this.isLoading = false;
-                this.isOptimizing = false;
-              })
-              .catch(err => {
-                console.error('Fallback optimization error:', err);
-                this.errorMessage = 'Route optimization failed. Please try again.';
-                this.isLoading = false;
-                this.isOptimizing = false;
-              });
-          }
-        );
-        } else {
-      // Fall back to our client-side implementation
-      this.buildDistanceMatrix()
-        .then(() => this.optimizeRouteWithDistanceMatrix())
-        .then(() => {
-          this.calculateETAs();
-          this.updateMarkerInfo();
-          this.isLoading = false;
-          this.isOptimizing = false;
-        })
-        .catch(err => {
-          console.error('Optimization error:', err);
-          this.errorMessage = 'Route optimization failed. Please try again.';
-          this.isLoading = false;
-          this.isOptimizing = false;
-        });
-    }
-  }
-  
-  /**
-   * Process the optimized route from the TSP solver
-   */
-  private processOptimizedRoute(
-    distanceMatrix: number[][],
-    locations: TspLocation[],
-    startNodeIndex: number,
-    allPoints: google.maps.LatLngLiteral[],
-    tspOptions: TspOptions
-  ): void {
-    try {
-      // Solve the TSP problem
-      const optimizedIndices = solveTsp(
-        distanceMatrix,
-        startNodeIndex,
-        locations,
-        tspOptions
-      );
+    // If we have multiple routes and they should be optimized separately
+    if (this.getUniqueRoutes().length > 1 && !this.applyStartingPointToAllRoutes) {
+      // Show all route polylines for multi-route mode
+      this.showMultipleRoutePolylines = true;
       
-      // Convert optimized indices to the actual route
-      // Need to account for the starting point if it exists
-      const hasCustomStarting = this.startingPointMarker !== null;
-      const offset = hasCustomStarting ? 1 : 0;
-      
-      this.optimizedRoute = optimizedIndices
-        .filter(idx => idx >= offset) // Remove starting point if it exists
-        .map(idx => idx - offset);    // Map back to marker indices
-      
-      // Update routeOrder property in storeLocations for sorting
-      this.optimizedRoute.forEach((idx, order) => {
-        if (idx >= 0 && idx < this.storeLocations.length) {
-          this.storeLocations[idx].routeOrder = order + 1;
-        }
+      // Optimize each route separately
+      this.optimizeEachRouteSeparately().then(() => {
+        // Ensure we always follow road paths
+        this.recalculateSelectedRoutesDirections();
+        
+        console.log('All routes optimized separately');
+        this.isOptimizing = false;
+      }).catch(error => {
+        console.error('Error optimizing routes separately:', error);
+        this.errorMessage = 'Error optimizing routes: ' + error.message;
+        this.isOptimizing = false;
       });
+    } else {
+      // Optimize the route based on the starting point and all visible locations
+      this.optimizeWithDistanceMatrix();
       
-      // Get points for the optimized route in the correct order
-      const orderedPoints: google.maps.LatLngLiteral[] = [];
-      
-      // Add starting point if it exists
-      if (this.startingPointMarker) {
-        orderedPoints.push(this.startingPointMarker.position);
-      }
-      
-      // Add all points in the optimized route
-      this.optimizedRoute.forEach(idx => {
-        if (idx >= 0 && idx < this.markers.length) {
-          orderedPoints.push(this.markers[idx].position);
-        }
-      });
-      
-      // Create multiple route polylines first
-      this.createMultiRoutePolylines();
-      
-      // If we have more than one route, use multiple polylines
-      const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-      this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-      
-      // Get the road-based route using the Directions API (chunked if needed)
-      if (this.googleMapsApiKey && orderedPoints.length > 1) {
-        // Use HTTP API
-        this.mapsApiService.getChunkedDirections(orderedPoints, this.googleMapsApiKey)
-          .subscribe(
-            pathPoints => {
-              // Set path coordinates
-              this.pathCoordinates = pathPoints;
-              
-              // Create multiple route polylines
-              this.createMultiRoutePolylines();
-              
-              // Enable multiple route display if we have more than one route
-              const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-              this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-              
-              // If not showing multiple routes, ensure the single route line is visible
-              if (!this.showMultipleRoutePolylines) {
-                // Make sure we have a visible path
-                if (this.pathCoordinates.length === 0) {
-                  this.pathCoordinates = orderedPoints;
-                }
-              }
-              
-              // Calculate ETAs
-              this.calculateETAs();
-              
-              // Update marker info windows with ETAs
-              this.updateMarkerInfo();
-              
-              // Force real driving directions for the routes
-              this.recalculateSelectedRoutesDirections();
-              
-              this.isLoading = false;
-              this.isOptimizing = false;
-            },
-            error => {
-              console.error('Error getting directions:', error);
-              
-              // Fallback to straight lines
-              this.pathCoordinates = orderedPoints;
-              
-              // Try to create route polylines again
-              this.createMultiRoutePolylines();
-              
-              // Enable multiple route display if we have more than one route
-              const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-              this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-              
-              // Calculate ETAs
-              this.calculateETAs();
-              
-              // Update marker info windows with ETAs
-              this.updateMarkerInfo();
-              
-              // Force real driving directions for the routes
-              this.recalculateSelectedRoutesDirections();
-              
-              this.isLoading = false;
-              this.isOptimizing = false;
-            }
-          );
-          } else {
-        // Fallback to client-side implementation
-        this.pathCoordinates = orderedPoints;
+      // After optimization, calculate the road route to follow actual road paths
+      setTimeout(() => {
         this.calculateChunkedRoadRoute().then(() => {
-          // Calculate ETAs
-          this.calculateETAs();
-          
-          // Update marker info windows with ETAs
-          this.updateMarkerInfo();
-          
-          // Force real driving directions for the routes
-          this.recalculateSelectedRoutesDirections();
-          
-          this.isLoading = false;
+          console.log('Road route calculated');
           this.isOptimizing = false;
         }).catch(error => {
           console.error('Error calculating road route:', error);
-          
-          // Fallback to straight lines
-          this.pathCoordinates = orderedPoints;
-          
-          // Make sure to create the route polylines
-          this.createMultiRoutePolylines();
-              
-          // Enable multiple route display if we have more than one route
-          const routeCount = this.availableRoutes.filter(route => route !== 'All Routes').length;
-          this.showMultipleRoutePolylines = routeCount > 1 && this.routePolylines.size > 0;
-          
-          // Calculate ETAs
-          this.calculateETAs();
-          
-          // Update marker info windows with ETAs
-          this.updateMarkerInfo();
-          
-          // Force real driving directions for the routes
-          this.recalculateSelectedRoutesDirections();
-          
-          this.isLoading = false;
+          this.errorMessage = 'Error calculating road route: ' + error.message;
+          // Still mark as not optimizing, as we've completed the optimization part
           this.isOptimizing = false;
         });
+      }, 500); // Small delay to ensure optimization is complete
+    }
+  }
+
+  // New helper method to ensure route sequence numbers are refreshed
+  refreshRouteSequenceNumbers(): void {
+    // For each route, ensure displayOrder is set correctly
+    const routes = this.getUniqueRoutes();
+    
+    routes.forEach(route => {
+      const routeStores = this.storeLocations.filter(store => store.route === route);
+      
+      if (routeStores.length === 0) return;
+      
+      // Sort by routeOrder first
+      const sortedStores = [...routeStores].sort((a, b) => {
+        if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
+          return a.routeOrder - b.routeOrder;
+        } else if (a.routeOrder !== undefined) {
+          return -1;
+        } else if (b.routeOrder !== undefined) {
+          return 1;
+        }
+        return 0;
+      });
+      
+      // Set displayOrder starting from 1
+      sortedStores.forEach((store, index) => {
+        store.displayOrder = index + 1;
+      });
+    });
+    
+    // Update marker info windows to ensure they show the correct sequence
+    this.updateMarkerInfo();
+    
+    // Force marker refresh by re-creating the markers array
+    // This ensures the marker labels are updated with the new display order
+    setTimeout(() => {
+      this.markers = [...this.markers];
+    }, 50);
+    
+    // Force refresh of UI by expanding routes
+    routes.forEach(route => {
+      this.expandedRoutes.add(route);
+    });
+  }
+
+  /**
+   * Optimize each route separately using Google's Directions API
+   */
+  optimizeEachRouteSeparately(): Promise<void> {
+    // Get all route names
+    const routes = Array.from(this.routePolylines.keys());
+    
+    if (routes.length === 0) {
+      return Promise.resolve();
+    }
+    
+    console.log(`Optimizing ${routes.length} routes individually`);
+    
+    // Create an array of promises
+    const optimizationPromises = routes.map(routeName => {
+      const polyline = this.routePolylines.get(routeName);
+      if (polyline && polyline.path.length > 1) {
+        return this.calculateOptimalRouteForPath(polyline.path, routeName);
       }
+      return Promise.resolve();
+    });
+    
+    // Wait for all promises to resolve
+    return Promise.all(optimizationPromises).then(() => {
+      console.log('All routes have been individually optimized');
+      
+      // Make sure route display order is updated for all routes
+      this.refreshRouteSequenceNumbers();
+      
+      // Update marker information to reflect sequence numbers
+      this.updateMarkerInfo();
+      
+      // Expand all routes to show the updated sequences
+      this.getUniqueRoutes().forEach(route => {
+        this.expandedRoutes.add(route);
+      });
+      
+      return Promise.resolve();
+    });
+  }
+
+  /**
+   * Primary optimization method using Distance Matrix API
+   */
+  private optimizeWithDistanceMatrix(): void {
+    try {
+      // Clear any previous optimizations
+      this.optimizedRoute = [];
+      this.pathCoordinates = [];
+      this.routePolylines.clear();
+      
+      console.log('Starting route optimization with distance matrix...');
+      
+      // Optimize using the distance matrix
+      this.optimizeRouteWithDistanceMatrix()
+        .then(() => {
+          // Create path coordinates and calculate ETAs
+          // These will be done inside the calculateRoadRoute/calculateChunkedRoadRoute methods
+          console.log('Route optimization complete. Creating route polylines...');
+          
+          // Ensure route polylines are visible
+          this.displayMarkersOnly = false;
+          
+          // Create multiple route polylines if needed
+          const uniqueRoutes = this.getUniqueRoutes();
+          if (uniqueRoutes.length > 1) {
+            this.showMultipleRoutePolylines = true;
+            this.createMultiRoutePolylines();
+          }
+          
+          // Calculate ETAs for each stop
+          this.calculateETAs();
+          
+          // Update info windows for markers
+          this.updateMarkerInfo();
+          
+          // Make sure route display orders are updated
+          this.refreshRouteSequenceNumbers();
+          
+          // Expand all routes to show updated sequence
+          this.getUniqueRoutes().forEach(route => {
+            this.expandedRoutes.add(route);
+          });
+          
+          // Done with optimization
+          this.isLoading = false;
+          this.isOptimizing = false;
+          
+          console.log('Route optimization and visualization complete.');
+        })
+        .catch(error => {
+          console.error('Route optimization error:', error);
+          this.errorMessage = 'Error optimizing route. Please try again.';
+          this.isLoading = false;
+          this.isOptimizing = false;
+          
+          // Fallback to simple optimization if distance matrix fails
+          console.log('Attempting fallback optimization...');
+          this.optimizeRouteWorker().then(() => {
+            this.calculateETAs();
+            this.updateMarkerInfo();
+            this.refreshRouteSequenceNumbers();
+            
+            // Ensure polylines are visible
+            this.displayMarkersOnly = false;
+            this.createMultiRoutePolylines();
+            
+            const uniqueRoutes = this.getUniqueRoutes();
+            this.showMultipleRoutePolylines = uniqueRoutes.length > 1;
+            
+            // Expand all routes to show updated sequence
+            uniqueRoutes.forEach(route => {
+              this.expandedRoutes.add(route);
+            });
+          });
+        });
     } catch (error) {
-      console.error('Error processing optimized route:', error);
-      this.errorMessage = 'Error optimizing route. Please try again.';
+      console.error('Error in optimizeWithDistanceMatrix:', error);
+      this.errorMessage = 'Error starting optimization. Please try again.';
       this.isLoading = false;
       this.isOptimizing = false;
     }
   }
 
-  /**
-   * Build a complete distance matrix using the Google Distance Matrix API
-   * Handles chunking for large numbers of locations to stay within API limits
-   */
-  buildDistanceMatrix(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (!this.distanceMatrixService) {
-        reject(new Error('Distance Matrix service not available'));
-        return;
-      }
-
-      // Create locations array including starting point if set
-      const locations: google.maps.LatLngLiteral[] = [];
-      
-      // Add starting point if defined
-      if (this.startingPointMarker) {
-        locations.push(this.startingPointMarker.position);
-      }
-      
-      // Add all marker locations
-      this.markers.forEach(marker => locations.push(marker.position));
-      
-      if (locations.length <= 1) {
-        reject(new Error('At least two locations are needed to create a distance matrix'));
-        return;
-      }
-      
-      // Initialize empty distance matrix
-      this.distanceMatrix = Array(locations.length).fill(0)
-        .map(() => Array(locations.length).fill(0));
-      
-      // Create chunks of origin/destination pairs to stay within API limits
-      // Distance Matrix API has a limit of 100 elements per request (10x10 grid)
-      const chunkSize = Math.floor(Math.sqrt(this.MAX_ELEMENTS_PER_DISTANCE_MATRIX));
-      const locationChunks: google.maps.LatLngLiteral[][] = [];
-      
-      for (let i = 0; i < locations.length; i += chunkSize) {
-        locationChunks.push(locations.slice(i, i + chunkSize));
-      }
-      
-      // Create all origin-destination chunk pairs
-      const matrixPromises: Promise<DistanceMatrixResult>[] = [];
-      
-      for (let i = 0; i < locationChunks.length; i++) {
-        for (let j = 0; j < locationChunks.length; j++) {
-          matrixPromises.push(
-            this.getDistanceMatrix(locationChunks[i], locationChunks[j])
-          );
-        }
-      }
-      
-      // Execute all requests and combine results
-      Promise.all(matrixPromises)
-        .then(results => {
-          // Combine all chunks into the complete distance matrix
-          results.forEach(result => {
-            // For each origin-destination pair in this chunk
-            for (let i = 0; i < result.origins.length; i++) {
-              for (let j = 0; j < result.destinations.length; j++) {
-                // Find the indices of this origin and destination in the original locations array
-                const originIndex = this.findLocationIndex(locations, result.origins[i]);
-                const destIndex = this.findLocationIndex(locations, result.destinations[j]);
-                
-                if (originIndex !== -1 && destIndex !== -1) {
-                  // Store both duration and distance (prioritize duration for optimization)
-                  this.distanceMatrix[originIndex][destIndex] = result.durations[i][j];
-                }
-              }
-            }
-          });
-          
-          resolve();
-        })
-        .catch(error => {
-          console.error('Error building distance matrix:', error);
-          reject(error);
-        });
-    });
-  }
-  
-  /**
-   * Find the index of a location in an array of locations
-   */
-  findLocationIndex(locations: google.maps.LatLngLiteral[], location: google.maps.LatLngLiteral): number {
-    return locations.findIndex(loc => 
-      Math.abs(loc.lat - location.lat) < 1e-6 && 
-      Math.abs(loc.lng - location.lng) < 1e-6
-    );
-  }
-  
-  /**
-   * Get a distance matrix for a chunk of origins and destinations
-   */
-  getDistanceMatrix(
-    origins: google.maps.LatLngLiteral[],
-    destinations: google.maps.LatLngLiteral[]
-  ): Promise<DistanceMatrixResult> {
-    return new Promise((resolve, reject) => {
-      if (!this.distanceMatrixService) {
-        reject(new Error('Distance Matrix service not available'));
-        return;
-      }
-      
-      this.distanceMatrixService.getDistanceMatrix({
-        origins: origins.map(origin => new google.maps.LatLng(origin.lat, origin.lng)),
-        destinations: destinations.map(dest => new google.maps.LatLng(dest.lat, dest.lng)),
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.METRIC
-      }, (response, status) => {
-        if (status === google.maps.DistanceMatrixStatus.OK && response) {
-          // Process and transform response to our simplified format
-          const result: DistanceMatrixResult = {
-            origins: origins,
-            destinations: destinations,
-            distances: [],
-            durations: []
-          };
-          
-          // Extract distances and durations
-          response.rows.forEach(row => {
-            const distanceRow: number[] = [];
-            const durationRow: number[] = [];
-            
-            row.elements.forEach(element => {
-              if (element.status === google.maps.DistanceMatrixElementStatus.OK) {
-                distanceRow.push(element.distance.value / 1000); // Convert to km
-                durationRow.push(element.duration.value / 60); // Convert to minutes
-              } else {
-                // If not OK, use a large value to discourage using this path
-                distanceRow.push(9999);
-                durationRow.push(9999);
-              }
-            });
-            
-            result.distances.push(distanceRow);
-            result.durations.push(durationRow);
-          });
-          
-          resolve(result);
-        } else {
-          console.error('Distance Matrix request failed:', status);
-          reject(new Error(`Distance Matrix request failed: ${status}`));
-        }
-      });
-    });
-  }
-  
   /**
    * Optimize route using the precomputed distance matrix
    * Uses a simple greedy algorithm (Nearest Neighbor)
    * Priorities are handled by sorting and considering opening times if enabled
    */
   optimizeRouteWithDistanceMatrix(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       try {
-        // Create locations array (including starting point if set)
-        const locations: google.maps.LatLngLiteral[] = [];
-        
-        // Add starting point if defined
+        // Find start index
+        const locations = this.markers.map(marker => marker.position);
         let startIdx = -1;
+        
+        // If we have a starting point marker, use it as the starting point
         if (this.startingPointMarker) {
-          locations.push(this.startingPointMarker.position);
-          startIdx = 0;
-        }
-        
-        // Add all marker locations
-        this.markers.forEach(marker => locations.push(marker.position));
-        
-        // If no explicit starting point, use the first marker
-        if (startIdx === -1 && this.markers.length > 0) {
+          startIdx = 0; // Starting point marker is always first
+          locations.unshift(this.startingPointMarker.position);
+        } else if (this.markers.length > 0) {
           startIdx = 0;
         }
         
@@ -1293,39 +1101,11 @@ export class RoutePlannerComponent implements OnInit {
           }
         }
         
-        // Consider priorities and opening times
-        if (this.considerOpeningTimes) {
-          // Sort unvisited based on opening times
-          // The mapping depends on whether we have a starting point
-          const offset = this.startingPointMarker ? 1 : 0;
-          
-          unvisited.sort((a, b) => {
-            // Map indices to store locations (offset by 1 if we have a starting point)
-            const storeIdxA = a - offset;
-            const storeIdxB = b - offset;
-            
-            // Check if these indices map to valid stores
-            const storeA = storeIdxA >= 0 && storeIdxA < this.storeLocations.length ? 
-                           this.storeLocations[storeIdxA] : null;
-            const storeB = storeIdxB >= 0 && storeIdxB < this.storeLocations.length ? 
-                           this.storeLocations[storeIdxB] : null;
-            
-            // First sort by priority (higher priority comes first)
-            if (storeA?.priority && !storeB?.priority) return -1;
-            if (!storeA?.priority && storeB?.priority) return 1;
-            
-            // Then sort by opening time
-            if (storeA?.openingTimeObj && storeB?.openingTimeObj) {
-              return storeA.openingTimeObj.getTime() - storeB.openingTimeObj.getTime();
-            } else if (storeA?.openingTimeObj) {
-              return -1; // A comes first
-            } else if (storeB?.openingTimeObj) {
-              return 1; // B comes first
-            }
-            
-            return 0;
-          });
-        }
+        // Remove opening times consideration - we'll ignore this flag completely
+        // if (this.considerOpeningTimes) {
+        //   // Sort unvisited based on opening times
+        //   // ...
+        // }
         
         // Find nearest neighbor for each step using the distance matrix
         while (unvisited.length > 0) {
@@ -1336,51 +1116,7 @@ export class RoutePlannerComponent implements OnInit {
             // Get distance from current to this point
             const distance = this.distanceMatrix[current][point];
             
-            // If considering opening times, adjust distance based on estimated arrival
-            if (this.considerOpeningTimes) {
-              // Only for actual stores (not the starting point)
-              const offset = this.startingPointMarker ? 1 : 0;
-              const storeIdx = point - offset;
-              
-              if (storeIdx >= 0 && storeIdx < this.storeLocations.length) {
-                const store = this.storeLocations[storeIdx];
-                
-                if (store.openingTimeObj) {
-                  // Calculate estimated arrival (similar to the ETAs calculation)
-                  let currentTime = new Date();
-                  
-                  // Set starting time
-                  const [startHours, startMinutes] = this.startTime.split(':').map(Number);
-                  currentTime.setHours(startHours, startMinutes, 0, 0);
-                  
-                  // Add travel times for already visited locations
-                  for (let i = 1; i < visited.length; i++) {
-                    const prevIdx = visited[i-1];
-                    const thisIdx = visited[i];
-                    const travelTime = this.distanceMatrix[prevIdx][thisIdx];
-                    currentTime = new Date(currentTime.getTime() + travelTime * 60000);
-                    currentTime = new Date(currentTime.getTime() + this.averageStopTimeMinutes * 60000);
-                  }
-                  
-                  // Add travel time to potential next location
-                  const travelTime = this.distanceMatrix[current][point];
-                  const estimatedArrival = new Date(currentTime.getTime() + travelTime * 60000);
-                  
-                  // Penalty for arriving before opening
-                  if (estimatedArrival < store.openingTimeObj) {
-                    const waitTimeMinutes = (store.openingTimeObj.getTime() - estimatedArrival.getTime()) / 60000;
-                    const adjustedDistance = distance + waitTimeMinutes * 0.5;
-                    
-                    if (adjustedDistance < minDistance) {
-                      minDistance = adjustedDistance;
-                      nearest = point;
-                    }
-                    continue;
-                  }
-                }
-              }
-            }
-              
+            // Remove opening times consideration
             if (distance < minDistance) {
               minDistance = distance;
               nearest = point;
@@ -1396,6 +1132,9 @@ export class RoutePlannerComponent implements OnInit {
           }
         }
       
+        // Apply 2-opt improvement algorithm to refine the route
+        this.apply2OptImprovement(visited);
+        
         // Convert visited indices to the actual route
         // Need to account for the starting point if it exists
         const offset = this.startingPointMarker ? 1 : 0;
@@ -1410,6 +1149,9 @@ export class RoutePlannerComponent implements OnInit {
             this.storeLocations[idx].routeOrder = order + 1;
           }
         });
+
+        // Update displayOrder for all routes
+        this.refreshRouteSequenceNumbers();
         
         // Calculate path coordinates for the map
         this.pathCoordinates = [];
@@ -1426,13 +1168,52 @@ export class RoutePlannerComponent implements OnInit {
           }
         });
       
-        // Calculate road-based route using Directions API (chunked if needed)
+        // Always calculate road-based route using Directions API
         this.calculateChunkedRoadRoute().then(() => {
-          setTimeout(resolve, 100);
+          // Make sure polylines are visible
+          this.showMultipleRoutePolylines = this.getUniqueRoutes().length > 1;
+          
+          // Force a refresh of the table ordering
+          this.refreshRouteSequenceNumbers();
+          this.updateMarkerInfo();
+          
+          // Force UI update to reflect the changes in the table
+          setTimeout(() => {
+            // Force marker refresh
+            this.markers = [...this.markers];
+            
+            // Expand all routes to show the updated order
+            this.getUniqueRoutes().forEach(route => {
+              this.expandedRoutes.add(route);
+            });
+          }, 100);
+          
+          setTimeout(resolve, 200);
         }).catch(error => {
           console.error('Error calculating road route:', error);
-          // Fallback to straight lines if directions fail
-          setTimeout(resolve, 100);
+          // Even if directions fail, try again with different approach
+          this.calculateRoadRoute().then(() => {
+            // Force a refresh of the table ordering
+            this.refreshRouteSequenceNumbers();
+            this.updateMarkerInfo();
+            
+            // Force UI update
+            setTimeout(() => {
+              // Force marker refresh
+              this.markers = [...this.markers];
+              
+              // Expand all routes to show the updated order
+              this.getUniqueRoutes().forEach(route => {
+                this.expandedRoutes.add(route);
+              });
+            }, 100);
+            
+            setTimeout(resolve, 200);
+          }).catch(err => {
+            console.error('Both road route calculation methods failed:', err);
+            // Fallback to straight lines
+            setTimeout(resolve, 100);
+          });
         });
       } catch (error) {
         console.error('Error in optimizeRouteWithDistanceMatrix:', error);
@@ -1440,95 +1221,154 @@ export class RoutePlannerComponent implements OnInit {
       }
     });
   }
+  
+  /**
+   * Apply the 2-opt improvement algorithm to refine the route
+   * This algorithm looks for route segments that cross and uncrosses them to improve the route
+   */
+  apply2OptImprovement(route: number[]): void {
+    if (route.length < 4) {
+      // Need at least 4 points to apply 2-opt
+      return;
+    }
+    
+    const MAX_ITERATIONS = 100;
+    let improvement = true;
+    let iteration = 0;
+    
+    // Continue until no more improvements can be made or max iterations reached
+    while (improvement && iteration < MAX_ITERATIONS) {
+      improvement = false;
+      iteration++;
+      
+      // Try all possible 2-opt swaps and pick the best one
+      for (let i = 1; i < route.length - 2; i++) {
+        for (let j = i + 1; j < route.length - 1; j++) {
+          // Calculate current distance
+          const currentDistance = 
+            this.distanceMatrix[route[i-1]][route[i]] + 
+            this.distanceMatrix[route[j]][route[j+1]];
+          
+          // Calculate distance after swap
+          const newDistance = 
+            this.distanceMatrix[route[i-1]][route[j]] + 
+            this.distanceMatrix[route[i]][route[j+1]];
+          
+          // If the swap improves the route, apply it
+          if (newDistance < currentDistance) {
+            // Reverse the segment between i and j
+            this.reverseSegment(route, i, j);
+            improvement = true;
+            // Break and start over with the new route
+            break;
+          }
+        }
+        if (improvement) {
+          break;
+        }
+      }
+    }
+    
+    console.log(`2-opt algorithm completed after ${iteration} iterations`);
+  }
+  
+  /**
+   * Reverse a segment of the route (used by 2-opt algorithm)
+   */
+  reverseSegment(route: number[], i: number, j: number): void {
+    // Reverse the segment between i and j (inclusive)
+    while (i < j) {
+      const temp = route[i];
+      route[i] = route[j];
+      route[j] = temp;
+      i++;
+      j--;
+    }
+  }
 
   /**
-   * Calculate a road-based route in chunks to handle routes with many waypoints
+   * Calculate a road-based route by splitting into chunks if needed
    */
   calculateChunkedRoadRoute(): Promise<void> {
-    // Reset path coordinates
-    this.pathCoordinates = [];
-    
-    // If we're in multi-route mode, reset the polylines
-    if (this.showMultipleRoutePolylines) {
-      // Get existing routes
-      const existingRoutes = Array.from(this.routePolylines.keys());
-      
-      // For each route, create a new promise to calculate the road route
-      const routePromises = existingRoutes.map(routeName => {
-        const routePolyline = this.routePolylines.get(routeName);
-        if (routePolyline && routePolyline.path.length > 1) {
-          return this.calculateRoadRouteForPath(routePolyline.path, routeName);
-        }
-        return Promise.resolve();
-      });
-      
-      // Wait for all routes to be calculated
-      return Promise.all(routePromises).then(() => {
-        // Consider it complete
-        return Promise.resolve();
-      });
-    } else {
-      // Traditional single-route mode
-      return new Promise<void>((resolve, reject) => {
-        if (!this.directionsService) {
-          console.error('Directions service not initialized');
-          reject(new Error('Map service not available'));
-          return;
-        }
+    return new Promise<void>((resolve, reject) => {
+      // Skip if path is empty or we don't have the Directions Service
+      if (this.pathCoordinates.length < 2 || !this.directionsService) {
+        console.log('Skipping road route calculation - not enough points or no directions service');
+        reject(new Error('No valid path to calculate or directions service unavailable'));
+        return;
+      }
+
+      try {
+        // If we have more than the maximum waypoints allowed, split into chunks
+        const maxSize = this.MAX_WAYPOINTS_PER_REQUEST + 1; // +1 for the destination
         
-        if (this.pathCoordinates.length < 2) {
-          console.warn('Not enough points to calculate a route');
-          resolve();
-          return;
-        }
-        
-        try {
-          // If we have more than the maximum waypoints allowed, split into chunks
-          const maxSize = this.MAX_WAYPOINTS_PER_REQUEST + 1; // +1 for the destination
+        if (this.pathCoordinates.length > maxSize) {
+          // Split the route into chunks of waypoints (maximum waypoints per request is 23)
+          const chunks: google.maps.LatLngLiteral[][] = [];
+          let currentChunk: google.maps.LatLngLiteral[] = [];
           
-          if (this.pathCoordinates.length > maxSize) {
-            // Create chunks of waypoints respecting the API limit
-            const chunks: google.maps.LatLngLiteral[][] = [];
-            let currentChunk: google.maps.LatLngLiteral[] = [];
-            
-            this.pathCoordinates.forEach((point, idx) => {
-              currentChunk.push(point);
+          // First point is always origin
+          currentChunk.push(this.pathCoordinates[0]);
+          
+          // Add waypoints
+          for (let i = 1; i < this.pathCoordinates.length - 1; i++) {
+            // If current chunk is full, finalize it and start a new one
+            if (currentChunk.length >= maxSize) {
+              // Add last point as destination
+              currentChunk.push(this.pathCoordinates[i]);
+              chunks.push(currentChunk);
               
-              // When we hit the maximum or the last point, start a new chunk
-              // overlapping with the last point of the previous chunk
-              if (currentChunk.length === maxSize || idx === this.pathCoordinates.length - 1) {
-                chunks.push([...currentChunk]);
-                
-                // Start new chunk with the last point of the previous chunk
-                // unless we've just processed the last point
-                if (idx < this.pathCoordinates.length - 1) {
-                  currentChunk = [point];
-                }
-              }
-            });
-            
-            console.log(`Split route into ${chunks.length} chunks`);
-            
-            // Process chunks sequentially
-            this.processChunkedRoutes(chunks, 0)
-              .then(resolve)
-              .catch(reject);
-          } else {
-            // Single request for small routes
-            this.calculateRoadRoute()
-              .then(resolve)
-              .catch(error => {
-                console.error('Error calculating road route:', error);
-                // Fallback to straight lines if directions fail
-                setTimeout(resolve, 100);
-              });
+              // Start new chunk with this destination as new origin
+              currentChunk = [this.pathCoordinates[i]];
+            } else {
+              // Add to current chunk
+              currentChunk.push(this.pathCoordinates[i]);
+            }
           }
-        } catch (error) {
-          console.error('Error calculating chunked route:', error);
-          reject(error);
+          
+          // Add last point
+          if (this.pathCoordinates.length > 1) {
+            currentChunk.push(this.pathCoordinates[this.pathCoordinates.length - 1]);
+          }
+          
+          // Add final chunk if not empty
+          if (currentChunk.length > 1) {
+            chunks.push(currentChunk);
+          }
+          
+          console.log(`Split route into ${chunks.length} chunks`);
+          
+          // Process chunks sequentially
+          this.processChunkedRoutes(chunks, 0)
+            .then(() => {
+              // Always ensure polylines are shown for visualization
+              this.displayMarkersOnly = false;
+              if (this.getUniqueRoutes().length > 1) {
+                this.showMultipleRoutePolylines = true;
+                this.createMultiRoutePolylines();
+              }
+              resolve();
+            })
+            .catch(reject);
+        } else {
+          // Simple case - just calculate route for all points
+          this.calculateRoadRoute()
+            .then(() => {
+              // Always ensure polylines are shown for visualization
+              this.displayMarkersOnly = false;
+              if (this.getUniqueRoutes().length > 1) {
+                this.showMultipleRoutePolylines = true;
+                this.createMultiRoutePolylines();
+              }
+              resolve();
+            })
+            .catch(reject);
         }
-      });
-    }
+      } catch (error) {
+        console.error('Error in calculateChunkedRoadRoute:', error);
+        reject(error);
+      }
+    });
   }
   
   /**
@@ -1604,7 +1444,7 @@ export class RoutePlannerComponent implements OnInit {
             const destination = chunk[chunk.length - 1];
             const waypoints = chunk.slice(1, chunk.length - 1).map(point => ({
               location: point,
-              stopover: false
+              stopover: true
             }));
             
             const request = {
@@ -1612,7 +1452,7 @@ export class RoutePlannerComponent implements OnInit {
               destination,
               waypoints,
               travelMode: google.maps.TravelMode.DRIVING,
-              optimizeWaypoints: false
+              optimizeWaypoints: true
             };
             
             this.directionsService!.route(request, (response, status) => {
@@ -1656,7 +1496,7 @@ export class RoutePlannerComponent implements OnInit {
         const destination = path[path.length - 1];
         const waypoints = path.slice(1, path.length - 1).map(point => ({
           location: point,
-          stopover: false
+          stopover: true
         }));
         
         const request = {
@@ -1664,7 +1504,7 @@ export class RoutePlannerComponent implements OnInit {
           destination,
           waypoints,
           travelMode: google.maps.TravelMode.DRIVING,
-          optimizeWaypoints: false
+          optimizeWaypoints: true
         };
         
         this.directionsService!.route(request, (response, status) => {
@@ -1821,24 +1661,74 @@ export class RoutePlannerComponent implements OnInit {
   }
 
   updateMarkerInfo(): void {
-    // Update marker info windows with new ETAs
-    this.optimizedRoute.forEach(idx => {
-      const store = this.storeLocations[idx];
-      if (store.eta && idx < this.markers.length) {
+    // First, assign display orders to all stores based on their route
+    const routeGroups: Map<string, StoreLocation[]> = new Map();
+    
+    // Group stores by route
+    this.storeLocations.forEach(store => {
+      if (!routeGroups.has(store.route)) {
+        routeGroups.set(store.route, []);
+      }
+      routeGroups.get(store.route)!.push(store);
+    });
+    
+    // Assign route-specific displayOrder to each store
+    routeGroups.forEach((stores, routeName) => {
+      // Sort stores by routeOrder
+      const sortedStores = [...stores].sort((a, b) => {
+        if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
+          return a.routeOrder - b.routeOrder;
+        } else if (a.routeOrder !== undefined) {
+          return -1;
+        } else if (b.routeOrder !== undefined) {
+          return 1;
+        }
+        return 0;
+      });
+      
+      // Assign display order starting from 1 for each route
+      sortedStores.forEach((store, index) => {
+        store.displayOrder = index + 1;
+      });
+    });
+    
+    // Update marker info windows with new ETAs and route-specific display order
+    this.storeLocations.forEach(store => {
+      if (store.lat && store.lng) {
         const markerIndex = this.markers.findIndex(marker => 
           Math.abs(marker.position.lat - store.lat!) < 1e-6 && 
           Math.abs(marker.position.lng - store.lng!) < 1e-6
         );
         
         if (markerIndex >= 0) {
-        const orderText = store.routeOrder ? `<p><strong>Stop #:</strong> ${store.routeOrder}</p>` : '';
+          // Use the displayOrder for consistency with the table and map markers
+          let sequenceNumber;
+          if (this.selectedRoutes.has(store.route) && store.displayOrder !== undefined) {
+            sequenceNumber = store.displayOrder;
+          } else {
+            sequenceNumber = null; // Don't show for routes not selected
+          }
+          
+          const orderText = sequenceNumber ? 
+            `<p><strong>Stop #:</strong> ${sequenceNumber}</p>` : '';
+          
+          // Add opening time information
+          const openingTimeText = store.openingTime ? 
+            `<p><strong>Opening Time:</strong> ${this.getOpeningTimeDisplay(store)}</p>` : '';
+          
+          // Add travel time from previous stop if available
+          const travelTimeText = store.travelTimeMinutes ? 
+            `<p><strong>Travel Time:</strong> ${store.travelTimeMinutes} mins</p>` : '';
+          
           this.markers[markerIndex].info = `<div class="info-window-content">
-          <h3>${store.storeName}</h3>
-          ${orderText}
-          <p><strong>Route:</strong> ${store.route}</p>
+            <h3>${store.storeName}</h3>
+            ${orderText}
+            <p><strong>Route:</strong> ${store.route}</p>
             <p><strong>Address:</strong> ${store.eircode}</p>
-          <p><strong>ETA:</strong> ${store.eta}</p>
-        </div>`;
+            ${openingTimeText}
+            ${store.eta ? `<p><strong>ETA:</strong> ${store.eta}</p>` : ''}
+            ${travelTimeText}
+          </div>`;
         }
       }
     });
@@ -1982,12 +1872,32 @@ export class RoutePlannerComponent implements OnInit {
       Math.abs(marker.position.lng - store.lng!) < 1e-6
     );
     
+    // Use the same displayOrder for consistency
+    let sequenceNumber = null;
+    if (this.selectedRoutes.has(store.route) && store.displayOrder !== undefined) {
+      sequenceNumber = store.displayOrder;
+    }
+    
+    const orderText = sequenceNumber ? 
+      `<p><strong>Stop #:</strong> ${sequenceNumber}</p>` : '';
+    
+    // Create info window content with opening time
+    const openingTimeText = store.openingTime ? 
+      `<p><strong>Opening Time:</strong> ${this.getOpeningTimeDisplay(store)}</p>` : '';
+    
+    // Create travel time text if available
+    const travelTimeText = store.travelTimeMinutes ? 
+      `<p><strong>Travel Time:</strong> ${store.travelTimeMinutes} mins</p>` : '';
+    
     // Create simplified info window content
     const infoContent = `<div class="info-window-content">
       <h3>${store.storeName}</h3>
+      ${orderText}
       <p><strong>Route:</strong> ${store.route}</p>
       <p><strong>Address:</strong> ${store.eircode}</p>
+      ${openingTimeText}
       ${store.eta ? `<p><strong>ETA:</strong> ${store.eta}</p>` : ''}
+      ${travelTimeText}
     </div>`;
     
     // If marker exists, just update info
@@ -2338,17 +2248,56 @@ export class RoutePlannerComponent implements OnInit {
         origin: origin,
         destination: destination,
         waypoints: waypoints,
-        optimizeWaypoints: false, // We've already optimized
+        optimizeWaypoints: true, // Use Google's built-in optimization
         travelMode: google.maps.TravelMode.DRIVING
       }, (response, status) => {
         if (status === google.maps.DirectionsStatus.OK && response) {
           this.processDirectionsResponse(response);
+          
+          // If waypoints were optimized, update our route order
+          if (response.routes && response.routes.length > 0 && response.routes[0].waypoint_order) {
+            this.updateRouteFromWaypointOrder(response.routes[0].waypoint_order, waypointIndices);
+          }
+          
           resolve();
         } else {
           console.warn('Directions request failed:', status);
           reject(new Error(`Directions request failed: ${status}`));
         }
       });
+    });
+  }
+  
+  /**
+   * Update the optimized route based on the waypoint order returned by the Directions API
+   */
+  updateRouteFromWaypointOrder(waypointOrder: number[], waypointIndices: number[]): void {
+    // Create a new optimized route array
+    const newOptimizedRoute: number[] = [];
+    
+    // Add the first point if we're not using a starting point marker
+    if (!this.startingPointMarker && this.optimizedRoute.length > 0) {
+      newOptimizedRoute.push(this.optimizedRoute[0]);
+    }
+    
+    // Add the waypoints in the optimized order
+    waypointOrder.forEach(waypointIdx => {
+      newOptimizedRoute.push(waypointIndices[waypointIdx]);
+    });
+    
+    // Add the last point
+    if (this.optimizedRoute.length > 0) {
+      newOptimizedRoute.push(this.optimizedRoute[this.optimizedRoute.length - 1]);
+    }
+    
+    // Update the optimized route
+    this.optimizedRoute = newOptimizedRoute;
+    
+    // Update routeOrder property in storeLocations for sorting
+    this.optimizedRoute.forEach((idx, order) => {
+      if (idx >= 0 && idx < this.storeLocations.length) {
+        this.storeLocations[idx].routeOrder = order + 1;
+      }
     });
   }
   
@@ -2376,21 +2325,14 @@ export class RoutePlannerComponent implements OnInit {
   }
 
   /**
-   * Create polyline options for a specific route
+   * Get polyline options for a specific route
    */
   getPolylineOptionsForRoute(routeName: string): any {
-    const defaultColor = '#2c5282'; // Default blue
-    const routeColor = this.routeColorMap.get(routeName) || defaultColor;
+    const color = this.routeColorMap.get(routeName) || this.routeColors[0];
     
-    // Debug info
-    console.log(`Creating polyline for route ${routeName} with color ${routeColor}`);
-    
-    // Create a darker version of the route color for the arrows
-    // First convert the hex to RGB
+    // Create a more visible polyline with an outline effect
     const hexToRgb = (hex: string) => {
-      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-      const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? {
         r: parseInt(result[1], 16),
         g: parseInt(result[2], 16),
@@ -2398,32 +2340,20 @@ export class RoutePlannerComponent implements OnInit {
       } : { r: 0, g: 0, b: 0 };
     };
     
-    // Function to darken a color
-    const darkenColor = (color: string, percent: number): string => {
-      const rgb = hexToRgb(color);
-      const darken = (c: number) => Math.max(0, Math.floor(c * (1 - percent / 100)));
-      return `#${darken(rgb.r).toString(16).padStart(2, '0')}${darken(rgb.g).toString(16).padStart(2, '0')}${darken(rgb.b).toString(16).padStart(2, '0')}`;
-    };
-    
-    // Get a darker version of the route color for better contrast
-    const arrowColor = darkenColor(routeColor, 25); // 25% darker
+    const darken = (c: number) => Math.max(0, Math.floor(c * (1 - 25 / 100)));
     
     return {
-      strokeColor: routeColor,
-      strokeOpacity: 1.0,
-      strokeWeight: 6,
+      strokeColor: color,
+      strokeOpacity: 0.85,
+      strokeWeight: 5,
+      clickable: false,
+      draggable: false,
+      editable: false,
+      visible: true,
+      zIndex: 1,
       geodesic: true,
-      icons: [{
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 3.5,
-          strokeColor: arrowColor,
-          fillColor: arrowColor,
-          fillOpacity: 1
-        },
-        offset: '0',
-        repeat: '120px'
-      }]
+      strokeLinecap: 'round',
+      strokeLineJoin: 'round'
     };
   }
 
@@ -2443,59 +2373,49 @@ export class RoutePlannerComponent implements OnInit {
       return;
     }
     
-    // Find the first marker for each route to use as starting point instead of global starting point
-    const routeFirstMarkers: Map<string, number> = new Map();
-    
-    // Get first marker index for each route
-    this.storeLocations.forEach((store, index) => {
-      if (store.route && !routeFirstMarkers.has(store.route)) {
-        routeFirstMarkers.set(store.route, index);
-      }
-    });
-    
     // Create polylines for each route
     for (const routeName of uniqueRoutes) {
-      // Filter optimized route indices to only show this route
-      const filteredIndices = this.optimizedRoute.filter(idx => {
-        if (idx >= 0 && idx < this.storeLocations.length) {
-          return this.storeLocations[idx].route === routeName;
+      // Filter store locations for this route
+      const routeStoreLocations = this.storeLocations.filter(store => store.route === routeName);
+      
+      if (routeStoreLocations.length === 0) continue;
+      
+      // Get filtered point indices for this route
+      const routePointIndices = this.storeLocations
+        .map((store, index) => ({ index, store }))
+        .filter(item => item.store.route === routeName)
+        .map(item => item.index);
+      
+      if (routePointIndices.length === 0) continue;
+      
+      // Get actual points for this route
+      const routePoints: google.maps.LatLngLiteral[] = [];
+      
+      // Add starting point if it exists and we want to apply it to all routes
+      if (this.startingPointMarker && this.applyStartingPointToAllRoutes) {
+        routePoints.push(this.startingPointMarker.position);
+      }
+      
+      // Add all points for this route
+      routePointIndices.forEach(idx => {
+        if (idx >= 0 && idx < this.markers.length) {
+          routePoints.push(this.markers[idx].position);
         }
-        return false;
       });
       
-      if (filteredIndices.length > 0) {
-        const routePath: google.maps.LatLngLiteral[] = [];
-        
-        // Add starting point if it exists and we want to apply it to all routes
-        if (this.startingPointMarker && this.applyStartingPointToAllRoutes) {
-          routePath.push(this.startingPointMarker.position);
-        }
-        
-        // Add filtered points for this route
-        filteredIndices.forEach(idx => {
-          if (idx >= 0 && idx < this.markers.length) {
-            routePath.push(this.markers[idx].position);
-          }
+      // Add polyline for this route if it has points
+      if (routePoints.length > 0) {
+        this.routePolylines.set(routeName, {
+          path: routePoints,
+          options: this.getPolylineOptionsForRoute(routeName)
         });
         
-        // Add polyline for this route if it has points
-        if (routePath.length > 0) {
-          this.routePolylines.set(routeName, {
-            path: routePath,
-            options: this.getPolylineOptionsForRoute(routeName)
-          });
-        }
+        console.log(`Created initial polyline for route ${routeName} with ${routePoints.length} points`);
       }
     }
     
     // Enable multiple route polylines if we have at least one
     this.showMultipleRoutePolylines = this.routePolylines.size > 0 && uniqueRoutes.length > 1;
-    
-    // Debug info
-    console.log(`Created ${this.routePolylines.size} route polylines. showMultipleRoutePolylines=${this.showMultipleRoutePolylines}`);
-    this.routePolylines.forEach((polyline, route) => {
-      console.log(`Route ${route}: ${polyline.path.length} points`);
-    });
   }
 
   /**
@@ -2556,7 +2476,35 @@ export class RoutePlannerComponent implements OnInit {
   // Toggle a route's visibility (for checkbox handling in HTML)
   onRouteCheckboxChange(route: string, event: Event): void {
     const checkbox = event.target as HTMLInputElement;
-    this.toggleRouteVisibility(route, checkbox.checked);
+    
+    if (checkbox.checked) {
+      this.selectedRoutes.add(route);
+      
+      // Initialize display settings if needed
+      if (!this.routeSettings.has(route)) {
+        this.routeSettings.set(route, {
+          startTime: this.startTime,
+          visible: true,
+          showPath: true,
+          showPoints: true
+        });
+      } else {
+        // Make sure display options are enabled when route is selected
+        const settings = this.routeSettings.get(route)!;
+        if (!settings.showPath && !settings.showPoints) {
+          settings.showPath = true;
+          settings.showPoints = true;
+          this.routeSettings.set(route, settings);
+        }
+      }
+    } else {
+      this.selectedRoutes.delete(route);
+    }
+    
+    // Force re-render of routes if we already have an optimized route
+    if (this.optimizedRoute.length > 0) {
+      this.updateVisibleRoutes();
+    }
   }
   
   // Toggle a route's visibility
@@ -2586,34 +2534,261 @@ export class RoutePlannerComponent implements OnInit {
     this.recalculateSelectedRoutesDirections();
   }
   
-  // Recalculate driving directions for all selected routes
+  /**
+   * Recalculate the directions for all selected routes
+   */
   recalculateSelectedRoutesDirections(): void {
     if (this.selectedRoutes.size === 0) {
+      console.log('No routes selected to recalculate');
       return;
     }
     
-    // Show loading state
-    this.isLoading = true;
+    // Track completion for all routes
+    const totalRoutes = this.selectedRoutes.size;
+    let completedRoutes = 0;
     
-    // Create an array of promises
-    const promisesArray = Array.from(this.selectedRoutes).map(routeName => {
-      const polyline = this.routePolylines.get(routeName);
-      if (polyline && polyline.path.length > 1) {
-        return this.calculateRoadRouteForPath(polyline.path, routeName);
+    // Create a promise array for all route calculations
+    const promises: Promise<void>[] = [];
+    
+    // Process each selected route
+    this.selectedRoutes.forEach(route => {
+      const routeLocations = this.getStoresForRoute(route);
+      
+      // Skip empty routes
+      if (routeLocations.length === 0) {
+        completedRoutes++;
+        return;
       }
-      return Promise.resolve();
+      
+      // Get stores in optimized order (if available)
+      const sortedStores = routeLocations.sort((a, b) => {
+        // If we have route order, use it
+        if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
+          return a.routeOrder - b.routeOrder;
+        }
+        // Otherwise, use any existing order
+        return (a.displayOrder || 0) - (b.displayOrder || 0);
+      });
+      
+      // Extract path from sorted stores
+      const path = sortedStores.map(store => ({
+        lat: store.lat!,
+        lng: store.lng!
+      }));
+      
+      // Add starting point if we have one and it should be applied to all routes
+      if (this.startingPointMarker && this.applyStartingPointToAllRoutes) {
+        path.unshift(this.startingPointMarker.position);
+      }
+      
+      // Skip if path is too short
+      if (path.length < 2) {
+        completedRoutes++;
+        return;
+      }
+      
+      // Calculate road route using Google Maps Directions API
+      const promise = this.calculateRoadRouteForPath(path, route).then(() => {
+        completedRoutes++;
+        console.log(`Completed road route for ${route}: ${completedRoutes}/${totalRoutes}`);
+      }).catch(error => {
+        completedRoutes++;
+        console.error(`Error calculating road route for ${route}:`, error);
+      });
+      
+      promises.push(promise);
     });
     
-    // Wait for all promises to resolve
-    Promise.all(promisesArray)
-      .then(() => {
-        this.isLoading = false;
-        console.log("All selected routes have been recalculated with driving directions");
+    // Wait for all route calculations to complete
+    Promise.all(promises).then(() => {
+      console.log('All route directions recalculated');
+      this.isOptimizing = false;
+    }).catch(error => {
+      console.error('Error recalculating route directions:', error);
+      this.isOptimizing = false;
+    });
+  }
+  
+  /**
+   * Calculate optimal route for a specific path - with more aggressive optimization
+   */
+  calculateOptimalRouteForPath(path: google.maps.LatLngLiteral[], routeName: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (path.length < 2) {
+        console.warn(`Path too short for route ${routeName}: ${path.length} points`);
+        resolve();
+        return;
+      }
+      
+      console.log(`Optimizing route for ${routeName} with ${path.length} points`);
+      
+      // Ensure we're using a valid DirectionsService instance
+      if (!this.directionsService) {
+        this.directionsService = new google.maps.DirectionsService();
+      }
+      
+      try {
+        // The starting point should always be the warehouse/depot
+        const origin = this.startingPointMarker ? this.startingPointMarker.position : path[0];
+        
+        // The destination can be the last stop
+        const destination = path[path.length - 1];
+        
+        // All other points are waypoints
+        const waypoints = path.slice(this.startingPointMarker ? 0 : 1, path.length - 1).map(point => ({
+          location: new google.maps.LatLng(point.lat, point.lng),
+          stopover: true
+        }));
+        
+        console.log(`Route ${routeName}: ${waypoints.length} waypoints between origin and destination`);
+        
+        // If we have a lot of waypoints, we need to chunk the requests
+        if (waypoints.length > this.MAX_WAYPOINTS_PER_REQUEST) {
+          console.log(`Route ${routeName} has too many waypoints, chunking requests`);
+          this.calculateRoadRouteForPath(path, routeName)
+            .then(() => {
+              // After calculating the route, ensure route sequence numbers are updated
+              this.updateRouteSpecificSequence(routeName);
+              resolve();
+            })
+            .catch(reject);
+          return;
+        }
+        
+        // Single request for route optimization
+        this.directionsService.route({
+          origin: new google.maps.LatLng(origin.lat, origin.lng),
+          destination: new google.maps.LatLng(destination.lat, destination.lng),
+          waypoints: waypoints,
+          travelMode: google.maps.TravelMode.DRIVING,
+          optimizeWaypoints: true,  // This is the key to let Google optimize the route
+          avoidHighways: false,     // Don't avoid highways
+          avoidTolls: false,        // Don't avoid toll roads
+          provideRouteAlternatives: true  // Ask for multiple route options
+        }, (response, status) => {
+          if (status === google.maps.DirectionsStatus.OK && response) {
+            // If we have multiple routes, use the shortest one
+            const bestRoute = this.findBestRoute(response);
+            const routePath = this.extractPathFromDirectionsResponse(response);
+            
+            // Update the route polyline
+            this.routePolylines.set(routeName, {
+              path: routePath,
+              options: this.getPolylineOptionsForRoute(routeName)
+            });
+            
+            console.log(`Created optimized polyline for route ${routeName} with ${routePath.length} points`);
+            
+            // Update route-specific sequence numbers
+            this.updateRouteSpecificSequence(routeName);
+            
+            resolve();
+          } else {
+            console.warn(`Directions request failed for route ${routeName}: ${status}`);
+            
+            // Fallback to regular route calculation
+            this.calculateRoadRouteForPath(path, routeName)
+              .then(() => {
+                // Update route-specific sequence numbers
+                this.updateRouteSpecificSequence(routeName);
+                resolve();
+              })
+              .catch(reject);
+          }
+        });
+      } catch (error) {
+        console.error(`Error calculating optimal route for ${routeName}:`, error);
+        // Fallback to regular route calculation
+        this.calculateRoadRouteForPath(path, routeName)
+          .then(() => {
+            // Update route-specific sequence numbers
+            this.updateRouteSpecificSequence(routeName);
+            resolve();
+          })
+          .catch(reject);
+      }
+    });
+  }
+  
+  /**
+   * Update sequence numbers for a specific route
+   */
+  private updateRouteSpecificSequence(routeName: string): void {
+    // Get all stores for this route
+    const routeStores = this.storeLocations.filter(store => store.route === routeName);
+    
+    if (routeStores.length === 0) return;
+    
+    // Find the indices of these stores in the optimized route
+    const optimizedIndices = this.optimizedRoute
+      .map((idx, order) => ({ idx, order }))
+      .filter(item => {
+        if (item.idx >= 0 && item.idx < this.storeLocations.length) {
+          return this.storeLocations[item.idx].route === routeName;
+        }
+        return false;
       })
-      .catch(error => {
-        console.error("Error recalculating route directions:", error);
-        this.isLoading = false;
+      .sort((a, b) => a.order - b.order);
+    
+    // Update the display order for each store in this route
+    optimizedIndices.forEach((item, index) => {
+      if (item.idx >= 0 && item.idx < this.storeLocations.length) {
+        this.storeLocations[item.idx].displayOrder = index + 1;
+      }
+    });
+    
+    // Force marker refresh to update labels
+    setTimeout(() => {
+      this.markers = [...this.markers];
+    }, 50);
+  }
+  
+  /**
+   * Find the best (shortest) route from a directions result with alternatives
+   */
+  findBestRoute(response: google.maps.DirectionsResult): google.maps.DirectionsRoute {
+    if (!response.routes || response.routes.length === 0) {
+      throw new Error('No routes found in directions response');
+    }
+    
+    // If we only have one route, return it
+    if (response.routes.length === 1) {
+      return response.routes[0];
+    }
+    
+    // Find the shortest route
+    let shortestRoute = response.routes[0];
+    let shortestDistance = this.calculateRouteDistance(shortestRoute);
+    
+    for (let i = 1; i < response.routes.length; i++) {
+      const route = response.routes[i];
+      const distance = this.calculateRouteDistance(route);
+      
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        shortestRoute = route;
+      }
+    }
+    
+    console.log(`Selected best route with distance: ${shortestDistance} meters`);
+    return shortestRoute;
+  }
+  
+  /**
+   * Calculate total distance of a route
+   */
+  calculateRouteDistance(route: google.maps.DirectionsRoute): number {
+    let distance = 0;
+    
+    if (route.legs) {
+      route.legs.forEach(leg => {
+        if (leg.distance) {
+          distance += leg.distance.value;
+        }
       });
+    }
+    
+    return distance;
   }
   
   // Get visible routes for the map
@@ -2623,12 +2798,13 @@ export class RoutePlannerComponent implements OnInit {
       return new Map();
     }
     
-    // Return only the polylines for selected routes
+    // Return only the polylines for selected routes with paths visible
     const visiblePolylines = new Map<string, { path: google.maps.LatLngLiteral[], options: any }>();
     
-    // Only include routes that are in the selectedRoutes set
+    // Only include routes that are in the selectedRoutes set AND have showPath enabled
     this.routePolylines.forEach((value, key) => {
-      if (this.selectedRoutes.has(key)) {
+      const settings = this.routeSettings.get(key);
+      if (this.selectedRoutes.has(key) && settings && settings.showPath) {
         visiblePolylines.set(key, value);
       }
     });
@@ -2653,5 +2829,310 @@ export class RoutePlannerComponent implements OnInit {
         this.calculateETAs();
       }
     }
+  }
+
+  // Initialize or update route marker icons with sequence numbers
+  initializeRouteMarkerIcons(): void {
+    this.routeMarkerIcons.clear();
+    
+    this.availableRoutes.forEach((route, index) => {
+      if (route !== 'All Routes') {
+        // Use modulo to cycle through colors
+        const colorIndex = (index - 1) % this.routeColors.length;
+        const routeColor = this.routeColors[colorIndex];
+        this.routeColorMap.set(route, routeColor);
+        
+        // Create marker icon for this route
+        this.routeMarkerIcons.set(route, {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: routeColor,
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: '#ffffff',
+          scale: 14
+        });
+      }
+    });
+  }
+
+  // Select all routes except "All Routes"
+  selectAllRoutes(): void {
+    this.selectedRoutes.clear();
+    this.availableRoutes.forEach(route => {
+      if (route !== 'All Routes') {
+        this.selectedRoutes.add(route);
+      }
+    });
+    this.updateVisibleRoutes();
+  }
+
+  // Clear all selected routes
+  clearRouteSelection(): void {
+    this.selectedRoutes.clear();
+    this.updateVisibleRoutes();
+  }
+
+  // Apply the selected routes
+  applySelectedRoutes(): void {
+    if (this.selectedRoutes.size === 0) {
+      return;
+    }
+    
+    // Enable multiple route display mode
+    this.showMultipleRoutePolylines = true;
+    
+    // Create route polylines for all selected routes
+    this.createMultiRoutePolylines();
+    
+    // Update markers with the appropriate labels
+    this.updateMarkerInfo();
+    
+    // Recalculate directions for selected routes
+    this.recalculateSelectedRoutesDirections();
+    
+    // Force re-render of markers to update the labels
+    setTimeout(() => {
+      this.markers = [...this.markers];
+    }, 50);
+  }
+
+  // Get route path visibility
+  getRoutePathVisibility(route: string): boolean {
+    const settings = this.routeSettings.get(route);
+    return settings ? settings.showPath : false;
+  }
+  
+  // Toggle route path visibility
+  toggleRoutePathVisibility(route: string, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    const settings = this.routeSettings.get(route);
+    
+    if (settings) {
+      settings.showPath = checkbox.checked;
+      this.routeSettings.set(route, settings);
+      this.applySelectedRoutes();
+    }
+  }
+  
+  // Get route points visibility
+  getRoutePointsVisibility(route: string): boolean {
+    const settings = this.routeSettings.get(route);
+    return settings ? settings.showPoints : false;
+  }
+  
+  // Toggle route points visibility
+  toggleRoutePointsVisibility(route: string, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    const settings = this.routeSettings.get(route);
+    
+    if (settings) {
+      settings.showPoints = checkbox.checked;
+      this.routeSettings.set(route, settings);
+      this.applySelectedRoutes();
+    }
+  }
+
+  // Get a list of unique routes from store locations
+  getUniqueRoutes(): string[] {
+    if (!this.storeLocations.length) return [];
+    
+    // Get unique routes from store locations
+    const uniqueRoutes = Array.from(new Set(this.storeLocations.map(store => store.route)))
+      .filter(Boolean) // Filter out undefined/null/empty routes
+      .sort(); // Sort alphabetically
+      
+    return uniqueRoutes;
+  }
+  
+  // Toggle expanded state of a route
+  toggleRouteExpanded(route: string): void {
+    if (this.isRouteExpanded(route)) {
+      this.expandedRoutes.delete(route);
+    } else {
+      this.expandedRoutes.add(route);
+    }
+  }
+  
+  // Check if a route is expanded
+  isRouteExpanded(route: string): boolean {
+    return this.expandedRoutes.has(route);
+  }
+  
+  // Get number of locations for a specific route
+  getLocationCountForRoute(route: string): number {
+    return this.storeLocations.filter(store => store.route === route).length;
+  }
+  
+  // Get all store locations for a specific route
+  getStoresForRoute(route: string): StoreLocation[] {
+    // Filter stores for this route
+    const routeStores = this.storeLocations.filter(store => store.route === route);
+    
+    // If route is optimized, ensure stores are sorted by delivery sequence
+    if (this.optimizedRoute.length > 0) {
+      return routeStores.sort((a, b) => {
+        // For optimized routes, always use displayOrder (route-specific sequence)
+        // Fallback to routeOrder if displayOrder not available
+        const aOrder = a.displayOrder !== undefined ? a.displayOrder : (a.routeOrder || 9999);
+        const bOrder = b.displayOrder !== undefined ? b.displayOrder : (b.routeOrder || 9999);
+        return aOrder - bOrder;
+      });
+    }
+    
+    // If route isn't optimized, return in original order
+    return routeStores;
+  }
+
+  // Handle map clicks
+  mapClick(event: google.maps.MapMouseEvent): void {
+    // Do nothing by default - this is just a placeholder to satisfy the event binding
+    console.log('Map clicked:', event);
+  }
+
+  /**
+   * Build a complete distance matrix using the Google Distance Matrix API
+   * Handles chunking for large numbers of locations to stay within API limits
+   */
+  buildDistanceMatrix(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.distanceMatrixService) {
+        reject(new Error('Distance Matrix service not available'));
+        return;
+      }
+
+      // Create locations array including starting point if set
+      const locations: google.maps.LatLngLiteral[] = [];
+      
+      // Add starting point if defined
+      if (this.startingPointMarker) {
+        locations.push(this.startingPointMarker.position);
+      }
+      
+      // Add all marker locations
+      this.markers.forEach(marker => locations.push(marker.position));
+      
+      if (locations.length <= 1) {
+        reject(new Error('At least two locations are needed to create a distance matrix'));
+        return;
+      }
+      
+      // Initialize empty distance matrix
+      this.distanceMatrix = Array(locations.length).fill(0)
+        .map(() => Array(locations.length).fill(0));
+      
+      // Create chunks of origin/destination pairs to stay within API limits
+      // Distance Matrix API has a limit of 100 elements per request (10x10 grid)
+      const chunkSize = Math.floor(Math.sqrt(this.MAX_ELEMENTS_PER_DISTANCE_MATRIX));
+      const locationChunks: google.maps.LatLngLiteral[][] = [];
+      
+      for (let i = 0; i < locations.length; i += chunkSize) {
+        locationChunks.push(locations.slice(i, i + chunkSize));
+      }
+      
+      // Create all origin-destination chunk pairs
+      const matrixPromises: Promise<DistanceMatrixResult>[] = [];
+      
+      for (let i = 0; i < locationChunks.length; i++) {
+        for (let j = 0; j < locationChunks.length; j++) {
+          matrixPromises.push(
+            this.getDistanceMatrix(locationChunks[i], locationChunks[j])
+          );
+        }
+      }
+      
+      // Execute all requests and combine results
+      Promise.all(matrixPromises)
+        .then(results => {
+          // Combine all chunks into the complete distance matrix
+          results.forEach(result => {
+            // For each origin-destination pair in this chunk
+            for (let i = 0; i < result.origins.length; i++) {
+              for (let j = 0; j < result.destinations.length; j++) {
+                // Find the indices of this origin and destination in the original locations array
+                const originIndex = this.findLocationIndex(locations, result.origins[i]);
+                const destIndex = this.findLocationIndex(locations, result.destinations[j]);
+                
+                if (originIndex !== -1 && destIndex !== -1) {
+                  // Store both duration and distance (prioritize duration for optimization)
+                  this.distanceMatrix[originIndex][destIndex] = result.durations[i][j];
+                }
+              }
+            }
+          });
+          
+          resolve();
+        })
+        .catch(error => {
+          console.error('Error building distance matrix:', error);
+          reject(error);
+        });
+    });
+  }
+  
+  /**
+   * Find the index of a location in an array of locations
+   */
+  findLocationIndex(locations: google.maps.LatLngLiteral[], location: google.maps.LatLngLiteral): number {
+    return locations.findIndex(loc => 
+      Math.abs(loc.lat - location.lat) < 1e-6 && 
+      Math.abs(loc.lng - location.lng) < 1e-6
+    );
+  }
+  
+  /**
+   * Get a distance matrix for a chunk of origins and destinations
+   */
+  getDistanceMatrix(
+    origins: google.maps.LatLngLiteral[],
+    destinations: google.maps.LatLngLiteral[]
+  ): Promise<DistanceMatrixResult> {
+    return new Promise((resolve, reject) => {
+      if (!this.distanceMatrixService) {
+        reject(new Error('Distance Matrix service not available'));
+        return;
+      }
+      
+      this.distanceMatrixService.getDistanceMatrix({
+        origins: origins.map(origin => new google.maps.LatLng(origin.lat, origin.lng)),
+        destinations: destinations.map(dest => new google.maps.LatLng(dest.lat, dest.lng)),
+        travelMode: google.maps.TravelMode.DRIVING,
+        unitSystem: google.maps.UnitSystem.METRIC
+      }, (response, status) => {
+        if (status === google.maps.DistanceMatrixStatus.OK && response) {
+          // Process and transform response to our simplified format
+          const result: DistanceMatrixResult = {
+            origins: origins,
+            destinations: destinations,
+            distances: [],
+            durations: []
+          };
+          
+          // Extract distances and durations
+          response.rows.forEach(row => {
+            const distanceRow: number[] = [];
+            const durationRow: number[] = [];
+            
+            row.elements.forEach(element => {
+              if (element.status === google.maps.DistanceMatrixElementStatus.OK) {
+                distanceRow.push(element.distance.value / 1000); // Convert to km
+                durationRow.push(element.duration.value / 60); // Convert to minutes
+              } else {
+                // If not OK, use a large value to discourage using this path
+                distanceRow.push(9999);
+                durationRow.push(9999);
+              }
+            });
+            
+            result.distances.push(distanceRow);
+            result.durations.push(durationRow);
+          });
+          
+          resolve(result);
+        } else {
+          console.error('Distance Matrix request failed:', status);
+          reject(new Error(`Distance Matrix request failed: ${status}`));
+        }
+      });
+    });
   }
 } 

@@ -12,9 +12,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 2rem;
-  background-color: #2c5282;
+  background: linear-gradient(135deg, #2c5282, #3498db);
   color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   height: 60px;
   width: 100%;
 }
@@ -23,6 +23,7 @@
   font-size: 1.5rem;
   font-weight: bold;
   letter-spacing: 1px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .nav-links {
@@ -35,7 +36,7 @@
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   color: white;
   text-decoration: none;
@@ -43,7 +44,7 @@
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.25);
   }
 
   i {
@@ -82,7 +83,74 @@
   height: 100%;
   overflow-y: auto;
   background-color: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+}
+
+// Map container styling
+.map-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+google-map {
+  height: 100%;
+  width: 100%;
+}
+
+// Enhanced polyline styles for map routes
+::ng-deep .gm-style {
+  .map-polyline-container {
+    z-index: 1; // Ensure polylines appear above the map but below markers
+  }
+}
+
+// Custom polyline styles to make routes more visible
+map-polyline {
+  // Override styles to ensure polylines are visible and have proper z-index
+  ::ng-deep path {
+    stroke-opacity: 0.85 !important;
+    stroke-width: 5px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    filter: drop-shadow(0px 0px 4px rgba(0, 0, 0, 0.3));
+  }
+}
+
+// Marker styling improvements
+::ng-deep .gm-style {
+  .map-marker {
+    filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
+    cursor: pointer;
+  }
+}
+
+// Map loading indicator
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #2c5282;
+  z-index: 10;
+  
+  .spin {
+    animation: spin 1s linear infinite;
+    margin-right: 0.75rem;
+    font-size: 1.5rem;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 // File upload section
@@ -109,9 +177,10 @@
   margin-bottom: 0.5rem;
 }
 
+// File input styling
 .file-input-label {
   padding: 0.4rem 0.75rem;
-  background-color: #2c5282;
+  background: linear-gradient(135deg, #3498db, #2c5282);
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -119,9 +188,10 @@
   margin-right: 0.75rem;
   white-space: nowrap;
   transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background-color: #2b4f7a;
+    background: linear-gradient(135deg, #2980b9, #2b4f7a);
   }
 }
 
@@ -205,21 +275,73 @@
   }
 }
 
+// Button styling
+.btn {
+  transition: all 0.2s ease;
+  
+  &.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2c5282);
+    border: none;
+    
+    &:hover:not([disabled]) {
+      background: linear-gradient(135deg, #2980b9, #2b4f7a);
+    }
+  }
+  
+  &.btn-outline-primary {
+    color: #2c5282;
+    border-color: #3498db;
+    
+    &:hover:not([disabled]) {
+      background-color: rgba(52, 152, 219, 0.1);
+      color: #2b4f7a;
+    }
+  }
+  
+  &.btn-outline-secondary {
+    color: #4a5568;
+    border-color: #cbd5e0;
+    
+    &:hover:not([disabled]) {
+      background-color: #edf2f7;
+      color: #2d3748;
+    }
+  }
+  
+  &.btn-sm {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Set button styling
 .set-btn {
   position: absolute;
   right: 2px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 0.25rem 0.4rem;
-  background: #2c5282;
+  padding: 0.3rem 0.6rem;
+  background: linear-gradient(135deg, #3498db, #2c5282);
   color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  i {
+    font-size: 0.9rem;
+  }
   
   &:hover:not([disabled]) {
-    background-color: #2b4f7a;
+    background: linear-gradient(135deg, #2980b9, #2b4f7a);
   }
   
   &:disabled {
@@ -587,32 +709,7 @@ table {
   }
 }
 
-// Map container
-.map-container {
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-.map-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(247, 249, 252, 0.9);
-  z-index: 10;
-  font-size: 1rem;
-  color: #2c5282;
-
-  i {
-    margin-right: 0.75rem;
-  }
-}
-
+// Map notice
 .map-notice {
   position: absolute;
   bottom: 20px;
@@ -659,67 +756,141 @@ table {
 
 // Missing locations styles
 .missing-locations-container {
-  margin-bottom: 15px;
-  border-radius: 8px;
-  padding: 15px;
+  margin: 0.75rem 0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  background-color: #fff8e6;
+  border: 1px solid #fcefc7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
-  .missing-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.missing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  
+  .header-text {
     font-weight: 600;
-
+    font-size: 0.9rem;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    
     i {
-      margin-right: 8px;
+      margin-right: 0.5rem;
+      color: #f59e0b;
+      font-size: 1rem;
+    }
+  }
+  
+  button {
+    background: linear-gradient(135deg, #3498db, #2c5282);
+    color: white;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, #2980b9, #2b4f7a);
+    }
+  }
+}
+
+.missing-locations-list {
+  margin-top: 0.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.missing-location-item {
+  background-color: white;
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.missing-store-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #2d3748;
+  margin-bottom: 0.2rem;
+}
+
+.missing-store-address {
+  color: #718096;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.manual-location-input {
+  margin-top: 0.5rem;
+
+  input {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    
+    &:focus {
+      outline: none;
+      border-color: #2c5282;
+      box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.1);
     }
   }
 
-  .missing-locations-list {
-    margin-top: 15px;
-  }
-
-  .missing-location-item {
-    margin-bottom: 12px;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.5);
-    border-radius: 6px;
-  }
-
-  .missing-store-name {
-    font-weight: 600;
-    font-size: 15px;
-  }
-
-  .missing-store-address {
-    color: #666;
-    margin-bottom: 5px;
-    font-size: 14px;
-  }
-
-  .manual-location-input {
-    margin-top: 10px;
-
+  .coordinate-inputs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    
+    .row {
+      display: flex;
+      width: 100%;
+      gap: 0.5rem;
+    }
+    
+    .col-6 {
+      flex: 1;
+    }
+    
     input {
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #ddd;
+      font-size: 0.8rem;
+    }
+    
+    .btn {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+  }
+
+  .toggle-coordinates {
+    margin-top: 0.5rem;
+    text-align: center;
+    
+    button {
+      width: 100%;
+      background-color: #f7fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .coordinate-inputs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-
-      input {
-        width: 100%;
+      padding: 0.3rem 0.5rem;
+      color: #4a5568;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: #edf2f7;
+        border-color: #cbd5e0;
       }
-    }
-
-    .toggle-coordinates {
-      margin-top: 8px;
-      text-align: center;
     }
   }
 }
@@ -797,73 +968,486 @@ table {
 // Route filter styles
 .route-filter {
   margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.route-dropdown {
-  position: relative;
-  
-  select {
-    width: 100%;
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    background-color: white;
-    font-size: 0.85rem;
-    color: #2d3748;
-    appearance: none;
-    cursor: pointer;
-    
-    &:disabled {
-      background-color: #edf2f7;
-      cursor: not-allowed;
-    }
-  }
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
   
   i {
-    position: absolute;
-    right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #4a5568;
-    pointer-events: none;
+    margin-right: 0.5rem;
+    color: #2c5282;
   }
 }
 
-.route-legend {
-  margin-top: 0.5rem;
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-}
-
-.legend-title {
-  font-weight: 600;
-  color: #4a5568;
-  margin-bottom: 0.25rem;
-}
-
-.legend-items {
+.filter-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.legend-item {
+// Make route checkboxes more compact
+.route-checkboxes {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.25rem;
+  padding-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+// Selected routes info bar styling
+.selected-routes-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+// Styling for route group headers
+.route-group-header {
+  cursor: pointer;
+  background-color: #f7fafc;
+  
+  &:hover {
+    background-color: #edf2f7;
+  }
+  
+  &.expanded {
+    background-color: #e6f0f9;
+  }
+}
+
+.route-header-cell {
+  padding: 0.75rem 0.5rem !important;
+}
+
+.route-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.route-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  i {
+    font-size: 0.9rem;
+    color: #4a5568;
+  }
+  
+  .route-name {
+    font-weight: 600;
+    color: #2d3748;
+  }
+  
+  .location-count {
+    font-size: 0.8rem;
+    color: #718096;
+  }
+}
+
+.route-toggle-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+// Checkbox styling
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #cbd5e0;
+  background-color: white;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  
+  &:checked {
+    background-color: #2c5282;
+    border-color: #2c5282;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  }
+  
+  &:hover:not(:disabled) {
+    border-color: #2c5282;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(44, 82, 130, 0.05);
+  }
+  
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Style for route checkboxes in a list
+.route-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  
+  .route-checkbox-item {
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+}
+
+// Route options section styling
+.route-options-section {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #edf2f7;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: #f7fafc;
+  }
+  
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #2c5282;
+    
+    i {
+      font-size: 1rem;
+    }
+  }
+}
+
+.compact-content {
+  padding: 0.75rem;
+  
+  &:not(.expanded) {
+    display: none;
+  }
+}
+
+.options-row {
+  margin-bottom: 0.75rem;
+}
+
+.option-group {
+  margin-bottom: 0.5rem;
+  
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.25rem;
+  }
+}
+
+.starting-point-control {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.starting-point-input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #2c5282;
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.1);
+  }
+}
+
+.starting-point-btn {
+  background: linear-gradient(135deg, #3498db, #2c5282);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  i {
+    font-size: 1rem;
+  }
+  
+  &:hover:not([disabled]) {
+    background: linear-gradient(135deg, #2980b9, #2b4f7a);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.checkbox-option {
+  margin-top: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #4a5568;
+  
+  input[type="checkbox"] {
+    margin-right: 0.5rem;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.action-link {
+  background: none;
+  border: none;
+  color: #2c5282;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  
+  &:hover:not([disabled]) {
+    background-color: rgba(44, 82, 130, 0.1);
+    text-decoration: underline;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.route-checkbox-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  margin-bottom: 0.3rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #cbd5e0;
+    background-color: #f7fafc;
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.route-main {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  
+  .color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  
+  .route-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2d3748;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+}
+
+.route-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.time-control {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  min-width: 90px;
+  
+  .tiny-label {
+    font-size: 0.7rem;
+    color: #718096;
+    white-space: nowrap;
+  }
+  
+  .small-time-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.15rem 0.25rem;
+    font-size: 0.75rem;
+    width: 70px;
+  }
 }
 
-.color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
+.display-toggles {
+  display: flex;
+  gap: 0.3rem;
 }
 
-.route-name {
-  font-size: 0.75rem;
+.toggle-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+  }
+  
+  i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background-color: #f7fafc;
+    color: #4a5568;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  input:checked + i {
+    background-color: #2c5282;
+    color: white;
+  }
+  
+  input:disabled + i {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.apply-routes-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #2c5282;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover:not([disabled]) {
+    background-color: #2b4f7a;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  i {
+    font-size: 0.9rem;
+  }
 } 
