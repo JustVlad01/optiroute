@@ -6,6 +6,7 @@ import { FormDetailsComponent } from './components/form-details/form-details.com
 import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.component';
 import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
+import { DrivingDashboardComponent } from './components/driving-dashboard/driving-dashboard.component';
 
 export const routes: Routes = [
     {
@@ -32,6 +33,10 @@ export const routes: Routes = [
     {
         path: 'store-library',
         component: StoreLibraryComponent
+    },
+    {
+        path: 'driving-dashboard',
+        component: DrivingDashboardComponent
     },
     {
         path: 'admin/forms',

@@ -1,0 +1,124 @@
+<!-- Header with title and home button -->
+<div class="header-container" [ngClass]="{'hidden-for-fullscreen': isFullScreen}">
+  <h2 class="page-title">My Driving Performance</h2>
+  <a class="home-btn" routerLink="/dashboard">
+    <i class="bi bi-house-fill"></i>
+  </a>
+</div>
+
+<div class="dashboard-content">
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your performance data...</p>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="loadError" class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ loadError }}
+  </div>
+
+  <!-- No images available -->
+  <div *ngIf="!isLoading && performanceImages.length === 0 && !loadError" class="no-data-container">
+    <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
+    <p>No performance data available yet.</p>
+  </div>
+
+  <!-- Performance Images -->
+  <div *ngIf="!isLoading && performanceImages.length > 0" 
+       class="performance-display"
+       [ngClass]="{'fullscreen-active': isFullScreen}">
+    
+    <!-- Hidden image counter -->
+    <div class="navigation-controls" [ngClass]="{'fullscreen-mode': isFullScreen, 'hidden': true}">
+      <span class="image-counter">
+        {{ selectedImageIndex + 1 }} / {{ performanceImages.length }}
+      </span>
+    </div>
+    
+    <div class="image-viewer" [ngClass]="{'fullscreen-mode': isFullScreen}">
+      <button 
+        class="nav-button prev" 
+        (click)="previousImage()" 
+        [disabled]="performanceImages.length <= 1"
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      
+      <img 
+        [src]="performanceImages[selectedImageIndex].url" 
+        alt="Driver Performance Data" 
+        class="performance-image full-size-image"
+        [ngClass]="{'fullscreen-mode': isFullScreen, 'maximized': isMaximized}"
+        [style.transform]="'rotate(' + currentRotation + 'deg) scale(' + zoomLevel + ')'"
+        (click)="toggleMaximize()"
+      >
+      
+      <button 
+        class="nav-button next" 
+        (click)="nextImage()" 
+        [disabled]="performanceImages.length <= 1"
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-chevron-right"></i>
+      </button>
+
+      <!-- Add Rotate Button -->
+      <button 
+        class="nav-button rotate" 
+        (click)="rotateImage()" 
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+      
+      <!-- Add Zoom Buttons -->
+      <button 
+        class="nav-button zoom-in" 
+        (click)="zoomIn()" 
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-plus-lg"></i>
+      </button>
+      
+      <button 
+        class="nav-button zoom-out" 
+        (click)="zoomOut()" 
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-dash-lg"></i>
+      </button>
+      
+      <!-- Add Zoom Reset Button -->
+      <button 
+        *ngIf="zoomLevel !== 1 || currentRotation !== 0"
+        class="nav-button zoom-reset" 
+        (click)="resetZoom(); resetRotation();" 
+        [ngClass]="{'fullscreen-mode': isFullScreen}"
+      >
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
+    </div>
+    
+    <!-- Prominent fullscreen button -->
+    <div class="fullscreen-button-container" *ngIf="performanceImages.length > 0">
+      <button class="btn btn-primary fullscreen-toggle-btn" (click)="toggleFullScreen()">
+        <i class="bi" [ngClass]="isFullScreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+        {{ isFullScreen ? 'Exit Full Screen' : 'View Full Screen' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Footer with upload date in white container -->
+<div class="footer-container" *ngIf="!isLoading && performanceImages.length > 0" [ngClass]="{'hidden-for-fullscreen': isFullScreen}">
+  <div class="upload-info">
+    <small>
+      Uploaded on: {{ performanceImages[selectedImageIndex].created_at | date:'MMM d, yyyy, h:mm a' }}
+    </small>
+  </div>
+</div> 

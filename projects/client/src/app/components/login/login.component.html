@@ -1,40 +1,38 @@
-<div class="login-container">
-  <div class="login-header">
-    <h1 class="logo">OPTIROUTE</h1>
-    <div class="badge">
-      <span class="badge">DRIVER PORTAL</span>
+<div class="login-header">
+  <h1 class="logo">OPTIROUTE</h1>
+  <div class="badge">
+    <span class="badge">DRIVER PORTAL</span>
+  </div>
+</div>
+
+<div class="login-content">
+  <h2 class="login-title">Driver Login</h2>
+  <p class="login-subtitle">Enter your custom ID to access your dashboard</p>
+
+  <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+    <div class="form-group">
+      <label for="customId" class="form-label">Custom ID</label>
+      <input 
+        type="text" 
+        id="customId" 
+        name="customId" 
+        class="form-control" 
+        [(ngModel)]="customId" 
+        placeholder="Enter your custom ID"
+        required>
     </div>
+
+    <button type="submit" class="login-btn" [disabled]="!loginForm.form.valid || isLoading">
+      <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Login
+    </button>
+  </form>
+
+  <div *ngIf="message" class="alert mt-4" [ngClass]="isError ? 'alert-danger' : 'alert-success'" role="alert">
+    {{ message }}
   </div>
+</div>
 
-  <div class="login-form-container">
-    <h2 class="login-title">Driver Login</h2>
-    <p class="login-subtitle">Enter your custom ID to access your dashboard</p>
-
-    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-      <div class="form-group mb-4">
-        <label for="customId" class="form-label">Custom ID</label>
-        <input 
-          type="text" 
-          id="customId" 
-          name="customId" 
-          class="form-control" 
-          [(ngModel)]="customId" 
-          placeholder="Enter your custom ID"
-          required>
-      </div>
-
-      <button type="submit" class="login-btn" [disabled]="!loginForm.form.valid || isLoading">
-        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Login
-      </button>
-    </form>
-
-    <div *ngIf="message" class="alert mt-4" [ngClass]="isError ? 'alert-danger' : 'alert-success'" role="alert">
-      {{ message }}
-    </div>
-  </div>
-
-  <div class="login-footer">
-    <p>&copy; 2025 OptiRoute Fleet Management</p>
-  </div>
+<div class="login-footer">
+  <p>&copy; 2025 OptiRoute Fleet Management</p>
 </div>
