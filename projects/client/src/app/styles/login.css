@@ -1,0 +1,112 @@
+/* Login component styles */
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.login-logo h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  font-size: 2.25rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.login-form {
+  margin-top: 1.5rem;
+}
+
+.login-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.login-form input:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.login-form .btn-login {
+  width: 100%;
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-form .btn-login:hover {
+  background: linear-gradient(135deg, #2980b9, #1e2b37);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-form .btn-login:active {
+  transform: translateY(0);
+}
+
+.login-links {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.login-links a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.login-links a:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.login-error {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: var(--danger-color);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+} 

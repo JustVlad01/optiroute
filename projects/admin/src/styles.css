@@ -1,0 +1,157 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('bootstrap/dist/css/bootstrap.min.css');
+@import url('bootstrap-icons/font/bootstrap-icons.css');
+@import url('@angular/material/prebuilt-themes/indigo-pink.css');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap');
+
+/* Add corporate theme global variables */
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --light-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --success-color: #27ae60;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --text-color: #333;
+  --light-text: #6c757d;
+}
+
+/* Admin-specific styles */
+body {
+  background-color: var(--light-bg);
+  color: var(--text-color);
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Admin header styling */
+.header, .navbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo styling */
+.logo, h1.logo, h2.logo {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.5px !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3) !important;
+  background: linear-gradient(to right, #ffffff, #e0e0e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  position: relative;
+  z-index: 1;
+  font-size: 1.75rem !important;
+}
+
+/* Admin container */
+.admin-container {
+  padding: 1.5rem;
+}
+
+/* Admin cards */
+.admin-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Admin tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  background-color: var(--light-bg);
+  padding: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.admin-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Admin forms */
+.admin-form {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+/* Admin buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2980b9, #1e2b37);
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Utilities */
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+} 

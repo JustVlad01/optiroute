@@ -1,0 +1,163 @@
+/* Admin module styles */
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+.admin-header {
+  margin-bottom: 1.5rem;
+}
+
+.admin-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.admin-header .breadcrumb {
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.admin-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  background-color: var(--light-bg);
+  padding: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.admin-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.admin-action-col {
+  width: 120px;
+  text-align: right;
+}
+
+.admin-action-btn {
+  background: none;
+  border: none;
+  color: var(--secondary-color);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.admin-action-btn:hover {
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.admin-action-btn.delete {
+  color: var(--danger-color);
+}
+
+.admin-action-btn.delete:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-filter {
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-filter label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.admin-filter select,
+.admin-filter input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.admin-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.admin-pagination-info {
+  color: var(--light-text);
+  font-size: 0.9rem;
+}
+
+.admin-pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-pagination-btn {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-pagination-btn:hover {
+  background-color: var(--light-bg);
+  border-color: var(--secondary-color);
+}
+
+.admin-pagination-btn.active {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+.admin-form {
+  max-width: 800px;
+} 

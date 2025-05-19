@@ -2,7 +2,7 @@
 :host {
   --primary-color: #2c3e50;
   --secondary-color: #3498db;
-  --light-bg: #f8f9fa;
+  --light-bg: #f5f7fa;
   --border-color: #dee2e6;
   --success-color: #27ae60;
   --warning-color: #f39c12;
@@ -16,6 +16,10 @@
   background-color: #f5f7fa;
   font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
 }
 
 .navbar {
@@ -30,6 +34,9 @@
   z-index: 100;
   color: white;
   height: 64px; /* Match global header height */
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
 }
 
 .logo {

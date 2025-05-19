@@ -7,7 +7,7 @@
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
-          "style": "scss",
+          "style": "css",
           "skipTests": true
         },
         "@schematics/angular:class": {
@@ -46,7 +46,7 @@
               "zone.js"
             ],
             "tsConfig": "projects/admin/tsconfig.app.json",
-            "inlineStyleLanguage": "scss",
+            "inlineStyleLanguage": "css",
             "assets": [
               {
                 "glob": "**/*",
@@ -55,7 +55,7 @@
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "projects/admin/src/styles.scss"
+              "projects/admin/src/styles.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
@@ -111,7 +111,7 @@
               "zone.js/testing"
             ],
             "tsConfig": "projects/admin/tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
+            "inlineStyleLanguage": "css",
             "assets": [
               {
                 "glob": "**/*",
@@ -120,7 +120,7 @@
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "projects/admin/src/styles.scss"
+              "projects/admin/src/styles.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
@@ -133,7 +133,7 @@
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
-          "style": "scss",
+          "style": "css",
           "skipTests": true
         },
         "@schematics/angular:class": {
@@ -172,7 +172,7 @@
               "zone.js"
             ],
             "tsConfig": "projects/client/tsconfig.app.json",
-            "inlineStyleLanguage": "scss",
+            "inlineStyleLanguage": "css",
             "assets": [
               {
                 "glob": "**/*",
@@ -181,7 +181,7 @@
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "projects/client/src/styles.scss"
+              "projects/client/src/styles.css"
             ],
             "scripts": []
           },
@@ -235,7 +235,7 @@
               "zone.js/testing"
             ],
             "tsConfig": "projects/client/tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
+            "inlineStyleLanguage": "css",
             "assets": [
               {
                 "glob": "**/*",
@@ -244,7 +244,7 @@
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "projects/client/src/styles.scss"
+              "projects/client/src/styles.css"
             ],
             "scripts": []
           }

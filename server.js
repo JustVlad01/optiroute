@@ -285,6 +285,37 @@ app.get('/api/routes', async (req, res) => {
   }
 });
 
+// API endpoint for optimizing routes with many stops
+app.post('/api/optimize-route', async (req, res) => {
+  try {
+    const { locations, startingPoint, options } = req.body;
+    
+    if (!locations || !Array.isArray(locations) || locations.length === 0) {
+      return res.status(400).json({ error: 'Invalid locations data' });
+    }
+    
+    // In a production environment, you would implement:
+    // 1. Call to Distance Matrix API to get travel times/distances between all points
+    // 2. Run a TSP solver algorithm on the matrix
+    // 3. Split the optimized route into chunks of 23 waypoints
+    // 4. Call Directions API for each chunk
+    // 5. Combine the results
+    
+    // This is a placeholder response - in a real implementation
+    // you would make the actual API calls and optimization
+    res.json({
+      success: true,
+      message: 'Route optimization processed',
+      optimizedRoute: locations, 
+      chunkCount: Math.ceil(locations.length / 23),
+      totalStops: locations.length
+    });
+  } catch (error) {
+    console.error('Route optimization error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 // Set up static file serving
 if (fs.existsSync(adminBrowserPath)) {
   console.log(`Setting up admin static files from: ${adminBrowserPath}`);

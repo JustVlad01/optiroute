@@ -1,0 +1,182 @@
+/* Global form styles */
+
+.form-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+
+.form-subtitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+}
+
+.form-section-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -0.75rem;
+  margin-left: -0.75rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+  margin-bottom: 1rem;
+  flex: 0 0 100%;
+}
+
+.form-group-half {
+  flex: 0 0 50%;
+}
+
+.form-group-third {
+  flex: 0 0 33.333333%;
+}
+
+.form-group-quarter {
+  flex: 0 0 25%;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.form-group .form-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--light-text);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-color);
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: var(--secondary-color);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger-color);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--danger-color);
+}
+
+.form-check {
+  position: relative;
+  display: block;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-check-input {
+  position: absolute;
+  margin-top: 0.3rem;
+  margin-left: -1.5rem;
+}
+
+.form-check-label {
+  margin-bottom: 0;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.form-buttons .btn {
+  margin-left: 0.5rem;
+}
+
+.btn-submit, .btn-save {
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-submit:hover, .btn-save:hover {
+  background: linear-gradient(135deg, #2980b9, #1e2b37);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-cancel {
+  background-color: #f8f9fa;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #e9ecef;
+}
+
+@media (max-width: 768px) {
+  .form-group-half,
+  .form-group-third,
+  .form-group-quarter {
+    flex: 0 0 100%;
+  }
+} 

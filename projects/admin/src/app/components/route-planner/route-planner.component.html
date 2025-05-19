@@ -1,0 +1,331 @@
+<!-- Header/Navbar -->
+<header class="navbar">
+  <div class="logo">OPTIROUTE</div>
+  <div class="nav-links">
+    <a class="nav-pill" routerLink="/dashboard">
+      <i class="bi bi-house"></i> DASHBOARD
+    </a>
+    <a class="nav-pill" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i> LOGOUT
+    </a>
+  </div>
+</header>
+
+<div class="content-wrapper">
+  <div class="route-planner-container">
+    <div class="controls-panel">
+      <!-- File Upload -->
+      <div class="file-upload-section">
+        <div class="upload-header">
+          <i class="bi bi-upload"></i> Import Store Locations
+        </div>
+        <div class="file-input-container">
+          <label for="fileUpload" class="file-input-label">Choose File</label>
+          <span class="file-name">{{ getFileName() }}</span>
+          <input 
+            id="fileUpload"
+            type="file" 
+            #fileInput
+            class="hidden-file-input"
+            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+            (change)="onFileUpload($event)" 
+            [disabled]="isLoading"
+          >
+        </div>
+      </div>
+      
+      <!-- Notifications -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="bi bi-exclamation-triangle"></i> {{ errorMessage }}
+      </div>
+      
+      <div *ngIf="isLoading && !isOptimizing" class="loading-spinner">
+        <i class="bi bi-arrow-clockwise spin"></i> Loading store locations...
+      </div>
+      
+      <div *ngIf="isOptimizing" class="loading-spinner optimize-spinner">
+        <i class="bi bi-arrow-clockwise spin"></i> Calculating optimal route...
+      </div>
+      
+      <!-- Route Options (Collapsible) -->
+      <div *ngIf="storeLocations.length > 0" class="collapsible-section">
+        <div class="collapsible-header" (click)="toggleRouteOptions()">
+          <h3><i class="bi bi-sliders"></i> Route Options</h3>
+          <i class="bi" [ngClass]="routeOptionsExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </div>
+        <div class="collapsible-content" [ngClass]="{'expanded': routeOptionsExpanded}">
+          <div class="form-group">
+            <label for="startingPoint">Starting Point:</label>
+            <div class="input-with-icon">
+              <input 
+                type="text" 
+                id="startingPoint" 
+                placeholder="Enter address or eircode" 
+                [(ngModel)]="startingPointAddress"
+                [disabled]="isLoading"
+              >
+              <button 
+                class="set-btn" 
+                (click)="setStartingPoint()" 
+                [disabled]="isLoading || !startingPointAddress"
+              >
+                <i class="bi bi-geo-alt"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="startTime">Starting Time:</label>
+            <input 
+              type="time" 
+              id="startTime" 
+              [(ngModel)]="startTime" 
+              [disabled]="isLoading"
+            >
+          </div>
+          <div class="form-group checkbox-container">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="considerOpeningTimes" [disabled]="isLoading">
+              <span>Consider Opening Times</span>
+            </label>
+            <div class="checkbox-hint">
+              Optimizes route based on store opening times
+            </div>
+          </div>
+          <div class="form-group button-container">
+            <div class="d-flex justify-content-between">
+              <button class="action-btn reset-btn" (click)="resetForm()" [disabled]="isLoading || (!markers.length && !storeLocations.length)">
+                <i class="bi bi-x-circle"></i> Reset
+              </button>
+              <button class="action-btn optimize-btn" (click)="optimizeRoute()" [disabled]="isLoading || markers.length < 2">
+                <i class="bi bi-shuffle" *ngIf="!isOptimizing"></i>
+                <i class="bi bi-arrow-clockwise spin" *ngIf="isOptimizing"></i>
+                {{ isOptimizing ? 'Optimising...' : 'Optimise Route' }}
+              </button>
+            </div>
+            
+            <div class="progress mt-2" *ngIf="isOptimizing && markers.length > MAX_WAYPOINTS_PER_REQUEST">
+              <div 
+                class="progress-bar progress-bar-striped progress-bar-animated" 
+                role="progressbar" 
+                [style.width]="'100%'"
+              >
+                Processing {{ markers.length }} locations...
+              </div>
+            </div>
+            
+            <div class="alert alert-danger mt-2" *ngIf="errorMessage">
+              <i class="bi bi-exclamation-triangle"></i> {{ errorMessage }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store List Table -->
+      <div *ngIf="storeLocations.length > 0" class="store-list">
+        <div class="store-list-header">
+          <div class="store-list-title">
+            <i class="bi bi-geo-alt-fill"></i> Imported Locations ({{ storeLocations.length }})
+            <span *ngIf="optimizedRoute.length > 0" class="badge">Route Optimized</span>
+          </div>
+          
+          <button *ngIf="optimizedRoute.length > 0" class="action-btn export-btn" (click)="exportToExcel()" [disabled]="isLoading">
+            <i class="bi bi-file-earmark-excel"></i> Export to Excel
+          </button>
+        </div>
+        
+        <!-- Missing locations section -->
+        <div *ngIf="getMissingLocations().length > 0" class="missing-locations-container alert alert-warning mt-2 mb-2">
+          <div class="missing-header">
+            <i class="bi bi-exclamation-triangle"></i> Missing Locations ({{ getMissingLocations().length }})
+            <button class="btn btn-sm btn-outline-primary" (click)="showMissingLocations = !showMissingLocations">
+              {{ showMissingLocations ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          
+          <div *ngIf="showMissingLocations" class="missing-locations-list">
+            <div *ngFor="let store of getMissingLocations(); let i = index" class="missing-location-item">
+              <div class="missing-store-name">{{ store.storeName }}</div>
+              <div class="missing-store-address">{{ store.address }} {{ store.eircode }}</div>
+              <div class="manual-location-input mt-2">
+                <div class="input-with-icon">
+                  <input 
+                    type="text" 
+                    placeholder="Enter updated address or eircode" 
+                    [(ngModel)]="manualAddressInputs[i]"
+                    [disabled]="isLoading"
+                  >
+                  <button 
+                    class="set-btn" 
+                    (click)="setManualLocation(store, manualAddressInputs[i])" 
+                    [disabled]="isLoading || !manualAddressInputs[i]"
+                  >
+                    <i class="bi bi-geo-alt"></i> Locate
+                  </button>
+                </div>
+                <div class="coordinate-inputs mt-1" *ngIf="showCoordinateInputs">
+                  <div class="row">
+                    <div class="col-6">
+                      <input 
+                        type="number" 
+                        placeholder="Latitude" 
+                        [(ngModel)]="manualLatInputs[i]"
+                        [disabled]="isLoading"
+                        step="0.000001"
+                      >
+                    </div>
+                    <div class="col-6">
+                      <input 
+                        type="number" 
+                        placeholder="Longitude" 
+                        [(ngModel)]="manualLngInputs[i]"
+                        [disabled]="isLoading"
+                        step="0.000001"
+                      >
+                    </div>
+                  </div>
+                  <button 
+                    class="btn btn-sm btn-primary mt-1 w-100" 
+                    (click)="setManualCoordinates(store, manualLatInputs[i], manualLngInputs[i])" 
+                    [disabled]="isLoading || !manualLatInputs[i] || !manualLngInputs[i]"
+                  >
+                    <i class="bi bi-pin-map"></i> Set Coordinates
+                  </button>
+                </div>
+                <div class="toggle-coordinates mt-1">
+                  <button class="btn btn-sm btn-outline-secondary" (click)="showCoordinateInputs = !showCoordinateInputs">
+                    {{ showCoordinateInputs ? 'Hide Coordinate Inputs' : 'Enter Coordinates Directly' }}
+                  </button>
+                </div>
+              </div>
+              <hr *ngIf="i < getMissingLocations().length - 1">
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th *ngIf="optimizedRoute.length > 0" class="order-column">#</th>
+                <th>Store</th>
+                <th>Route</th>
+                <th>Qty</th>
+                <th>Opening</th>
+                <th>Priority</th>
+                <th *ngIf="optimizedRoute.length > 0">ETA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let store of getSortedLocations(); let i = index" 
+                  [class.optimized]="optimizedRoute && store.routeOrder !== undefined"
+                  [class.priority]="store.priority"
+                  (mouseenter)="highlightMarker(store)"
+                  (mouseleave)="unhighlightMarker()"
+                  class="store-row">
+                <td *ngIf="optimizedRoute.length > 0" class="order-column">
+                  <div *ngIf="store.routeOrder !== undefined" class="store-index">
+                    {{ store.routeOrder }}
+                  </div>
+                </td>
+                <td class="store-name-cell">
+                  <!-- Regular display mode -->
+                  <div *ngIf="editingStoreIndex !== storeLocations.indexOf(store)">
+                    <div class="store-name">{{ store.storeName }}</div>
+                    <div class="store-address">{{ store.address }} {{ store.eircode }}</div>
+                    <div class="edit-address-link" (click)="startEditingStore(storeLocations.indexOf(store))">
+                      <i class="bi bi-pencil-square"></i> Edit address
+                    </div>
+                  </div>
+                  
+                  <!-- Edit mode -->
+                  <div *ngIf="editingStoreIndex === storeLocations.indexOf(store)" class="edit-address-container">
+                    <input 
+                      type="text"
+                      placeholder="Address"
+                      [(ngModel)]="editedAddress"
+                      class="edit-address-input"
+                    >
+                    <input 
+                      type="text"
+                      placeholder="Eircode"
+                      [(ngModel)]="editedEircode"
+                      class="edit-eircode-input"
+                    >
+                    <div class="edit-buttons">
+                      <button class="edit-btn save-btn" (click)="updateStoreAddress(storeLocations.indexOf(store))">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                      <button class="edit-btn cancel-btn" (click)="cancelEditingStore()">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ store.route }}</td>
+                <td>{{ store.quantity }}</td>
+                <td>
+                  <span [class.keys-badge]="store.hasKeys">{{ getOpeningTimeDisplay(store) }}</span>
+                </td>
+                <td class="priority-column">
+                  <button class="priority-toggle" 
+                          [class.active]="store.priority"
+                          (click)="togglePriority(storeLocations.indexOf(store))"
+                          [disabled]="isLoading || optimizedRoute.length > 0">
+                    <i class="bi" [ngClass]="store.priority ? 'bi-star-fill' : 'bi-star'"></i>
+                  </button>
+                </td>
+                <td *ngIf="optimizedRoute.length > 0" class="eta-column">
+                  <div *ngIf="store.eta" class="eta-info">
+                    <i class="bi bi-clock"></i> {{ store.eta }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="map-container">
+      <google-map 
+        *ngIf="apiLoaded" 
+        height="100%"
+        width="100%"
+        [center]="center" 
+        [zoom]="zoom"
+        [options]="{
+          mapTypeControl: true,
+          fullscreenControl: true,
+          streetViewControl: true,
+          mapTypeId: 'roadmap'
+        }"
+      >
+        <map-marker 
+          *ngIf="startingPointMarker"
+          [position]="startingPointMarker.position"
+          [options]="startingPointMarker.options"
+        ></map-marker>
+        
+        <map-marker
+          *ngFor="let marker of markers; let i = index"
+          [position]="marker.position"
+          [options]="getMarkerOptions(i)"
+          (mapClick)="openInfoWindow(mapMarker, marker.info)"
+          #mapMarker="mapMarker"
+        ></map-marker>
+        
+        <map-polyline
+          *ngIf="pathCoordinates.length > 0"
+          [path]="pathCoordinates"
+          [options]="polylineOptions"
+        ></map-polyline>
+        
+        <map-info-window></map-info-window>
+      </google-map>
+      
+      <div *ngIf="!apiLoaded" class="map-loading">
+        <i class="bi bi-arrow-clockwise spin"></i> Google Maps is loading...
+      </div>
+    </div>
+  </div>
+</div> 

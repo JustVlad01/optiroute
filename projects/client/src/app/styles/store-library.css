@@ -1,0 +1,207 @@
+/* Store Library styles */
+
+.store-library-container {
+  padding: 1.5rem;
+}
+
+.store-library-header {
+  margin-bottom: 1.5rem;
+}
+
+.store-library-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.store-library-header p {
+  color: var(--light-text);
+  font-size: 1rem;
+}
+
+.store-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.store-filter {
+  flex: 1;
+  min-width: 200px;
+}
+
+.store-filter label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.store-filter select,
+.store-filter input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.store-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+.store-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.store-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.store-card-image {
+  height: 150px;
+  background-color: var(--light-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.store-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.store-card-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.store-card-content {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.store-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.store-card-address {
+  font-size: 0.9rem;
+  color: var(--light-text);
+  margin-bottom: 0.75rem;
+}
+
+.store-card-details {
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  flex: 1;
+}
+
+.store-card-detail {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.store-card-detail i {
+  color: var(--secondary-color);
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.store-card-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.store-card-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem;
+  background-color: var(--light-bg);
+  color: var(--text-color);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.store-card-btn:hover {
+  background-color: var(--border-color);
+}
+
+.store-card-btn.primary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.store-card-btn.primary:hover {
+  background-color: #2980b9;
+}
+
+.store-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.store-pagination-btn {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  margin: 0 0.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.store-pagination-btn:hover {
+  background-color: var(--light-bg);
+  border-color: var(--secondary-color);
+}
+
+.store-pagination-btn.active {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+  .store-filters {
+    flex-direction: column;
+  }
+  
+  .store-filter {
+    width: 100%;
+  }
+} 

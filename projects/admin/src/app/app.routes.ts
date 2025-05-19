@@ -9,7 +9,8 @@ import { DriverFormFillComponent } from './components/driver-form-fill/driver-fo
 import { DriverFormContainerComponent } from './components/driver-form-container/driver-form-container.component';
 import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
-import { ExcelImportComponent } from './components/excel-import/excel-import.component';
+import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
+
 
 export const routes: Routes = [
     // Admin routes
@@ -38,8 +39,8 @@ export const routes: Routes = [
         component: VehicleCrateTrackingComponent
     },
     {
-        path: 'excel-import',
-        component: ExcelImportComponent
+        path: 'route-planner',
+        component: RoutePlannerComponent
     },
     {
         path: 'driver-forms',
