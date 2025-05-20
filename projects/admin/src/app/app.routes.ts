@@ -12,6 +12,7 @@ import { ViewOrdersComponent } from './components/view-orders/view-orders.compon
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
 import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
+import { StoreLibraryAdminComponent } from './components/store-library-admin/store-library-admin.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -47,6 +48,10 @@ export const routes: Routes = [
     {
         path: 'store-masterfile',
         component: StoreMasterfileComponent
+    },
+    {
+        path: 'store-library-admin',
+        component: StoreLibraryAdminComponent
     },
     {
         path: 'vehicle-crate-tracking',

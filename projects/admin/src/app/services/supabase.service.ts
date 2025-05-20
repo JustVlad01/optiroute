@@ -514,33 +514,34 @@ export class SupabaseService {
     }
 
     try {
-      console.log('Querying store_information table...');
+      console.log('Querying stores table in Supabase...');
+      console.log('Supabase client status:', this.supabase ? 'Initialized' : 'Not initialized');
       
       // Reset the total store count to ensure we're not using cached data
       this.totalStoreCount = null;
       
-      // Try fetching from store_information with pagination
+      // Fetch from the 'stores' table with pagination
       let allData: any[] = [];
       let hasMore = true;
       let page = 0;
       const pageSize = 1000; // Supabase's default and likely maximum allowed
       
-      // First try store_information table with pagination
       while (hasMore) {
+        console.log(`Fetching page ${page} of stores data...`);
         const { data, error } = await this.supabase
-          .from('store_information')
+          .from('stores')
           .select('*')
           .range(page * pageSize, (page + 1) * pageSize - 1)
-          .order('id'); // Add ordering for consistent results
+          .order('id');
         
         if (error) {
-          console.error(`Error querying store_information table page ${page}:`, error.message);
+          console.error(`Error querying stores table page ${page}:`, error.message);
           break;
         }
         
         if (data && data.length > 0) {
           allData = [...allData, ...data];
-          console.log(`Retrieved ${data.length} records from store_information (page ${page + 1})`);
+          console.log(`Retrieved ${data.length} records from stores (page ${page + 1})`);
           
           // Check if we've reached the end
           if (data.length < pageSize) {
@@ -549,32 +550,34 @@ export class SupabaseService {
             page++;
           }
         } else {
+          console.log('No data found in stores table for this page');
           hasMore = false;
         }
       }
       
-      // If no data from store_information, try stores table with pagination
+      // If no data from stores, try store_information as fallback
       if (allData.length === 0) {
-        console.log('No data in store_information table, falling back to stores table...');
+        console.log('No data in stores table, checking store_information table...');
         
         hasMore = true;
         page = 0;
         
         while (hasMore) {
+          console.log(`Fetching page ${page} of store_information data...`);
           const { data, error } = await this.supabase
-            .from('stores')
+            .from('store_information')
             .select('*')
             .range(page * pageSize, (page + 1) * pageSize - 1)
-            .order('store_id'); // Add ordering for consistent results
+            .order('id');
           
           if (error) {
-            console.error(`Error querying stores table page ${page}:`, error.message);
+            console.error(`Error querying store_information table page ${page}:`, error.message);
             break;
           }
           
           if (data && data.length > 0) {
             allData = [...allData, ...data];
-            console.log(`Retrieved ${data.length} records from stores (page ${page + 1})`);
+            console.log(`Retrieved ${data.length} records from store_information (page ${page + 1})`);
             
             // Check if we've reached the end
             if (data.length < pageSize) {
@@ -583,6 +586,7 @@ export class SupabaseService {
               page++;
             }
           } else {
+            console.log('No data found in store_information table for this page');
             hasMore = false;
           }
         }
@@ -595,7 +599,7 @@ export class SupabaseService {
       return allData;
     } catch (err) {
       console.error('Unexpected error in getStoreInformation:', err);
-      return [];
+      throw err; // Propagate the error for better handling
     }
   }
   
@@ -615,14 +619,14 @@ export class SupabaseService {
         const fixedUpdate = this.fixColumnNames(update);
         console.log('After column name fixing:', JSON.stringify(fixedUpdate));
         
-        // Check if this is a door_code update and ensure it's properly formatted
-        if ('door_code' in fixedUpdate) {
-          console.log('Door code update detected:', fixedUpdate.door_code);
-          // Ensure door_code is a string
-          fixedUpdate.door_code = fixedUpdate.door_code?.toString() || '';
+        // Check if this is a key_code update and ensure it's properly formatted
+        if ('key_code' in fixedUpdate) {
+          console.log('Key code update detected:', fixedUpdate.key_code);
+          // Ensure key_code is a string
+          fixedUpdate.key_code = fixedUpdate.key_code?.toString() || '';
         }
         
-        // First priority: Use id if available
+        // First priority: Use id if available (serial PRIMARY KEY)
         if (fixedUpdate.id) {
           try {
             const { data, error } = await this.supabase
@@ -688,7 +692,7 @@ export class SupabaseService {
               results.push({ success: true, data });
             }
           }
-          continue; // Skip to the third priority check
+          continue; // Skip to the next priority check
         }
         
         // Third priority: Use store_name as fallback
@@ -708,58 +712,43 @@ export class SupabaseService {
               .select();
               
             if (error) {
-              console.error('Error updating existing store by name:', error);
-              console.error('Failed update payload:', JSON.stringify(fixedUpdate));
+              console.error('Error updating store by name:', error);
               results.push({ success: false, error });
             } else {
               console.log('Store updated by name:', data);
               results.push({ success: true, data });
             }
           } else {
-            // If no record exists, insert a new one
+            // If no record exists with this name, insert a new one
             const { data, error } = await this.supabase
               .from('stores')
               .insert(fixedUpdate)
               .select();
               
             if (error) {
-              console.error('Error inserting new store:', error);
+              console.error('Error inserting new store by name:', error);
               results.push({ success: false, error });
             } else {
-              console.log('New store inserted:', data);
+              console.log('New store inserted by name:', data);
               results.push({ success: true, data });
             }
           }
-        } else {
-          console.error('Cannot update store without proper identifiers:', fixedUpdate);
-          results.push({ 
-            success: false, 
-            error: { message: 'Missing store identifiers (id, dispatch_code, store_code, or store_name)' } 
-          });
+          continue;
         }
-      }
-      
-      // Check if any updates failed
-      const anyFailures = results.some(result => !result.success);
-      if (anyFailures) {
-        console.error('Some store updates failed:', results.filter(r => !r.success));
-        return { 
+        
+        // If we get here, we couldn't identify the record to update
+        console.error('Could not identify store record to update:', fixedUpdate);
+        results.push({ 
           success: false, 
-          error: { message: 'Some store updates failed' },
-          results 
-        };
+          error: { message: 'No unique identifier (id, dispatch_code+store_code, or store_name) found to update the store' } 
+        });
       }
       
-      // All updates succeeded
-      return { 
-        success: true, 
-        data: results.map(r => r.data).flat(),
-        results
-      };
-    } catch (e) {
-      console.error('Exception while updating stores:', e);
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      return { success: false, error: { message: errorMessage } };
+      // Return all results
+      return results;
+    } catch (err) {
+      console.error('Unexpected error in updateStoreInformation:', err);
+      return [{ success: false, error: { message: 'Unexpected error during update' } }];
     }
   }
 
@@ -770,22 +759,22 @@ export class SupabaseService {
     // Map of frontend column names to database column names
     const columnMapping: {[key: string]: string} = {
       'address': 'address_line',
-      'store_name_1': 'store_full_name',
-      'new_route': 'new_route_08_05',
-      'date': 'date_21_04',
-      'door': 'door_code',
+      'store_name_1': 'store_name',
+      'new_route': 'route',
+      'date': 'created_at',
+      'door': 'key_code',
+      'openining_time_bankholiday': 'opening_time_bankholiday'
       // Add any other mismatched column names here
     };
     
     // Handle text fields specifically to ensure proper type conversion
     const textFields = [
-      'door_code', 'alarm_code', 'fridge_code', 'manual', 'dispatch_code', 
-      'store_name', 'store_code', 'store_company', 'store_name_future',
-      'address_line', 'old_route', 'new_route_08_05', 'route8_5_25',
-      'eircode', 'location_link', 'keys_available', 'hour_access_24',
-      'mon', 'tue', 'wed', 'thur', 'fri', 'sat', 'earliest_delivery_time',
-      'opening_time_saturday', 'opening_time_sunday', 'openining_time_bankholiday', 
-      'delivery_parking_instructions', 'geolocation', 'key_code'
+      'image_url', 'dispatch_code', 'dispatch_store_name', 'site_id',
+      'store_code', 'store_company', 'store_name', 'address_line',
+      'eircode', 'route', 'keys_available', 'key_code',
+      'prior_registration_required', 'hour_access_24',
+      'opening_time_sunday', 'earliest_delivery_time',
+      'opening_time_saturday', 'opening_time_bankholiday'
     ];
     
     // Replace any mismatched column names
@@ -1168,6 +1157,213 @@ export class SupabaseService {
     } catch (error) {
       console.error('Exception during getManualStoreMatches:', error);
       return [];
+    }
+  }
+
+  // Get all images for a specific store
+  async getStoreImages(storeId: string): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .select('*')
+        .eq('store_id', storeId);
+      
+      if (error) {
+        console.error('Error fetching store images:', error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (err) {
+      console.error('Exception during fetching store images:', err);
+      throw err;
+    }
+  }
+  
+  // Upload images for a store
+  async uploadStoreImages(storeId: string, files: File[]): Promise<any> {
+    try {
+      const uploadResults = [];
+      
+      for (const file of files) {
+        // Create a unique file name
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `store_images/${storeId}/${fileName}`;
+        
+        // Upload file to storage
+        const { data: fileData, error: fileError } = await this.supabase.storage
+          .from('store-images')
+          .upload(filePath, file);
+        
+        if (fileError) {
+          console.error('Error uploading file:', fileError);
+          throw fileError;
+        }
+        
+        // Get public URL for the uploaded file
+        const { data: urlData } = await this.supabase.storage
+          .from('store-images')
+          .getPublicUrl(filePath);
+        
+        const publicUrl = urlData.publicUrl;
+        
+        // Create a record in the store_images table
+        const { data: recordData, error: recordError } = await this.supabase
+          .from('store_images')
+          .insert([
+            {
+              store_id: storeId,
+              file_path: filePath,
+              url: publicUrl,
+              file_name: file.name,
+              uploaded_at: new Date().toISOString()
+            }
+          ])
+          .select();
+        
+        if (recordError) {
+          console.error('Error creating image record:', recordError);
+          throw recordError;
+        }
+        
+        uploadResults.push(recordData[0]);
+      }
+      
+      return uploadResults;
+    } catch (err) {
+      console.error('Exception during image upload:', err);
+      throw err;
+    }
+  }
+  
+  // Update image instructions
+  async updateImageInstructions(imageId: string, instructions: string): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .update({ instructions })
+        .eq('id', imageId)
+        .select();
+      
+      if (error) {
+        console.error('Error updating image instructions:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Exception during updating image instructions:', err);
+      throw err;
+    }
+  }
+  
+  // Delete a store image
+  async deleteStoreImage(imageId: string): Promise<void> {
+    try {
+      // Get the image record to get the file path
+      const { data: imageData, error: fetchError } = await this.supabase
+        .from('store_images')
+        .select('file_path')
+        .eq('id', imageId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching image data:', fetchError);
+        throw fetchError;
+      }
+      
+      // Delete the file from storage
+      const { error: storageError } = await this.supabase.storage
+        .from('store-images')
+        .remove([imageData.file_path]);
+      
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        // Continue to delete the record even if storage deletion fails
+      }
+      
+      // Delete the record from the database
+      const { error: deleteError } = await this.supabase
+        .from('store_images')
+        .delete()
+        .eq('id', imageId);
+      
+      if (deleteError) {
+        console.error('Error deleting image record:', deleteError);
+        throw deleteError;
+      }
+    } catch (err) {
+      console.error('Exception during image deletion:', err);
+      throw err;
+    }
+  }
+  
+  // Get additional info for a store
+  async getStoreAdditionalInfo(storeId: string): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .from('store_additional_info')
+        .select('*')
+        .eq('store_id', storeId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error fetching store additional info:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Exception during fetching store additional info:', err);
+      throw err;
+    }
+  }
+  
+  // Update or insert additional info for a store
+  async updateStoreAdditionalInfo(storeId: string, content: string): Promise<any> {
+    try {
+      // Check if record exists
+      const existingInfo = await this.getStoreAdditionalInfo(storeId);
+      
+      if (existingInfo) {
+        // Update existing record
+        const { data, error } = await this.supabase
+          .from('store_additional_info')
+          .update({ content, updated_at: new Date().toISOString() })
+          .eq('store_id', storeId)
+          .select();
+        
+        if (error) {
+          console.error('Error updating store additional info:', error);
+          throw error;
+        }
+        
+        return data;
+      } else {
+        // Insert new record
+        const { data, error } = await this.supabase
+          .from('store_additional_info')
+          .insert([
+            {
+              store_id: storeId,
+              content,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ])
+          .select();
+        
+        if (error) {
+          console.error('Error inserting store additional info:', error);
+          throw error;
+        }
+        
+        return data;
+      }
+    } catch (err) {
+      console.error('Exception during updating store additional info:', err);
+      throw err;
     }
   }
 }

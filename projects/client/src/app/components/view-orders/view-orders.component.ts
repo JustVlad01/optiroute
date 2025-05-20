@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../services/supabase.service';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { environment } from '../../../environments/environment.development';
 
 interface StoreOrder {
   id?: string;
@@ -34,7 +32,7 @@ interface Order {
 @Component({
   selector: 'app-view-orders',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule],
   templateUrl: './view-orders.component.html',
   styleUrls: ['./view-orders.component.scss']
 })
@@ -45,7 +43,7 @@ export class ViewOrdersComponent implements OnInit {
   expandedOrderIds: Set<string> = new Set();
   expandedRouteIds: Map<string, Set<string>> = new Map();
 
-  constructor(private http: HttpClient) {}
+  constructor(private supabaseService: SupabaseService) {}
 
   ngOnInit(): void {
     this.loadOrders();
@@ -55,17 +53,15 @@ export class ViewOrdersComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.http.get<any[]>(`${environment.apiUrl}/api/orders`)
-      .subscribe({
-        next: (data) => {
-          this.orders = this.processOrdersData(data);
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error loading orders:', error);
-          this.errorMessage = 'Failed to load orders. Please try again later.';
-          this.isLoading = false;
-        }
+    this.supabaseService.getOrders()
+      .then((data) => {
+        this.orders = this.processOrdersData(data || []);
+        this.isLoading = false;
+      })
+      .catch((error) => {
+        console.error('Error loading orders:', error);
+        this.errorMessage = 'Failed to load orders. Please try again later.';
+        this.isLoading = false;
       });
   }
 

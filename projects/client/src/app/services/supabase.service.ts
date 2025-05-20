@@ -17,6 +17,132 @@ export class SupabaseService {
     return this.supabase;
   }
 
+  // Method to get all stores for the autocomplete
+  async getAllStores(): Promise<any[]> {
+    console.log('Fetching all stores for autocomplete');
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('stores')
+        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name');
+      
+      if (error) {
+        console.error('Error fetching all stores:', error);
+        throw error;
+      }
+      
+      console.log(`Fetched ${data?.length || 0} stores`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception while fetching stores:', err);
+      throw err;
+    }
+  }
+
+  // Method to search for store across multiple fields
+  async searchStoreAcrossFields(searchTerm: string): Promise<any[]> {
+    console.log(`Searching for store with term: ${searchTerm}`);
+    
+    try {
+      // First try exact matches on the most common fields
+      const { data: exactMatches, error: exactError } = await this.supabase
+        .from('stores')
+        .select('*')
+        .or(`store_code.eq.${searchTerm},dispatch_code.eq.${searchTerm}`);
+      
+      if (exactError) {
+        console.error('Error searching stores with exact match:', exactError);
+        throw exactError;
+      }
+      
+      if (exactMatches && exactMatches.length > 0) {
+        console.log(`Found ${exactMatches.length} stores with exact match`);
+        return exactMatches;
+      }
+      
+      // If no exact matches, try partial matches on store name
+      const { data: partialMatches, error: partialError } = await this.supabase
+        .from('stores')
+        .select('*')
+        .or(`dispatch_store_name.ilike.%${searchTerm}%,store_name.ilike.%${searchTerm}%`);
+      
+      if (partialError) {
+        console.error('Error searching stores with partial match:', partialError);
+        throw partialError;
+      }
+      
+      console.log(`Found ${partialMatches?.length || 0} stores with partial match`);
+      return partialMatches || [];
+    } catch (err) {
+      console.error('Exception during store search:', err);
+      throw err;
+    }
+  }
+
+  // Method to search for stores by field and value
+  async searchStore(field: string, value: string): Promise<any[]> {
+    console.log(`Searching for store with ${field} = ${value}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('stores')
+        .select('*')
+        .eq(field, value);
+      
+      if (error) {
+        console.error('Error searching stores:', error);
+        throw error;
+      }
+      
+      console.log(`Found ${data?.length || 0} stores matching criteria`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during store search:', err);
+      throw err;
+    }
+  }
+
+  // Method to get all orders with their related data
+  async getOrders(): Promise<any[]> {
+    console.log('Fetching all orders from Supabase');
+    
+    try {
+      // Query the store_orders table with all necessary related data
+      const { data, error } = await this.supabase
+        .from('store_orders')
+        .select(`
+          id as store_id,
+          import_id,
+          file_name,
+          import_date,
+          order_delivery_date,
+          order_status,
+          route_id,
+          route_name,
+          route_number,
+          driver_name,
+          route_delivery_date,
+          route_status,
+          customer_name,
+          customer_code,
+          total_items,
+          store_status
+        `)
+        .order('import_date', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log(`Fetched ${data?.length || 0} order records`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during orders fetch:', err);
+      throw err;
+    }
+  }
+
   // Get the current session
   async getSession() {
     const { data, error } = await this.supabase.auth.getSession();
@@ -256,6 +382,96 @@ export class SupabaseService {
     } catch (error) {
       console.error('Error during login:', error);
       return null;
+    }
+  }
+
+  // Save geolocation data
+  async saveGeolocation(geolocationData: {
+    driver_id?: string | null;
+    dispatch_code: string | null;
+    store_name: string | null;
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+  }) {
+    console.log('Saving geolocation data:', geolocationData);
+    
+    try {
+      // Filter out undefined fields to let the database use defaults
+      const dataToInsert = {
+        ...(geolocationData.driver_id ? { driver_id: geolocationData.driver_id } : {}),
+        dispatch_code: geolocationData.dispatch_code,
+        store_name: geolocationData.store_name,
+        latitude: geolocationData.latitude,
+        longitude: geolocationData.longitude,
+        timestamp: geolocationData.timestamp
+      };
+      
+      const { data, error } = await this.supabase
+        .from('driver_geolocations')
+        .insert([dataToInsert])
+        .select();
+
+      if (error) {
+        console.error('Error saving geolocation data:', error);
+        return { data: null, error };
+      }
+
+      console.log('Geolocation data saved successfully:', data);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception during geolocation save:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  // Method to update store location coordinates
+  async updateStoreLocation(storeId: string, latitude: number, longitude: number): Promise<any> {
+    console.log(`Updating store location for store ID ${storeId}: lat=${latitude}, long=${longitude}`);
+    
+    try {
+      // First, fetch the current store record to check field names
+      const { data: storeData, error: fetchError } = await this.supabase
+        .from('stores')
+        .select('*')
+        .eq('store_id', storeId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching store data:', fetchError);
+        throw fetchError;
+      }
+      
+      // Determine which field names to use (uppercase or lowercase)
+      const updateData: any = {};
+      
+      // Check if fields exist and use appropriate case
+      if ('Latitude' in storeData) {
+        updateData.Latitude = latitude;
+        updateData.Longitude = longitude;
+      } else {
+        updateData.latitude = latitude;
+        updateData.longitude = longitude;
+      }
+      
+      console.log('Updating with data:', updateData);
+      
+      const { data, error } = await this.supabase
+        .from('stores')
+        .update(updateData)
+        .eq('store_id', storeId)
+        .select();
+      
+      if (error) {
+        console.error('Error updating store location:', error);
+        throw error;
+      }
+      
+      console.log('Store location updated successfully:', data);
+      return data;
+    } catch (err) {
+      console.error('Exception during store location update:', err);
+      throw err;
     }
   }
 }

@@ -1,0 +1,218 @@
+<nav class="navbar navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand" routerLink="/store-library">
+      <i class="bi bi-building"></i> Store Library
+    </a>
+    
+    <a class="nav-link home-icon" routerLink="/dashboard">
+      <i class="bi bi-house-fill"></i>
+    </a>
+  </div>
+</nav>
+
+<div class="search-box">
+  <div class="search-input-container">
+    <div class="input-with-icon">
+      <i class="bi bi-search search-icon"></i>
+      <input 
+        type="text" 
+        id="searchTerm" 
+        [(ngModel)]="searchTerm" 
+        class="form-control" 
+        placeholder="Search by store code, dispatch code or name..." 
+        (keyup.enter)="searchStore()"
+        (input)="onSearchInput()"
+      >
+    </div>
+    <button class="btn btn-primary search-btn" (click)="searchStore()">
+      Search
+    </button>
+  </div>
+  <small class="search-hint">Press Enter or click Search to find a store</small>
+  
+  <div *ngIf="filteredOptions.length > 0 && searchTerm.length > 0" class="search-results">
+    <div *ngFor="let result of filteredOptions" class="search-result-item" (click)="selectSearchResult(result)">
+      <div class="result-item-code">{{ result.code }}</div>
+      <div class="result-item-name">{{ result.name }}</div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loading-container">
+  <div class="spinner-border text-primary" role="status">
+    <span class="sr-only">Loading...</span>
+  </div>
+  <p>Searching for store information...</p>
+</div>
+
+<div *ngIf="error" class="error-message">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  {{ error }}
+</div>
+
+<div *ngIf="storeDetails" class="store-details-container">
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-info-circle"></i> Basic Details</h2>
+    </div>
+    <div class="section-content">
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <th>Store Code</th>
+            <td>{{ storeDetails.store_code }}</td>
+          </tr>
+          <tr>
+            <th>Dispatch Code</th>
+            <td>{{ storeDetails.dispatch_code }}</td>
+          </tr>
+          <tr>
+            <th>Store Name</th>
+            <td>{{ storeDetails.store_name }}</td>
+          </tr>
+          <tr>
+            <th>Dispatch Store Name</th>
+            <td>{{ storeDetails.dispatch_store_name }}</td>
+          </tr>
+          <tr>
+            <th>Company</th>
+            <td>{{ storeDetails.store_company }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-geo-alt"></i> Location</h2>
+    </div>
+    <div class="section-content">
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <th>Address</th>
+            <td>{{ storeDetails.address_line || 'Not available' }}</td>
+          </tr>
+          <tr>
+            <th>City</th>
+            <td>{{ storeDetails.City || 'Not available' }}</td>
+          </tr>
+          <tr>
+            <th>County</th>
+            <td>{{ storeDetails.County || 'Not available' }}</td>
+          </tr>
+          <tr>
+            <th>Eircode</th>
+            <td>{{ storeDetails.eircode || 'Not available' }}</td>
+          </tr>
+          <tr>
+            <th>Coordinates</th>
+            <td>
+              <span *ngIf="storeDetails.Latitude && storeDetails.Longitude">
+                {{ storeDetails.Latitude }}, {{ storeDetails.Longitude }}
+              </span>
+              <span *ngIf="storeDetails.latitude && storeDetails.longitude">
+                {{ storeDetails.latitude }}, {{ storeDetails.longitude }}
+              </span>
+              <span *ngIf="(!storeDetails.Latitude || !storeDetails.Longitude) && (!storeDetails.latitude || !storeDetails.longitude)">
+                Not available
+                <div class="mt-3">
+                  <button class="btn btn-location" (click)="saveCurrentLocation()" [disabled]="savingLocation">
+                    <i class="bi bi-geo-alt-fill me-2"></i>
+                    <span *ngIf="!savingLocation">Save Current Location</span>
+                    <span *ngIf="savingLocation">Saving...</span>
+                  </button>
+                </div>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-shield-lock"></i> Access Information</h2>
+    </div>
+    <div class="section-content">
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <th>Door Code</th>
+            <td>{{ storeDetails.door_code || 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Alarm Code</th>
+            <td>{{ storeDetails.alarm_code || 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Fridge Code</th>
+            <td>{{ storeDetails.fridge_code || 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Keys Available</th>
+            <td>{{ storeDetails.keys_available || 'No' }}</td>
+          </tr>
+          <tr>
+            <th>Key Code</th>
+            <td>{{ storeDetails.key_code || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-truck"></i> Delivery Information</h2>
+    </div>
+    <div class="section-content">
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <th>Route</th>
+            <td>{{ storeDetails.route || 'Not assigned' }}</td>
+          </tr>
+          <tr>
+            <th>Registration Required</th>
+            <td>{{ storeDetails.prior_registration_required || 'No' }}</td>
+          </tr>
+          <tr>
+            <th>24 Hour Access</th>
+            <td>{{ storeDetails.hour_access_24 || 'No' }}</td>
+          </tr>
+          <tr>
+            <th>Earliest Delivery</th>
+            <td>{{ storeDetails.earliest_delivery_time || 'Not specified' }}</td>
+          </tr>
+          <tr>
+            <th>Saturday Opening</th>
+            <td>{{ storeDetails.opening_time_saturday || 'Not specified' }}</td>
+          </tr>
+          <tr>
+            <th>Bank Holiday Opening</th>
+            <td>{{ storeDetails.openining_time_bankholiday || 'Not specified' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="storeDetails.images" class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-images"></i> Store Images</h2>
+    </div>
+    <div class="section-content">
+      <div class="responsive-images">
+        <div *ngFor="let image of storeDetails.images.split(',')" class="image-container">
+          <img [src]="image" class="store-image" alt="Store image">
+        </div>
+        <div *ngIf="!storeDetails.images || storeDetails.images === ''">
+          <p>No images available</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

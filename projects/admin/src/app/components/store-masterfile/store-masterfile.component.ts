@@ -186,10 +186,9 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           // Define columns we always want to exclude
           const alwaysExcludedColumns = [
             'image_storage_url', 
-            'delivery_parking_instructions', 
-            'key_code',
-            'store_name_future',
-            'prior_registration_required'
+            'delivery_parking_instructions',
+            'updated_at',
+            'created_at'
           ];
           
           // Get all available columns (except always excluded ones)
@@ -198,14 +197,24 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           
           // Add new columns that might not be in the data yet
           const newColumns = [
-            'manual',
+            'image_url',
+            'dispatch_code',
+            'dispatch_store_name',
+            'site_id',
+            'store_code',
             'store_company',
-            'geolocation',
-            'new_route_08_05',
-            'route8_5_25',
-            'opening_time_sunday',
+            'store_name',
+            'address_line',
+            'eircode',
+            'route',
             'keys_available',
-            'key_code'
+            'key_code',
+            'prior_registration_required',
+            'hour_access_24',
+            'opening_time_sunday',
+            'earliest_delivery_time',
+            'opening_time_saturday',
+            'opening_time_bankholiday'
           ];
           
           newColumns.forEach(column => {
@@ -224,7 +233,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
             // Only set default column widths if not already stored in localStorage
             if (this.columnWidths[column] === undefined) {
               // Set default column widths based on the type or name
-              if (column === 'location_link') {
+              if (column === 'image_url') {
                 this.columnWidths[column] = 100; // Smaller width for links
               } else if (column.includes('name') || column.includes('address')) {
                 this.columnWidths[column] = 200; // Wider for names and addresses
@@ -238,20 +247,17 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           this.updateVisibleColumns();
         }
         
-        // Populate allRoutes with unique values from old and new route columns
+        // Populate allRoutes with unique values from route column
         const routeSet = new Set<string>();
         const segregatedSet = new Set<string>();
         
         this.storeData.forEach(row => {
-          if (row['old_route']) routeSet.add(row['old_route']);
-          if (row['new_route_08_05']) routeSet.add(row['new_route_08_05']);
-          if (row['route8_5_25']) routeSet.add(row['route8_5_25']);
+          if (row['route']) routeSet.add(row['route']);
           
-          // Identify segregated routes (routes that are only in mastref files marked as segregated)
+          // Identify segregated routes if applicable
+          // This might need to be updated based on how segregated routes are marked in the new table
           if (row['is_segregated'] === true || row['is_segregated'] === 'true' || row['is_segregated'] === 'yes') {
-            if (row['old_route']) segregatedSet.add(row['old_route']);
-            if (row['new_route_08_05']) segregatedSet.add(row['new_route_08_05']);
-            if (row['route8_5_25']) segregatedSet.add(row['route8_5_25']);
+            if (row['route']) segregatedSet.add(row['route']);
           }
         });
         
@@ -465,132 +471,73 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   
   // Save changes implementation (manual only)
   async saveChanges(): Promise<void> {
+    if (this.editedRows.size === 0) {
+      console.log('No changes to save');
+      return;
+    }
+
     this.isSaving = true;
     this.saveSuccess = false;
     this.saveError = false;
-    
-    console.log('Starting to save changes for edited rows:', this.editedRows.size);
-    
+
     try {
-      // Collect all changes into a row-based format for the API
-      const rowUpdates: {[key: string]: any} = {};
+      console.log(`Preparing to save changes for ${this.editedRows.size} rows`);
       
-      // Process all edited cells
-      Object.entries(this.editedCells).forEach(([cellKey, newValue]) => {
-        // Parse the cell key to get row key and column
-        // Format is either "dispatch_store:D4091:ARAM006:column" or "id:123:column" or "index:1:column"
-        const parts = cellKey.split(':');
-        let rowKey: string;
-        let column: string;
-        
-        if (parts[0] === 'dispatch_store') {
-          // Format: "dispatch_store:D4091:ARAM006:column"
-          rowKey = `${parts[0]}:${parts[1]}:${parts[2]}`;
-          column = parts[3];
-        } else if (parts[0] === 'id' || parts[0] === 'index') {
-          // Format: "id:123:column" or "index:1:column"
-          rowKey = `${parts[0]}:${parts[1]}`;
-          column = parts[2];
-        } else {
-          // Legacy format or direct key
-          console.log(`Legacy cell key format: ${cellKey}, attempting direct parsing`);
-          const lastColon = cellKey.lastIndexOf(':');
-          rowKey = cellKey.substring(0, lastColon);
-          column = cellKey.substring(lastColon + 1);
-        }
-        
-        console.log(`Parsed cell key "${cellKey}" -> rowKey="${rowKey}", column="${column}"`);
-        
-        // Initialize row object if not exist
-        if (!rowUpdates[rowKey]) {
-          rowUpdates[rowKey] = {};
-        }
-        
-        // Add the changed column value
-        rowUpdates[rowKey][column] = newValue;
-      });
-      
-      // Prepare the updates array for the API
+      // Collect all updates into an array
       const updates: any[] = [];
       
-      // Process each row update
-      for (const [rowKey, changes] of Object.entries(rowUpdates)) {
-        // Find the original row that corresponds to this key
-        let originalRow: any = null;
+      this.editedRows.forEach(rowIndex => {
+        const rowKey = this.getRowKey(rowIndex);
+        const originalRow = this.pagedData[rowIndex];
         
-        // Parse the row key format to find the row
-        if (rowKey.startsWith('id:')) {
-          const id = rowKey.substring(3);
-          originalRow = this.storeData.find(row => row.store_id === parseInt(id) || row.store_id === id);
-          console.log(`Looking for row with store_id=${id}`, originalRow ? 'Found' : 'Not found');
-        } else if (rowKey.startsWith('index:')) {
-          const index = parseInt(rowKey.substring(6));
-          originalRow = this.pagedData[index];
-          console.log(`Looking for row at index=${index}`, originalRow ? 'Found' : 'Not found');
-        } else if (rowKey.startsWith('dispatch_store:')) {
-          // Handle composite keys (dispatch_code:store_code)
-          const parts = rowKey.split(':');
-          const dispatchCode = parts[1];
-          const storeCode = parts[2];
-          originalRow = this.storeData.find(row => 
-            row.dispatch_code === dispatchCode && row.store_code === storeCode
-          );
-          console.log(`Looking for row with dispatch_code=${dispatchCode} and store_code=${storeCode}`, originalRow ? 'Found' : 'Not found');
-        } else {
-          // Try to parse as a legacy format or direct key
-          console.log(`Unknown key format: ${rowKey}, attempting direct lookup`);
-          originalRow = this.storeData.find(row => 
-            row.dispatch_code === rowKey || 
-            (row.store_code && row.dispatch_code && `${row.dispatch_code}:${row.store_code}` === rowKey)
-          );
+        // Create a shallow copy of the original row to apply edits to
+        const updatedRow = { ...originalRow };
+        
+        // Apply all edited cell values for this row
+        Object.keys(this.editedCells).forEach(cellKey => {
+          if (cellKey.startsWith(`${rowKey}:`)) {
+            const column = cellKey.split(':').pop() as string;
+            updatedRow[column] = this.editedCells[cellKey];
+          }
+        });
+        
+        // Only add to updates if something actually changed
+        if (JSON.stringify(updatedRow) !== JSON.stringify(originalRow)) {
+          updates.push(updatedRow);
         }
-        
-        if (!originalRow) {
-          console.error(`Could not find original row for key: ${rowKey}`);
-          continue; // Skip this update
-        }
-        
-        // Create a complete update object with all needed fields
-        const completeUpdate = {
-          ...originalRow,  // Include all original data
-          ...changes       // Override with changes
-        };
-        
-        updates.push(completeUpdate);
-      }
+      });
       
-      console.log('Prepared updates for API:', updates);
+      console.log(`Sending ${updates.length} updates to server:`, updates);
       
-      if (updates.length > 0) {
-        // Call the service to update the store information
-        const result = await this.supabaseService.updateStoreInformation(updates);
-        
-        if (result.success) {
-          console.log('Successfully saved all changes:', result);
-          this.saveSuccess = true;
-          this.lastSavedTime = new Date();
-          
-          // Clear tracked changes
-          this.editedCells = {};
-          this.editedRows.clear();
-          
-          // Refresh data after saving
-          this.loadStoreData();
-        } else {
-          console.error('Error saving changes:', result.error);
-          this.saveError = true;
-        }
+      // Call the service to update the data
+      const results = await this.supabaseService.updateStoreInformation(updates);
+      
+      // Check results for any failures
+      const anyFailures = results.some(result => !result.success);
+      
+      if (anyFailures) {
+        console.error('Some updates failed:', results.filter(r => !r.success));
+        this.saveError = true;
       } else {
-        console.log('No changes to save');
+        console.log('All updates succeeded');
         this.saveSuccess = true;
+        
+        // Clear edited cells and rows after successful save
+        this.editedCells = {};
+        this.editedRows.clear();
+        
+        // Update the data after saving
+        await this.loadStoreData();
       }
+      
+      this.lastSavedTime = new Date();
     } catch (error) {
-      console.error('Exception while saving changes:', error);
+      console.error('Error saving changes:', error);
       this.saveError = true;
     } finally {
       this.isSaving = false;
       
-      // Auto-hide success message after 5 seconds
+      // Auto-hide the success message after 5 seconds
       if (this.saveSuccess) {
         setTimeout(() => {
           this.saveSuccess = false;
@@ -604,131 +551,100 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return data.map(row => this.fixColumnNames(row));
   }
 
-  // Fix column names to match database schema
   private fixColumnNames(row: any): any {
     const fixedRow = { ...row };
     
-    // Map standard column names
+    // Map any database column names to friendly display names if needed
     const columnMapping: {[key: string]: string} = {
-      'address_line': 'address_line',
-      'address_line_1': 'address_line',
-      'store_full_name': 'store_name',
-      'new_route_15_04': 'new_route_08_05',
-      'route8_5_25': 'route8_5_25',
-      'dispatch': 'dispatch_code',
-      'store': 'store_code',
-      'name': 'store_name',
-      'company': 'store_company',
-      'geolocation': 'geolocation',
-      'eircode': 'eircode',
-      'old route': 'old_route',
-      'new route': 'new_route_08_05',
-      'hour_access_24': 'hour_access_24',
-      'earliest_delivery': 'earliest_delivery_time',
-      'opening_time_sat': 'opening_time_saturday',
-      'opening_time_sun': 'opening_time_sunday',
-      'openining_time_bh': 'openining_time_bankholiday',
-      'door_code': 'door_code',
-      'alarm': 'alarm_code',
-      'fridge': 'fridge_code',
-      'keys': 'keys_available',
+      // Example: 'database_column_name': 'Friendly Display Name'
+      'address_line': 'address',
+      'store_name': 'store_name',
+      'route': 'route',
       'key_code': 'key_code',
-      'manual': 'manual'
+      'hour_access_24': '24hr_access'
     };
     
-    // Apply mappings for any keys that need to be standardized
-    Object.keys(columnMapping).forEach(displayName => {
-      if (displayName in row) {
-        const dbName = columnMapping[displayName];
-        fixedRow[dbName] = row[displayName];
-        if (displayName !== dbName) {
-          delete fixedRow[displayName];
-        }
+    // Apply friendly names if desired (don't apply if we want to keep DB column names)
+    /*
+    Object.keys(columnMapping).forEach(dbName => {
+      if (dbName in fixedRow) {
+        const friendlyName = columnMapping[dbName];
+        fixedRow[friendlyName] = fixedRow[dbName];
+        delete fixedRow[dbName];
       }
     });
+    */
     
     return fixedRow;
   }
   
   filterData(): void {
-    // Start with all data
-    let filtered = [...this.storeData];
+    // If search term is empty and no other filters are applied, just use all data
+    if (
+      !this.searchTerm && 
+      !this.show24HoursOnly && 
+      !this.showSegregatedRoutes && 
+      !this.hasSelectedRoutes
+    ) {
+      this.filteredData = [...this.storeData];
+      this.applySorting();
+      this.updatePagedData();
+      return;
+    }
     
-    // Apply search filter if there's a search term
-    if (this.searchTerm) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(row => {
-        // Search across all columns
-        return Object.keys(row).some(key => {
+    // Apply filters based on search term and other criteria
+    this.filteredData = this.storeData.filter(row => {
+      // Text search
+      if (this.searchTerm) {
+        const searchTermLower = this.searchTerm.toLowerCase();
+        // Search across all text fields
+        const matchesSearch = Object.keys(row).some(key => {
           const value = row[key];
           if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(term);
+          return String(value).toLowerCase().includes(searchTermLower);
         });
-      });
-    }
-    
-    // Apply 24-hour filter if enabled
-    if (this.show24HoursOnly) {
-      filtered = filtered.filter(row => {
-        return row['24_hour_access'] === true || 
-               row['24_hour_access'] === 'true' || 
-               row['24_hour_access'] === 'yes' || 
-               row['24_hour_access'] === 'Yes' || 
-               row['24_hour_access'] === 'YES';
-      });
-    }
-    
-    // Apply route filter if any routes are selected
-    const selectedRouteCount = Object.values(this.selectedRoutes).filter(Boolean).length;
-    if (selectedRouteCount > 0) {
-      filtered = filtered.filter(row => {
-        // Check if any of the route columns match selected routes
-        return (
-          (row['old_route'] && this.selectedRoutes[row['old_route']]) || 
-          (row['new_route_08_05'] && this.selectedRoutes[row['new_route_08_05']]) ||
-          (row['route8_5_25'] && this.selectedRoutes[row['route8_5_25']])
-        );
-      });
-    }
-    
-    // Apply segregated routes filter if enabled
-    if (this.showSegregatedRoutes) {
-      filtered = filtered.filter(row => {
-        const isSegregated = row['is_segregated'] === true || 
-                            row['is_segregated'] === 'true' || 
-                            row['is_segregated'] === 'yes';
         
-        const hasSegregatedRoute = 
-          (row['old_route'] && this.segregatedRoutes[row['old_route']]) || 
-          (row['new_route_08_05'] && this.segregatedRoutes[row['new_route_08_05']]) ||
-          (row['route8_5_25'] && this.segregatedRoutes[row['route8_5_25']]);
-        
-        return isSegregated || hasSegregatedRoute;
-      });
-    }
-    
-    // Update the filtered data
-    this.filteredData = filtered;
-    
-    // Adjust items per page based on filter criteria
-    const routeFiltersApplied = selectedRouteCount > 0 || this.showSegregatedRoutes;
-    this.adjustItemsPerPage(filtered.length, routeFiltersApplied);
+        if (!matchesSearch) return false;
+      }
+      
+      // 24-hour access filter
+      if (this.show24HoursOnly) {
+        const access24hr = row['hour_access_24'];
+        if (!access24hr || 
+            (typeof access24hr === 'string' && 
+            ['no', 'n', 'false', '0', ''].includes(access24hr.toLowerCase()))) {
+          return false;
+        }
+      }
+      
+      // Route filter
+      if (this.hasSelectedRoutes) {
+        const routeFound = row['route'] && this.selectedRoutes[row['route']];
+        if (!routeFound) return false;
+      }
+      
+      // Segregated routes filter
+      if (this.showSegregatedRoutes) {
+        const route = row['route'];
+        if (!route || !this.segregatedRoutes[route]) return false;
+      }
+      
+      return true;
+    });
     
     // Apply sorting
     this.applySorting();
     
-    // Update pagination
-    this.totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-    this.currentPage = Math.min(this.currentPage, this.totalPages || 1);
+    // Adjust items per page for filtered results
+    this.adjustItemsPerPage(this.filteredData.length, this.hasSelectedRoutes);
     
     // Update paged data
     this.updatePagedData();
   }
 
   toggle24HourFilter(): void {
-    // Don't toggle the model value here since the [(ngModel)] binding
-    // will handle that automatically with the (click) event
-    this.filterData(); // Just apply the filter
+    this.show24HoursOnly = !this.show24HoursOnly;
+    this.filterData();
   }
 
   sortData(column: string): void {
@@ -836,44 +752,41 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   
   // Helper to format column name for display
   formatColumnName(column: string): string {
-    // Handle special cases first
-    const specialCases: Record<string, string> = {
-      'store_id': 'Store ID',
-      'image_storage_url': 'Image URL',
-      'manual': 'Manual',
+    // Special cases for specific columns
+    const specialCases: { [key: string]: string } = {
+      'id': 'ID',
       'dispatch_code': 'Dispatch Code',
+      'dispatch_store_name': 'Dispatch Store Name',
+      'site_id': 'Site ID',
       'store_code': 'Store Code',
       'store_company': 'Store Company',
       'store_name': 'Store Name',
       'address_line': 'Address',
-      'geolocation': 'Geolocation',
       'eircode': 'Eircode',
-      'old_route': 'Old Route',
-      'new_route_08_05': 'New Route (08/05)',
-      'route8_5_25': 'Route (8.5.25)',
-      'location_link': 'Location Link',
-      'door_code': 'Door Code',
-      'alarm_code': 'Alarm Code',
-      'fridge_code': 'Fridge Code',
+      'route': 'Route',
       'keys_available': 'Keys Available',
       'key_code': 'Key Code',
-      'hour_access_24': '24 Hour Access',
+      'prior_registration_required': 'Prior Registration Required',
+      'hour_access_24': '24-Hour Access',
+      'opening_time_sunday': 'Sunday Opening Time',
       'earliest_delivery_time': 'Earliest Delivery Time',
-      'opening_time_saturday': 'Opening Time (Saturday)',
-      'opening_time_sunday': 'Opening Time (Sunday)',
-      'openining_time_bankholiday': 'Opening Time (Bank Holiday)'
+      'opening_time_saturday': 'Saturday Opening Time',
+      'opening_time_bankholiday': 'Bank Holiday Opening Time',
+      'image_url': 'Image URL'
     };
     
-    // Return special case if it exists
     if (column in specialCases) {
       return specialCases[column];
     }
     
-    // Otherwise, apply standard formatting (capitalize first letter of each word, replace underscores with spaces)
-    return column
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    // Generic formatting for other columns
+    const formattedName = column
+      .replace(/_/g, ' ') // Replace underscores with spaces
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
       .join(' ');
+    
+    return formattedName;
   }
 
   // Toggle route filter dropdown visibility
@@ -983,9 +896,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     
     // Check if any of the route columns match a segregated route
     return (
-      (row['old_route'] && this.segregatedRoutes[row['old_route']]) || 
-      (row['new_route_08_05'] && this.segregatedRoutes[row['new_route_08_05']]) ||
-      (row['route8_5_25'] && this.segregatedRoutes[row['route8_5_25']])
+      (row['route'] && this.segregatedRoutes[row['route']])
     );
   }
 } 

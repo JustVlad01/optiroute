@@ -41,6 +41,15 @@ interface RouteSettings {
   showPoints: boolean;
 }
 
+// Interface for geocoded addresses
+interface GeocodedAddress {
+  query: string;
+  lat: number;
+  lng: number;
+  hasMarker: boolean;
+  markerId?: number;
+}
+
 declare global {
   interface Window {
     googleMapsLoaded?: boolean;
@@ -74,7 +83,12 @@ export class RoutePlannerComponent implements OnInit {
     draggable: false,
     animation: null // Remove drop animation
   };
-  markers: { position: google.maps.LatLngLiteral, info: string }[] = [];
+  markers: { 
+    position: google.maps.LatLngLiteral, 
+    info: string, 
+    options?: any, 
+    addressRef?: GeocodedAddress 
+  }[] = [];
   pathCoordinates: google.maps.LatLngLiteral[] = [];
   polylineOptions = {
     strokeColor: '#2c5282',
@@ -213,6 +227,22 @@ export class RoutePlannerComponent implements OnInit {
   
   // Track expanded route sections in the table
   private expandedRoutes: Set<string> = new Set();
+
+  // Geocoding tool properties
+  geocodingToolExpanded = true;
+  batchGeocodingInput = '';
+  isGeocoding = false;
+  geocodedAddresses: GeocodedAddress[] = [];
+  geocodingMarkers: { 
+    id: number; 
+    marker: { 
+      position: google.maps.LatLngLiteral, 
+      info: string,
+      options?: any,
+      addressRef?: GeocodedAddress 
+    } 
+  }[] = [];
+  private nextGeocodingMarkerId = 1;
 
   constructor(private ngZone: NgZone, private mapsApiService: MapsApiService) {}
 
@@ -519,7 +549,7 @@ export class RoutePlannerComponent implements OnInit {
         routeGroups.get(store.route)!.push(store);
       });
       
-      // For each route, set displayOrder
+      // For each route, set display order
       routeGroups.forEach(stores => {
         stores.sort((a, b) => {
           if (a.routeOrder !== undefined && b.routeOrder !== undefined) {
@@ -593,26 +623,21 @@ export class RoutePlannerComponent implements OnInit {
   }
 
   // Update visible markers based on selected routes and point visibility settings
-  getVisibleMarkers(): { position: google.maps.LatLngLiteral, info: string }[] {
-    // If no routes are selected, return an empty array
+  getVisibleMarkers(): { position: google.maps.LatLngLiteral, info: string, options?: any, addressRef?: GeocodedAddress }[] {
+    // Start with all geocoding markers (these should always be visible)
+    const geocodingMarkers = this.geocodingMarkers.map(m => m.marker);
+    
+    // If no routes are selected, return only geocoding markers
     if (this.selectedRoutes.size === 0) {
-      return [];
+      return geocodingMarkers;
     }
     
-    // If all routes are selected and all have points visible, return all markers
-    if (this.selectedRoutes.size === this.availableRoutes.length - 1) { // -1 for "All Routes"
-      const allPointsVisible = Array.from(this.selectedRoutes).every(route => {
-        const settings = this.routeSettings.get(route);
-        return settings && settings.showPoints;
-      });
+    // Filter regular markers that correspond to the selected routes with visible points
+    const storeMarkers = this.markers.filter((marker, idx) => {
+      // Skip geocoding markers (which don't have corresponding store locations)
+      const isGeocodingMarker = marker.addressRef !== undefined;
+      if (isGeocodingMarker) return false;
       
-      if (allPointsVisible) {
-        return this.markers;
-      }
-    }
-    
-    // Filter markers that correspond to the selected routes with visible points
-    return this.markers.filter((_, idx) => {
       // First check if this is a marker for a store (could be starting point marker)
       if (idx < this.storeLocations.length) {
         const route = this.storeLocations[idx].route;
@@ -625,6 +650,9 @@ export class RoutePlannerComponent implements OnInit {
       }
       return false;
     });
+    
+    // Combine geocoding markers with filtered store markers
+    return [...geocodingMarkers, ...storeMarkers];
   }
 
   // Check if store should be shown based on selected routes
@@ -688,7 +716,25 @@ export class RoutePlannerComponent implements OnInit {
                           <h3>${store.storeName}</h3>
                           <p><strong>Route:</strong> ${store.route}</p>
                           <p><strong>Address:</strong> ${store.eircode}</p>
-                        </div>`
+                        </div>`,
+                  options: {
+                    draggable: true,
+                    animation: null,
+                    icon: {
+                      path: google.maps.SymbolPath.CIRCLE,
+                      fillColor: '#e53e3e',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 2,
+                      scale: 8
+                    }
+                  },
+                  addressRef: {
+                    query: addressQuery,
+                    lat: location.lat(),
+                    lng: location.lng(),
+                    hasMarker: false
+                  }
                 });
               } else {
                 console.warn(`Geocoding failed for ${addressQuery}: ${status}`);
@@ -2403,14 +2449,20 @@ export class RoutePlannerComponent implements OnInit {
         }
       });
       
-      // Add polyline for this route if it has points
+      // Add temporary polyline for this route if it has points
       if (routePoints.length > 0) {
+        // Initially create placeholder polyline with minimal points 
+        // (will be replaced with actual road path)
         this.routePolylines.set(routeName, {
-          path: routePoints,
+          path: routePoints.length > 1 ? [routePoints[0], routePoints[routePoints.length - 1]] : routePoints,
           options: this.getPolylineOptionsForRoute(routeName)
         });
         
-        console.log(`Created initial polyline for route ${routeName} with ${routePoints.length} points`);
+        // Immediately calculate the road-based path instead of using straight lines
+        if (routePoints.length > 1) {
+          this.calculateRoadRouteForPath(routePoints, routeName)
+            .catch(error => console.error(`Error calculating road route for ${routeName}:`, error));
+        }
       }
     }
     
@@ -3134,5 +3186,302 @@ export class RoutePlannerComponent implements OnInit {
         }
       });
     });
+  }
+
+  // Toggle the geocoding tool expansion
+  toggleGeocodingTool(): void {
+    this.geocodingToolExpanded = !this.geocodingToolExpanded;
+  }
+
+  // Batch geocode multiple addresses
+  batchGeocodeAddresses(): void {
+    if (!this.batchGeocodingInput || !this.apiLoaded) {
+      return;
+    }
+
+    this.isGeocoding = true;
+    this.errorMessage = '';
+
+    // Split input by newlines to get individual addresses
+    const addresses = this.batchGeocodingInput.split('\n')
+      .map(addr => addr.trim())
+      .filter(addr => addr.length > 0);
+
+    if (addresses.length === 0) {
+      this.isGeocoding = false;
+      this.errorMessage = 'No valid addresses found.';
+      return;
+    }
+
+    const geocoder = new google.maps.Geocoder();
+    let completedRequests = 0;
+    const totalRequests = addresses.length;
+    const batchSize = 5; // Process in smaller batches to avoid exceeding rate limits
+    let currentBatch = 0;
+    
+    const results: GeocodedAddress[] = [];
+
+    const processBatch = () => {
+      const startIdx = currentBatch * batchSize;
+      const endIdx = Math.min(startIdx + batchSize, addresses.length);
+      
+      // Process each address in the batch
+      for (let i = startIdx; i < endIdx; i++) {
+        const address = addresses[i];
+        
+        if (!address) {
+          completedRequests++;
+          checkCompletion();
+          continue;
+        }
+        
+        try {
+          geocoder.geocode({ address: address }, (geocodeResults, status) => {
+            this.ngZone.run(() => {
+              completedRequests++;
+              
+              if (status === google.maps.GeocoderStatus.OK && geocodeResults && geocodeResults[0]) {
+                const location = geocodeResults[0].geometry.location;
+                
+                results.push({
+                  query: address,
+                  lat: location.lat(),
+                  lng: location.lng(),
+                  hasMarker: false
+                });
+              } else {
+                console.warn(`Geocoding failed for ${address}: ${status}`);
+                this.errorMessage = `Geocoding failed for some addresses. Check console for details.`;
+              }
+              
+              checkCompletion();
+            });
+          });
+        } catch (error) {
+          console.error('Geocoding error:', error);
+          this.ngZone.run(() => {
+            completedRequests++;
+            checkCompletion();
+          });
+        }
+      }
+      
+      // Process next batch if any
+      currentBatch++;
+      if (currentBatch * batchSize < totalRequests) {
+        setTimeout(processBatch, 200); // Add delay between batches
+      }
+    };
+    
+    const checkCompletion = () => {
+      // When all requests are complete, update the UI
+      if (completedRequests === totalRequests) {
+        this.isGeocoding = false;
+        this.geocodedAddresses = results;
+        
+        // Update map center if we have results
+        if (results.length > 0) {
+          this.center = {
+            lat: results[0].lat,
+            lng: results[0].lng
+          };
+          this.zoom = 14; // Zoom in to see the result better
+        }
+      }
+    };
+    
+    // Start processing the first batch
+    processBatch();
+  }
+
+  // Clear geocoding results
+  clearGeocodingResults(): void {
+    // Remove all markers associated with geocoded addresses
+    this.geocodingMarkers.forEach(markerInfo => {
+      const index = this.markers.findIndex(m => 
+        m.position.lat === markerInfo.marker.position.lat && 
+        m.position.lng === markerInfo.marker.position.lng
+      );
+      
+      if (index !== -1) {
+        this.markers.splice(index, 1);
+      }
+    });
+    
+    this.geocodingMarkers = [];
+    this.geocodedAddresses = [];
+    this.batchGeocodingInput = '';
+  }
+
+  // Zoom to a specific location
+  zoomToLocation(address: GeocodedAddress): void {
+    this.center = {
+      lat: address.lat,
+      lng: address.lng
+    };
+    this.zoom = 18; // Zoom in closely
+    
+    // Add marker if one doesn't exist
+    if (!address.hasMarker) {
+      this.toggleStoreMarker(address);
+    }
+  }
+
+  // Toggle marker for a geocoded address
+  toggleStoreMarker(address: GeocodedAddress): void {
+    if (address.hasMarker) {
+      // Remove marker
+      const markerInfo = this.geocodingMarkers.find(m => m.id === address.markerId);
+      if (markerInfo) {
+        const index = this.markers.findIndex(m => 
+          m.position.lat === markerInfo.marker.position.lat && 
+          m.position.lng === markerInfo.marker.position.lng
+        );
+        
+        if (index !== -1) {
+          this.markers.splice(index, 1);
+        }
+        
+        // Remove from geocoding markers
+        const geoMarkerIndex = this.geocodingMarkers.findIndex(m => m.id === address.markerId);
+        if (geoMarkerIndex !== -1) {
+          this.geocodingMarkers.splice(geoMarkerIndex, 1);
+        }
+      }
+      
+      // Update address
+      address.hasMarker = false;
+      address.markerId = undefined;
+    } else {
+      // Add marker
+      const markerId = this.nextGeocodingMarkerId++;
+      const marker = {
+        position: { lat: address.lat, lng: address.lng },
+        info: `<div class="info-window-content">
+                <h3>Geocoded Location</h3>
+                <p><strong>Address:</strong> ${address.query}</p>
+                <p><strong>Coordinates:</strong> ${address.lat.toFixed(6)}, ${address.lng.toFixed(6)}</p>
+              </div>`,
+        options: {
+          draggable: true,
+          animation: null,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#e53e3e',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            scale: 8
+          }
+        },
+        addressRef: address // Reference to the address object
+      };
+      
+      this.markers.push(marker);
+      this.geocodingMarkers.push({ id: markerId, marker });
+      
+      // Update address
+      address.hasMarker = true;
+      address.markerId = markerId;
+      
+      // Update map center
+      this.center = { lat: address.lat, lng: address.lng };
+    }
+  }
+
+  // Export geocoded addresses to CSV
+  exportGeocodedAddresses(): void {
+    if (this.geocodedAddresses.length === 0) {
+      return;
+    }
+    
+    // Create CSV content
+    let csvContent = "Address/Eircode,Latitude,Longitude\n";
+    
+    this.geocodedAddresses.forEach(address => {
+      // Escape commas in the address
+      const escapedAddress = address.query.includes(',') ? `"${address.query}"` : address.query;
+      csvContent += `${escapedAddress},${address.lat},${address.lng}\n`;
+    });
+    
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'geocoded_addresses.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Copy coordinates to clipboard
+  copyCoordinates(address: GeocodedAddress): void {
+    if (!address) return;
+    
+    // Format coordinates as latitude,longitude
+    const coordsText = `${address.lat.toFixed(6)},${address.lng.toFixed(6)}`;
+    
+    // Copy to clipboard
+    const textArea = document.createElement('textarea');
+    textArea.value = coordsText;
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        // Show a temporary success message
+        this.showCopySuccessMessage('Coordinates copied to clipboard!');
+      } else {
+        console.error('Copy command was unsuccessful');
+      }
+    } catch (err) {
+      console.error('Could not copy text: ', err);
+    }
+    
+    document.body.removeChild(textArea);
+  }
+  
+  // Show a temporary success message
+  private showCopySuccessMessage(message: string): void {
+    const prevErrorMessage = this.errorMessage;
+    this.errorMessage = message;
+    
+    // After 2 seconds, restore the previous error message
+    setTimeout(() => {
+      this.errorMessage = prevErrorMessage;
+    }, 2000);
+  }
+  
+  // Handle marker drag end event
+  onMarkerDragEnd(marker: MapMarker, markerData: any): void {
+    if (!marker || !markerData) return;
+    
+    // Get the new position
+    const position = marker.getPosition();
+    if (!position) return;
+    
+    const newPosition = {
+      lat: position.lat(),
+      lng: position.lng()
+    };
+    
+    // Update the marker position in our data structure
+    markerData.position = newPosition;
+    
+    // If this is a geocoded address marker, update the address coordinates
+    if (markerData.addressRef) {
+      markerData.addressRef.lat = newPosition.lat;
+      markerData.addressRef.lng = newPosition.lng;
+      
+      // Update the info window content with new coordinates
+      markerData.info = `<div class="info-window-content">
+        <h3>Geocoded Location</h3>
+        <p><strong>Address:</strong> ${markerData.addressRef.query}</p>
+        <p><strong>Coordinates:</strong> ${newPosition.lat.toFixed(6)}, ${newPosition.lng.toFixed(6)}</p>
+      </div>`;
+    }
   }
 } 
