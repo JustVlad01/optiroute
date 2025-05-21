@@ -1,7 +1,7 @@
 /* Common header styles for OptiRoute application */
 
 .header-fullwidth {
-  background: linear-gradient(135deg, #0a5081 0%, #0a3161 100%);
+  background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%);
   padding: 15px 20px;
   
   h2 {
@@ -22,7 +22,7 @@
 
 /* Updated navbar styles based on Store Library component */
 .navbar {
-  background: linear-gradient(135deg, #0a5081 0%, #0a3161 100%) !important;
+  background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   height: 64px;
   position: sticky;

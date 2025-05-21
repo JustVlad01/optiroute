@@ -46,6 +46,7 @@ export class StoreLibraryComponent implements OnInit {
   loading: boolean = false;
   imageTabActive: boolean = true;
   hasSearched: boolean = false;
+  error: string = '';
   
   constructor(private supabaseService: SupabaseService) {}
   
@@ -107,29 +108,30 @@ export class StoreLibraryComponent implements OnInit {
     }, 200);
   }
   
-  // Search for stores by search term
+  // Modify searchStores method to include delivery day filtering
   async searchStores(): Promise<void> {
-    if (!this.searchTerm.trim()) {
-      return;
-    }
-    
+    // Existing search code
     this.loading = true;
     this.hasSearched = true;
-    this.showSuggestions = false;
+    this.error = '';
     
     try {
-      // First check if we need to load the store data
-      if (this.stores.length === 0) {
-        const data = await this.supabaseService.getStoreInformation();
-        if (data) {
-          this.stores = data;
-        }
+      let stores = [];
+      
+      if (this.searchTerm.trim() === '') {
+        stores = await this.supabaseService.getAllStores();
+      } else {
+        stores = await this.supabaseService.searchStores(this.searchTerm);
       }
       
-      // Filter stores based on search term
-      this.filterStores();
+      this.filteredStores = stores;
+      
+      if (this.filteredStores.length === 0) {
+        this.error = 'No stores found matching your search criteria.';
+      }
     } catch (error) {
       console.error('Error searching stores:', error);
+      this.error = 'An error occurred while searching for stores.';
     } finally {
       this.loading = false;
     }
@@ -584,5 +586,20 @@ export class StoreLibraryComponent implements OnInit {
     } finally {
       this.shopImageUploading = false;
     }
+  }
+  
+  // Add method to update store delivery day fields
+  updateStoreField(field: string, value: string): void {
+    if (!this.selectedStore) return;
+    
+    this.supabaseService.updateStore(this.selectedStore.store_id, { [field]: value })
+      .then(() => {
+        console.log(`Updated store ${field} to ${value}`);
+        // Update the local selectedStore object
+        this.selectedStore[field] = value;
+      })
+      .catch((error: any) => {
+        console.error(`Error updating store ${field}:`, error);
+      });
   }
 }

@@ -38,6 +38,11 @@
   </div>
 </div>
 
+<!-- Store Code Header - Positioned directly under search box -->
+<div *ngIf="storeDetails" class="store-code-header">
+  <div class="code-value">{{ storeDetails.store_code }}</div>
+</div>
+
 <div *ngIf="loading" class="loading-container">
   <div class="spinner-border text-primary" role="status">
     <span class="sr-only">Loading...</span>
@@ -59,24 +64,21 @@
     </div>
   </div>
 
+  <!-- Store Name Section - Only showing store name and dispatch code -->
   <div class="section-card">
     <div class="section-header">
-      <h2><i class="bi bi-info-circle"></i> Basic Details</h2>
+      <h2><i class="bi bi-building"></i> Store Info</h2>
     </div>
     <div class="section-content">
       <table class="info-table">
         <tbody>
           <tr>
-            <th>Store Code</th>
-            <td>{{ storeDetails.store_code }}</td>
+            <th>Store Name</th>
+            <td>{{ storeDetails.store_name }}</td>
           </tr>
           <tr>
             <th>Dispatch Code</th>
             <td>{{ storeDetails.dispatch_code }}</td>
-          </tr>
-          <tr>
-            <th>Store Name</th>
-            <td>{{ storeDetails.store_name }}</td>
           </tr>
         </tbody>
       </table>
@@ -203,6 +205,41 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Delivery Days Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="bi bi-calendar-check"></i> Delivery Days</h2>
+    </div>
+    <div class="section-content">
+      <div class="delivery-days-grid">
+        <div class="day-chip" [class.selected]="storeDetails.delivery_monday === 'Yes'">
+          <i [class]="storeDetails.delivery_monday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Monday
+        </div>
+        <div class="day-chip" [class.selected]="storeDetails.delivery_tuesday === 'Yes'">
+          <i [class]="storeDetails.delivery_tuesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Tuesday
+        </div>
+        <div class="day-chip" [class.selected]="storeDetails.delivery_wednesday === 'Yes'">
+          <i [class]="storeDetails.delivery_wednesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Wednesday
+        </div>
+        <div class="day-chip" [class.selected]="storeDetails.delivery_thursday === 'Yes'">
+          <i [class]="storeDetails.delivery_thursday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Thursday
+        </div>
+        <div class="day-chip" [class.selected]="storeDetails.delivery_friday === 'Yes'">
+          <i [class]="storeDetails.delivery_friday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Friday
+        </div>
+        <div class="day-chip" [class.selected]="storeDetails.delivery_saturday === 'Yes'">
+          <i [class]="storeDetails.delivery_saturday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+          Saturday
+        </div>
+      </div>
     </div>
   </div>
 

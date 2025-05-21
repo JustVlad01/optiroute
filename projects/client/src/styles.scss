@@ -7,7 +7,7 @@
 /* Add corporate theme global variables */
 :root {
   --primary-color: #2c3e50;
-  --secondary-color: #3498db;
+  --secondary-color: #FF5252;
   --light-bg: #f8f9fa;
   --border-color: #dee2e6;
   --success-color: #27ae60;
@@ -148,15 +148,20 @@
 
 /* Override Bootstrap primary */
 .btn-primary {
-  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  background: linear-gradient(135deg, var(--secondary-color), #D32F2F);
   border: none;
   
   &:hover {
-    background: linear-gradient(135deg, #2980b9, #1e2b37);
+    background: linear-gradient(135deg, #FF7373, #D32F2F);
   }
 }
 
 /* Bootstrap bg-primary override */
 .bg-primary {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+}
+
+/* Spinner color override */
+.spinner-border.text-primary {
+  color: var(--secondary-color) !important;
 }

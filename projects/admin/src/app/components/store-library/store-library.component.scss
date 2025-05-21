@@ -939,3 +939,50 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Delivery days section in store details */
+.delivery-days-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.delivery-days-label {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.delivery-days-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.delivery-day-chip {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 30px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+  
+  &.active {
+    background-color: rgba(255, 82, 82, 0.15);
+    color: #FF5252;
+    font-weight: 600;
+  }
+  
+  &:hover {
+    background-color: rgba(255, 82, 82, 0.05);
+  }
+}

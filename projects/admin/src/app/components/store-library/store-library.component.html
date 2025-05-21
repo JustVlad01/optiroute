@@ -154,6 +154,37 @@
               <div class="info-label">Earliest Delivery:</div>
               <div class="info-value">{{ selectedStore.earliest_delivery_time || 'N/A' }}</div>
             </div>
+            
+            <!-- Add Delivery Days section -->
+            <div class="delivery-days-section">
+              <div class="info-label delivery-days-label">Delivery Days:</div>
+              <div class="delivery-days-chips">
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_monday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_monday" [value]="'Yes'" (change)="updateStoreField('delivery_monday', selectedStore.delivery_monday === true ? 'Yes' : 'No')">
+                  <span>Mon</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_tuesday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_tuesday" [value]="'Yes'" (change)="updateStoreField('delivery_tuesday', selectedStore.delivery_tuesday === true ? 'Yes' : 'No')">
+                  <span>Tue</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_wednesday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_wednesday" [value]="'Yes'" (change)="updateStoreField('delivery_wednesday', selectedStore.delivery_wednesday === true ? 'Yes' : 'No')">
+                  <span>Wed</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_thursday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_thursday" [value]="'Yes'" (change)="updateStoreField('delivery_thursday', selectedStore.delivery_thursday === true ? 'Yes' : 'No')">
+                  <span>Thu</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_friday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_friday" [value]="'Yes'" (change)="updateStoreField('delivery_friday', selectedStore.delivery_friday === true ? 'Yes' : 'No')">
+                  <span>Fri</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_saturday === 'Yes'">
+                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_saturday" [value]="'Yes'" (change)="updateStoreField('delivery_saturday', selectedStore.delivery_saturday === true ? 'Yes' : 'No')">
+                  <span>Sat</span>
+                </label>
+              </div>
+            </div>
           </div>
           
           <!-- Tab Navigation -->

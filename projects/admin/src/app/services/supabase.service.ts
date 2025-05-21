@@ -1122,4 +1122,50 @@ export class SupabaseService {
       return [];
     }
   }
+
+  // Get all stores from the database
+  async getAllStores(): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from('stores')
+      .select('*')
+      .order('store_name');
+      
+    if (error) {
+      console.error('Error fetching all stores:', error);
+      throw error;
+    }
+    
+    return data || [];
+  }
+
+  // Search stores by term
+  async searchStores(searchTerm: string): Promise<any[]> {
+    const term = searchTerm.toLowerCase();
+    
+    const { data, error } = await this.supabase
+      .from('stores')
+      .select('*')
+      .or(`store_name.ilike.%${term}%,store_code.ilike.%${term}%,dispatch_code.ilike.%${term}%,address_line.ilike.%${term}%,eircode.ilike.%${term}%`)
+      .order('store_name');
+      
+    if (error) {
+      console.error('Error searching stores:', error);
+      throw error;
+    }
+    
+    return data || [];
+  }
+
+  // Update store
+  async updateStore(storeId: string, updates: any): Promise<void> {
+    const { error } = await this.supabase
+      .from('stores')
+      .update(updates)
+      .eq('store_id', storeId);
+      
+    if (error) {
+      console.error('Error updating store:', error);
+      throw error;
+    }
+  }
 }

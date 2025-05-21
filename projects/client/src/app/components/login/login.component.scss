@@ -1,6 +1,6 @@
 :root {
   --primary-color: #2c3e50;
-  --secondary-color: #3498db;
+  --secondary-color: #FF5252;
   --light-bg: #f8f9fa;
   --border-color: #dee2e6;
   --success-color: #27ae60;
@@ -20,7 +20,7 @@
 
 .login-header {
   padding: 2.5rem 1.5rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, #FF5252, #D32F2F);
   color: white;
   text-align: center;
   position: relative;
@@ -87,7 +87,7 @@
 
 .form-control:focus {
   border-color: var(--secondary-color);
-  box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.15);
+  box-shadow: 0 0 0 0.25rem rgba(255, 82, 82, 0.15);
   background-color: white;
 }
 
@@ -98,9 +98,9 @@
   font-size: 1.1rem;
   letter-spacing: 0.5px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  background: linear-gradient(135deg, #FF5252, #D32F2F);
   border: none;
-  box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
+  box-shadow: 0 4px 10px rgba(255, 82, 82, 0.2);
   transition: all 0.3s ease;
   color: white;
   cursor: pointer;
@@ -108,13 +108,13 @@
 }
 
 .login-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2980b9, #1e2b37);
-  box-shadow: 0 6px 15px rgba(44, 62, 80, 0.3);
+  background: linear-gradient(135deg, #FF7373, #B71C1C);
+  box-shadow: 0 6px 15px rgba(255, 82, 82, 0.3);
   transform: translateY(-2px);
 }
 
 .login-btn:disabled {
-  background: linear-gradient(135deg, #a3c2e3, #7896ab);
+  background: linear-gradient(135deg, #ffb2b2, #ef9a9a);
   cursor: not-allowed;
 }
 
