@@ -211,12 +211,23 @@
               
               <!-- Shop Storefront Image Upload -->
               <div class="shop-image-upload-container">
+                <h5>Storefront Image</h5>
                 <div class="upload-form">
-                  <label class="file-input-label special-upload">
-                    <i class="bi bi-building"></i>
-                    <span>{{ shopImageFile ? shopImageFile.name : 'Choose storefront image' }}</span>
-                    <input type="file" accept="image/*" (change)="onShopFileSelected($event)" class="file-input">
-                  </label>
+                  <div class="upload-options">
+                    <label class="file-input-label special-upload">
+                      <i class="bi bi-building"></i>
+                      <span>{{ shopImageFile ? shopImageFile.name : 'Choose storefront image' }}</span>
+                      <input type="file" accept="image/*" (change)="onShopFileSelected($event)" class="file-input">
+                    </label>
+                  </div>
+                  
+                  <!-- Enhanced, more visible paste area for storefront -->
+                  <div class="paste-container">
+                    <div class="paste-area storefront-paste-area" (paste)="onShopImagePaste($event)" tabindex="0">
+                      <i class="bi bi-clipboard"></i>
+                      <span class="paste-text">or paste image here (Ctrl+V)</span>
+                    </div>
+                  </div>
                   
                   <div *ngIf="shopImageFile" class="image-preview-container">
                     <img [src]="shopImagePreviewUrl" alt="Shop Preview" class="image-preview">
@@ -262,11 +273,21 @@
               <div class="image-upload-container">
                 <h5>Store Images</h5>
                 <div class="upload-form">
-                  <label class="file-input-label">
-                    <i class="bi bi-upload"></i>
-                    <span>{{ imageFile ? imageFile.name : 'Choose an image' }}</span>
-                    <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
-                  </label>
+                  <div class="upload-options">
+                    <label class="file-input-label">
+                      <i class="bi bi-upload"></i>
+                      <span>{{ imageFile ? imageFile.name : 'Choose an image' }}</span>
+                      <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
+                    </label>
+                  </div>
+                  
+                  <!-- Enhanced, more visible paste area for regular images -->
+                  <div class="paste-container">
+                    <div class="paste-area regular-paste-area" (paste)="onImagePaste($event)" tabindex="0">
+                      <i class="bi bi-clipboard"></i>
+                      <span class="paste-text">or paste image here (Ctrl+V)</span>
+                    </div>
+                  </div>
                   
                   <div *ngIf="imageFile" class="image-preview-container">
                     <img [src]="imagePreviewUrl" alt="Preview" class="image-preview">

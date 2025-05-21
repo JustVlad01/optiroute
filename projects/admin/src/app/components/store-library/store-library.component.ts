@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { SupabaseService } from '../../services/supabase.service';
   templateUrl: './store-library.component.html',
   styleUrl: './store-library.component.scss'
 })
-export class StoreLibraryComponent implements OnInit {
+export class StoreLibraryComponent implements OnInit, OnDestroy {
   // Store data
   stores: any[] = [];
   filteredStores: any[] = [];
@@ -52,6 +52,34 @@ export class StoreLibraryComponent implements OnInit {
   
   ngOnInit(): void {
     // Don't load stores initially
+    
+    // Add event listeners for global paste events when in the image tab
+    document.addEventListener('paste', this.handleGlobalPaste);
+  }
+  
+  // Handle pastes at the document level - this allows pasting anywhere in the component
+  private handleGlobalPaste = (event: ClipboardEvent) => {
+    // Only process if we're on the image tab and have a selected store
+    if (!this.imageTabActive || !this.selectedStore) return;
+    
+    // Determine which paste handler to use based on which tab/section is active
+    const activeElement = document.activeElement;
+    const isTextArea = activeElement instanceof HTMLTextAreaElement || activeElement instanceof HTMLInputElement;
+    
+    // Skip if user is pasting into a text field
+    if (isTextArea) return;
+    
+    // Check if storefront upload is visible/focused
+    const isShopSection = 
+      document.querySelector('.shop-image-upload-container')?.contains(activeElement as Node) ||
+      !document.querySelector('.image-upload-container');
+    
+    this.handlePastedImage(event, isShopSection);
+  }
+  
+  ngOnDestroy(): void {
+    // Remove event listeners when component is destroyed
+    document.removeEventListener('paste', this.handleGlobalPaste);
   }
   
   // Handle input changes for auto-suggest
@@ -585,6 +613,62 @@ export class StoreLibraryComponent implements OnInit {
       console.error('Exception during shop image upload:', error);
     } finally {
       this.shopImageUploading = false;
+    }
+  }
+  
+  // Handle pasted image for regular store images 
+  onImagePaste(event: ClipboardEvent): void {
+    this.handlePastedImage(event, false);
+  }
+  
+  // Handle pasted image for storefront
+  onShopImagePaste(event: ClipboardEvent): void {
+    this.handlePastedImage(event, true);
+  }
+  
+  // Common handler for pasted images
+  private handlePastedImage(event: ClipboardEvent, isShopImage: boolean): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    
+    // Look for image items in clipboard
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        // Get the image as a blob
+        const blob = items[i].getAsFile();
+        if (!blob) continue;
+        
+        // Create a unique filename for the pasted image
+        const filename = `pasted_image_${new Date().getTime()}.png`;
+        
+        // Create a File object from the blob
+        const file = new File([blob], filename, { type: blob.type });
+        
+        // Update the appropriate image field
+        if (isShopImage) {
+          this.shopImageFile = file;
+          this.shopImagePreviewUrl = URL.createObjectURL(blob);
+        } else {
+          this.imageFile = file;
+          this.imagePreviewUrl = URL.createObjectURL(blob);
+        }
+        
+        console.log(`Pasted image processed as ${filename}`);
+        
+        // Show feedback (optional)
+        const pasteArea = document.querySelector(isShopImage ? '.shop-image-upload-container .paste-area' : '.image-upload-container .paste-area');
+        if (pasteArea) {
+          pasteArea.classList.add('paste-active');
+          setTimeout(() => {
+            pasteArea.classList.remove('paste-active');
+          }, 1000);
+        }
+        
+        break; // Process only the first image
+      }
     }
   }
   
