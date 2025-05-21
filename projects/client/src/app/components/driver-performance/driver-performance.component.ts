@@ -269,6 +269,7 @@ export class DriverPerformanceComponent implements OnInit {
   }
 
   goBack(): void {
+    console.log('Navigating back to dashboard');
     this.router.navigate(['/dashboard']);
   }
 }

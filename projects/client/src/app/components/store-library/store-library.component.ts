@@ -22,6 +22,15 @@ export class StoreLibraryComponent implements OnInit {
   filteredOptions: any[] = [];
   storesList: any[] = [];
 
+  // Properties for store images and additional info
+  storeImages: any[] = [];
+  storefrontImage: any = null;
+  shopImage: any = null;
+  additionalInfo: string = '';
+  imagesLoading: boolean = false;
+  additionalInfoLoading: boolean = false;
+  selectedImage: any = null;
+
   constructor(private supabaseService: SupabaseService) {}
 
   ngOnInit(): void {
@@ -65,6 +74,10 @@ export class StoreLibraryComponent implements OnInit {
     this.searchTerm = result.code || result.name;
     this.filteredOptions = [];
     this.storeDetails = result.data;
+    
+    // Load store images and additional info when a store is selected
+    this.loadStoreImages();
+    this.loadAdditionalInfo();
   }
 
   searchStore(): void {
@@ -76,12 +89,18 @@ export class StoreLibraryComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.storeDetails = null;
+    this.storeImages = [];
+    this.additionalInfo = '';
     
     // If we already have matching results in filteredOptions, use the first one
     if (this.filteredOptions.length > 0) {
       this.storeDetails = this.filteredOptions[0].data;
       this.filteredOptions = [];
       this.loading = false;
+      
+      // Load store images and additional info
+      this.loadStoreImages();
+      this.loadAdditionalInfo();
       return;
     }
 
@@ -91,6 +110,10 @@ export class StoreLibraryComponent implements OnInit {
         this.loading = false;
         if (result && result.length > 0) {
           this.storeDetails = result[0];
+          
+          // Load store images and additional info
+          this.loadStoreImages();
+          this.loadAdditionalInfo();
         } else {
           this.error = 'No store found with the provided information';
         }
@@ -100,6 +123,86 @@ export class StoreLibraryComponent implements OnInit {
         this.error = 'Error searching for store: ' + (err.message || 'Unknown error');
         console.error('Store search error:', err);
       });
+  }
+  
+  // Load store images from Supabase
+  loadStoreImages(): void {
+    if (!this.storeDetails?.store_id) return;
+    
+    this.imagesLoading = true;
+    this.storeImages = [];
+    this.storefrontImage = null;
+    this.shopImage = null;
+    
+    this.supabaseService.getSupabase()
+      .from('store_images')
+      .select('*')
+      .eq('store_id', this.storeDetails.store_id)
+      .then(({ data, error }) => {
+        this.imagesLoading = false;
+        
+        if (error) {
+          console.error('Error loading store images:', error);
+          return;
+        }
+        
+        // Log the retrieved image data to debug instructions field
+        console.log('Store images data:', data);
+        
+        this.storeImages = data || [];
+        
+        // Find and set the storefront image if available
+        this.storefrontImage = this.storeImages.find(img => img.is_storefront === true);
+        
+        // Find and set the shop image if available (prioritize this over regular storefront)
+        this.shopImage = this.storeImages.find(img => img.is_shop_image === true);
+        
+        // If we have a shop image, use it as the primary display image
+        if (this.shopImage) {
+          this.storefrontImage = this.shopImage;
+        }
+        
+        // Check if any images have instructions
+        if (this.storeImages.length > 0) {
+          const imagesWithInstructions = this.storeImages.filter(img => img.instructions);
+          console.log('Images with instructions:', imagesWithInstructions);
+        }
+      });
+  }
+  
+  // Load additional store info from Supabase
+  loadAdditionalInfo(): void {
+    if (!this.storeDetails?.store_id) return;
+    
+    this.additionalInfoLoading = true;
+    this.additionalInfo = '';
+    
+    this.supabaseService.getSupabase()
+      .from('store_additional_info')
+      .select('content')
+      .eq('store_id', this.storeDetails.store_id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        this.additionalInfoLoading = false;
+        
+        if (error) {
+          console.error('Error loading additional info:', error);
+          return;
+        }
+        
+        this.additionalInfo = data?.content || '';
+      });
+  }
+  
+  // Select an image to view details
+  selectImage(image: any): void {
+    this.selectedImage = this.selectedImage?.id === image.id ? null : image;
+    console.log('Selected image:', this.selectedImage);
+  }
+  
+  // Filter out storefront/shop images to only show regular images
+  getRegularImages(): any[] {
+    return this.storeImages.filter(img => !img.is_storefront && !img.is_shop_image);
   }
   
   saveCurrentLocation(): void {

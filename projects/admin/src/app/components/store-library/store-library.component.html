@@ -1,0 +1,380 @@
+<div class="store-library-container">
+  <!-- Header/Navbar -->
+  <header class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" [routerLink]="['/dashboard']">
+        <i class="bi bi-house"></i> DASHBOARD
+      </a>
+    </div>
+  </header>
+
+  <div class="content">
+    <h2 class="page-title">Store Library</h2>
+    
+    <div class="library-container">
+      <!-- Store Search Panel -->
+      <div class="search-panel">
+        <h3>Find a Store</h3>
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Search by name, code, or address..." 
+            class="search-input"
+            (input)="onSearchInput()"
+            (keyup.enter)="searchStores()"
+            (blur)="hideSuggestions()"
+          >
+          <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-btn">
+            <i class="bi bi-x"></i>
+          </button>
+          <button class="search-btn" (click)="searchStores()">
+            <i class="bi bi-search"></i> Search
+          </button>
+          
+          <!-- Auto-suggest dropdown -->
+          <div *ngIf="showSuggestions && suggestedStores.length > 0" class="suggestions-dropdown">
+            <div 
+              *ngFor="let store of suggestedStores" 
+              class="suggestion-item" 
+              (mousedown)="selectSuggestion(store)"
+            >
+              <div class="suggestion-store-name">{{ store.store_name }}</div>
+              <div class="suggestion-store-details">
+                <span *ngIf="store.store_code">{{ store.store_code }}</span>
+                <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
+                <span *ngIf="store.address_line"> - {{ store.address_line }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Store List -->
+        <div class="store-list-container">
+          <div *ngIf="loading" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Searching stores...</p>
+          </div>
+          
+          <div *ngIf="!loading && hasSearched && filteredStores.length === 0" class="no-results">
+            <p>No stores match your search criteria.</p>
+          </div>
+          
+          <div *ngIf="!loading && !hasSearched" class="search-prompt">
+            <i class="bi bi-building"></i>
+            <p>Enter search terms and click Search to find stores</p>
+          </div>
+          
+          <div *ngIf="!loading && filteredStores.length > 0" class="store-list">
+            <div 
+              *ngFor="let store of filteredStores" 
+              class="store-item" 
+              [class.active]="selectedStore && selectedStore.store_id === store.store_id"
+              (click)="selectStore(store)"
+            >
+              <div class="store-name">{{ store.store_name }}</div>
+              <div class="store-details">
+                <span *ngIf="store.store_code">{{ store.store_code }}</span>
+                <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
+              </div>
+              <div class="store-address">
+                {{ store.address_line }}
+                <span *ngIf="store.eircode">, {{ store.eircode }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Store Details Panel -->
+      <div class="details-panel">
+        <div *ngIf="!selectedStore" class="no-store-selected">
+          <i class="bi bi-building"></i>
+          <p>Select a store to view details</p>
+        </div>
+        
+        <div *ngIf="selectedStore" class="store-details-container">
+          <div class="store-header">
+            <h3>{{ selectedStore.store_name }}</h3>
+            <div class="store-location">
+              {{ selectedStore.address_line }}
+              <span *ngIf="selectedStore.eircode">, {{ selectedStore.eircode }}</span>
+            </div>
+          </div>
+          
+          <!-- Store Details Box -->
+          <div class="store-info-box">
+            <div class="info-row">
+              <div class="info-label">Dispatch Code:</div>
+              <div class="info-value">{{ selectedStore.dispatch_code || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Store Code:</div>
+              <div class="info-value">{{ selectedStore.store_code || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">City:</div>
+              <div class="info-value">{{ selectedStore.city || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">County:</div>
+              <div class="info-value">{{ selectedStore.county || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Eircode:</div>
+              <div class="info-value">{{ selectedStore.eircode || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Route:</div>
+              <div class="info-value">{{ selectedStore.route || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Door Code:</div>
+              <div class="info-value">{{ selectedStore.door_code || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Alarm Code:</div>
+              <div class="info-value">{{ selectedStore.alarm_code || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Fridge Code:</div>
+              <div class="info-value">{{ selectedStore.fridge_code || 'N/A' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Keys Available:</div>
+              <div class="info-value">{{ selectedStore.keys_available || 'No' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">24-Hour Access:</div>
+              <div class="info-value">{{ selectedStore.hour_access_24 || 'No' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Earliest Delivery:</div>
+              <div class="info-value">{{ selectedStore.earliest_delivery_time || 'N/A' }}</div>
+            </div>
+          </div>
+          
+          <!-- Tab Navigation -->
+          <div class="tab-navigation">
+            <button 
+              class="tab-btn" 
+              [class.active]="imageTabActive" 
+              (click)="setActiveTab(true)"
+            >
+              <i class="bi bi-images"></i> Images
+            </button>
+            <button 
+              class="tab-btn" 
+              [class.active]="!imageTabActive" 
+              (click)="setActiveTab(false)"
+            >
+              <i class="bi bi-info-circle"></i> Additional Info
+            </button>
+          </div>
+          
+          <!-- Images Tab -->
+          <div *ngIf="imageTabActive" class="tab-content images-tab">
+            <div class="image-gallery">
+              
+              <!-- Shop Storefront Image Upload -->
+              <div class="shop-image-upload-container">
+                <div class="upload-form">
+                  <label class="file-input-label special-upload">
+                    <i class="bi bi-building"></i>
+                    <span>{{ shopImageFile ? shopImageFile.name : 'Choose storefront image' }}</span>
+                    <input type="file" accept="image/*" (change)="onShopFileSelected($event)" class="file-input">
+                  </label>
+                  
+                  <div *ngIf="shopImageFile" class="image-preview-container">
+                    <img [src]="shopImagePreviewUrl" alt="Shop Preview" class="image-preview">
+                    <textarea 
+                      [(ngModel)]="shopImageAnnotation" 
+                      placeholder="Add notes about this storefront..."
+                      class="image-annotation-input"
+                    ></textarea>
+                    <div class="upload-actions">
+                      <button class="cancel-btn" (click)="clearShopSelectedFile()">Cancel</button>
+                      <button 
+                        class="upload-btn shop-upload-btn" 
+                        [disabled]="shopImageUploading" 
+                        (click)="uploadShopImage()"
+                      >
+                        <i *ngIf="shopImageUploading" class="bi bi-arrow-repeat spinning"></i>
+                        <span>{{ shopImageUploading ? 'Uploading...' : 'Upload Storefront Image' }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Display current shop image if exists -->
+                <div *ngIf="storeImages.length > 0 && getShopImage()" class="current-shop-image">
+                  
+                  <div class="shop-image-display">
+                    <img [src]="getShopImage().url" alt="Current Storefront Image" class="shop-image">
+                    <div class="shop-image-info">
+                      <div class="image-name">{{ getShopImage().file_name }}</div>
+                      <div class="image-date">{{ getShopImage().uploaded_at | date }}</div>
+                      <div *ngIf="getShopImage().instructions" class="image-annotation-preview">
+                        <i class="bi bi-info-circle"></i>
+                        <span>{{ getShopImage().instructions }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="section-divider"></div>
+              
+              <!-- Regular Image Upload Form -->
+              <div class="image-upload-container">
+                <h5>Store Images</h5>
+                <div class="upload-form">
+                  <label class="file-input-label">
+                    <i class="bi bi-upload"></i>
+                    <span>{{ imageFile ? imageFile.name : 'Choose an image' }}</span>
+                    <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
+                  </label>
+                  
+                  <div *ngIf="imageFile" class="image-preview-container">
+                    <img [src]="imagePreviewUrl" alt="Preview" class="image-preview">
+                    <textarea 
+                      [(ngModel)]="imageAnnotation" 
+                      placeholder="Add notes or instructions for this image..."
+                      class="image-annotation-input"
+                    ></textarea>
+                    <div class="upload-actions">
+                      <button class="cancel-btn" (click)="clearSelectedFile()">Cancel</button>
+                      <button 
+                        class="upload-btn" 
+                        [disabled]="imageUploading" 
+                        (click)="uploadImage()"
+                      >
+                        <i *ngIf="imageUploading" class="bi bi-arrow-repeat spinning"></i>
+                        <span>{{ imageUploading ? 'Uploading...' : 'Upload Image' }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Existing Images -->
+              <div class="existing-images">
+                <div *ngIf="storeImages.length === 0" class="no-images">
+                  <i class="bi bi-image"></i>
+                  <p>No images for this store yet</p>
+                </div>
+                
+                <div *ngIf="storeImages.length > 0" class="image-grid">
+                  <div 
+                    *ngFor="let image of storeImages" 
+                    class="image-card"
+                    [class.active]="selectedImage && selectedImage.id === image.id"
+                    [class.is-storefront]="image.is_storefront"
+                    (click)="selectImage(image)"
+                  >
+                    <!-- Storefront badge -->
+                    <div *ngIf="image.is_storefront" class="storefront-badge">
+                      <i class="bi bi-building-check"></i>
+                      <span>Storefront</span>
+                    </div>
+                  
+                    <div class="image-container">
+                      <img [src]="image.url" alt="Store image" class="store-image">
+                    </div>
+                    <div class="image-info">
+                      <div class="image-name">{{ image.file_name }}</div>
+                      <div class="image-date">{{ image.uploaded_at | date }}</div>
+                    </div>
+                    <!-- Display image annotations directly beneath each image -->
+                    <div *ngIf="image.instructions" class="image-annotation-preview">
+                      <i class="bi bi-info-circle"></i>
+                      <span>{{ image.instructions }}</span>
+                    </div>
+                    <button class="delete-image-btn" (click)="$event.stopPropagation(); deleteImage(image)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Selected Image Details -->
+              <div *ngIf="selectedImage" class="selected-image-details">
+                <h4>Image Details</h4>
+                <div class="selected-image-container">
+                  <img [src]="selectedImage.url" alt="Selected image" class="selected-image">
+                  <div class="image-annotation-container">
+                    <textarea 
+                      [(ngModel)]="imageAnnotation" 
+                      placeholder="Add notes or instructions for this image..."
+                      class="image-annotation-input"
+                    ></textarea>
+                    <div class="image-action-buttons">
+                      <button class="save-annotation-btn" (click)="updateImageAnnotation()">
+                        Save Notes
+                      </button>
+                      
+                      <!-- Storefront toggle button -->
+                      <button 
+                        *ngIf="!selectedImage.is_storefront" 
+                        class="storefront-btn" 
+                        [disabled]="storefrontSaving" 
+                        (click)="setAsStorefront(selectedImage)"
+                      >
+                        <i *ngIf="storefrontSaving" class="bi bi-arrow-repeat spinning"></i>
+                        <i *ngIf="!storefrontSaving" class="bi bi-building"></i>
+                        Set as Storefront
+                      </button>
+                      
+                      <button 
+                        *ngIf="selectedImage.is_storefront" 
+                        class="remove-storefront-btn" 
+                        [disabled]="storefrontSaving" 
+                        (click)="removeStorefrontStatus(selectedImage)"
+                      >
+                        <i *ngIf="storefrontSaving" class="bi bi-arrow-repeat spinning"></i>
+                        <i *ngIf="!storefrontSaving" class="bi bi-building-slash"></i>
+                        Remove as Storefront
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Additional Info Tab -->
+          <div *ngIf="!imageTabActive" class="tab-content info-tab">
+            <div class="additional-info-container">
+              <h4>Additional Store Information</h4>
+              
+              <div *ngIf="additionalInfoLoading" class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading information...</p>
+              </div>
+              
+              <div *ngIf="!additionalInfoLoading" class="info-editor">
+                <textarea 
+                  [(ngModel)]="additionalInfo" 
+                  placeholder="Enter additional information about this store..."
+                  class="additional-info-input"
+                  rows="15"
+                ></textarea>
+                
+                <button 
+                  class="save-info-btn" 
+                  [disabled]="additionalInfoSaving"
+                  (click)="saveAdditionalInfo()"
+                >
+                  <i *ngIf="additionalInfoSaving" class="bi bi-arrow-repeat spinning"></i>
+                  <span>{{ additionalInfoSaving ? 'Saving...' : 'Save Information' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,11 +1,16 @@
 <div class="driver-performance-container">
   <!-- Improved Header/Nav Bar -->
-  <div class="nav-bar">
-    <h1 class="title">My Driving Performance</h1>
-    <button class="home-button" (click)="goBack()">
-      <i class="bi bi-house-fill"></i>
-    </button>
-  </div>
+  <nav class="navbar">
+    <div class="container-fluid">
+      <div class="nav-left">
+        <span class="nav-title">My Driving Performance</span>
+      </div>
+      
+      <a class="home-button-flat" (click)="goBack()">
+        <i class="bi bi-house-fill"></i>
+      </a>
+    </div>
+  </nav>
 
   <!-- Loading Indicator -->
   <div class="loading-container" *ngIf="isLoading">
@@ -24,10 +29,6 @@
 
   <!-- Performance Images List -->
   <div class="performance-content" *ngIf="!isLoading && performanceImages.length > 0">
-    <div class="section-info">
-      <p>Click on any image to view full size</p>
-    </div>
-
     <div class="performance-grid">
       <div class="performance-card" *ngFor="let image of performanceImages">
         <div class="card-header">

@@ -514,8 +514,7 @@ export class SupabaseService {
     }
 
     try {
-      console.log('Querying stores table in Supabase...');
-      console.log('Supabase client status:', this.supabase ? 'Initialized' : 'Not initialized');
+      console.log('Querying stores table...');
       
       // Reset the total store count to ensure we're not using cached data
       this.totalStoreCount = null;
@@ -527,12 +526,11 @@ export class SupabaseService {
       const pageSize = 1000; // Supabase's default and likely maximum allowed
       
       while (hasMore) {
-        console.log(`Fetching page ${page} of stores data...`);
         const { data, error } = await this.supabase
           .from('stores')
           .select('*')
           .range(page * pageSize, (page + 1) * pageSize - 1)
-          .order('id');
+          .order('store_id');
         
         if (error) {
           console.error(`Error querying stores table page ${page}:`, error.message);
@@ -550,45 +548,7 @@ export class SupabaseService {
             page++;
           }
         } else {
-          console.log('No data found in stores table for this page');
           hasMore = false;
-        }
-      }
-      
-      // If no data from stores, try store_information as fallback
-      if (allData.length === 0) {
-        console.log('No data in stores table, checking store_information table...');
-        
-        hasMore = true;
-        page = 0;
-        
-        while (hasMore) {
-          console.log(`Fetching page ${page} of store_information data...`);
-          const { data, error } = await this.supabase
-            .from('store_information')
-            .select('*')
-            .range(page * pageSize, (page + 1) * pageSize - 1)
-            .order('id');
-          
-          if (error) {
-            console.error(`Error querying store_information table page ${page}:`, error.message);
-            break;
-          }
-          
-          if (data && data.length > 0) {
-            allData = [...allData, ...data];
-            console.log(`Retrieved ${data.length} records from store_information (page ${page + 1})`);
-            
-            // Check if we've reached the end
-            if (data.length < pageSize) {
-              hasMore = false;
-            } else {
-              page++;
-            }
-          } else {
-            console.log('No data found in store_information table for this page');
-            hasMore = false;
-          }
         }
       }
       
@@ -599,7 +559,7 @@ export class SupabaseService {
       return allData;
     } catch (err) {
       console.error('Unexpected error in getStoreInformation:', err);
-      throw err; // Propagate the error for better handling
+      return [];
     }
   }
   
@@ -626,25 +586,25 @@ export class SupabaseService {
           fixedUpdate.key_code = fixedUpdate.key_code?.toString() || '';
         }
         
-        // First priority: Use id if available (serial PRIMARY KEY)
-        if (fixedUpdate.id) {
+        // First priority: Use store_id if available (serial PRIMARY KEY)
+        if (fixedUpdate.store_id) {
           try {
             const { data, error } = await this.supabase
               .from('stores')
               .update(fixedUpdate)
-              .eq('id', fixedUpdate.id)
+              .eq('store_id', fixedUpdate.store_id)
               .select();
               
             if (error) {
-              console.error('Error updating store by id:', error);
+              console.error('Error updating store by store_id:', error);
               console.error('Failed update payload:', JSON.stringify(fixedUpdate));
               results.push({ success: false, error });
             } else {
-              console.log('Store updated by id:', data);
+              console.log('Store updated by store_id:', data);
               results.push({ success: true, data });
             }
           } catch (err) {
-            console.error('Exception during update by id:', err);
+            console.error('Exception during update by store_id:', err);
             console.error('Failed update payload:', JSON.stringify(fixedUpdate));
             results.push({ success: false, error: { message: err instanceof Error ? err.message : 'Unknown error' } });
           }
@@ -762,19 +722,22 @@ export class SupabaseService {
       'store_name_1': 'store_name',
       'new_route': 'route',
       'date': 'created_at',
-      'door': 'key_code',
+      'door': 'door_code',
+      'keys': 'keys_available',
+      'id': 'store_id',
       'openining_time_bankholiday': 'opening_time_bankholiday'
       // Add any other mismatched column names here
     };
     
     // Handle text fields specifically to ensure proper type conversion
     const textFields = [
-      'image_url', 'dispatch_code', 'dispatch_store_name', 'site_id',
+      'images', 'dispatch_code', 'dispatch_store_name', 
       'store_code', 'store_company', 'store_name', 'address_line',
-      'eircode', 'route', 'keys_available', 'key_code',
+      'city', 'county', 'eircode', 'latitude', 'longitude', 'route', 
+      'door_code', 'alarm_code', 'fridge_code', 'keys_available', 'key_code',
       'prior_registration_required', 'hour_access_24',
-      'opening_time_sunday', 'earliest_delivery_time',
-      'opening_time_saturday', 'opening_time_bankholiday'
+      'earliest_delivery_time', 'opening_time_saturday', 
+      'opening_time_bankholiday'
     ];
     
     // Replace any mismatched column names
@@ -1157,213 +1120,6 @@ export class SupabaseService {
     } catch (error) {
       console.error('Exception during getManualStoreMatches:', error);
       return [];
-    }
-  }
-
-  // Get all images for a specific store
-  async getStoreImages(storeId: string): Promise<any[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('store_images')
-        .select('*')
-        .eq('store_id', storeId);
-      
-      if (error) {
-        console.error('Error fetching store images:', error);
-        throw error;
-      }
-      
-      return data || [];
-    } catch (err) {
-      console.error('Exception during fetching store images:', err);
-      throw err;
-    }
-  }
-  
-  // Upload images for a store
-  async uploadStoreImages(storeId: string, files: File[]): Promise<any> {
-    try {
-      const uploadResults = [];
-      
-      for (const file of files) {
-        // Create a unique file name
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `store_images/${storeId}/${fileName}`;
-        
-        // Upload file to storage
-        const { data: fileData, error: fileError } = await this.supabase.storage
-          .from('store-images')
-          .upload(filePath, file);
-        
-        if (fileError) {
-          console.error('Error uploading file:', fileError);
-          throw fileError;
-        }
-        
-        // Get public URL for the uploaded file
-        const { data: urlData } = await this.supabase.storage
-          .from('store-images')
-          .getPublicUrl(filePath);
-        
-        const publicUrl = urlData.publicUrl;
-        
-        // Create a record in the store_images table
-        const { data: recordData, error: recordError } = await this.supabase
-          .from('store_images')
-          .insert([
-            {
-              store_id: storeId,
-              file_path: filePath,
-              url: publicUrl,
-              file_name: file.name,
-              uploaded_at: new Date().toISOString()
-            }
-          ])
-          .select();
-        
-        if (recordError) {
-          console.error('Error creating image record:', recordError);
-          throw recordError;
-        }
-        
-        uploadResults.push(recordData[0]);
-      }
-      
-      return uploadResults;
-    } catch (err) {
-      console.error('Exception during image upload:', err);
-      throw err;
-    }
-  }
-  
-  // Update image instructions
-  async updateImageInstructions(imageId: string, instructions: string): Promise<any> {
-    try {
-      const { data, error } = await this.supabase
-        .from('store_images')
-        .update({ instructions })
-        .eq('id', imageId)
-        .select();
-      
-      if (error) {
-        console.error('Error updating image instructions:', error);
-        throw error;
-      }
-      
-      return data;
-    } catch (err) {
-      console.error('Exception during updating image instructions:', err);
-      throw err;
-    }
-  }
-  
-  // Delete a store image
-  async deleteStoreImage(imageId: string): Promise<void> {
-    try {
-      // Get the image record to get the file path
-      const { data: imageData, error: fetchError } = await this.supabase
-        .from('store_images')
-        .select('file_path')
-        .eq('id', imageId)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching image data:', fetchError);
-        throw fetchError;
-      }
-      
-      // Delete the file from storage
-      const { error: storageError } = await this.supabase.storage
-        .from('store-images')
-        .remove([imageData.file_path]);
-      
-      if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
-        // Continue to delete the record even if storage deletion fails
-      }
-      
-      // Delete the record from the database
-      const { error: deleteError } = await this.supabase
-        .from('store_images')
-        .delete()
-        .eq('id', imageId);
-      
-      if (deleteError) {
-        console.error('Error deleting image record:', deleteError);
-        throw deleteError;
-      }
-    } catch (err) {
-      console.error('Exception during image deletion:', err);
-      throw err;
-    }
-  }
-  
-  // Get additional info for a store
-  async getStoreAdditionalInfo(storeId: string): Promise<any> {
-    try {
-      const { data, error } = await this.supabase
-        .from('store_additional_info')
-        .select('*')
-        .eq('store_id', storeId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('Error fetching store additional info:', error);
-        throw error;
-      }
-      
-      return data;
-    } catch (err) {
-      console.error('Exception during fetching store additional info:', err);
-      throw err;
-    }
-  }
-  
-  // Update or insert additional info for a store
-  async updateStoreAdditionalInfo(storeId: string, content: string): Promise<any> {
-    try {
-      // Check if record exists
-      const existingInfo = await this.getStoreAdditionalInfo(storeId);
-      
-      if (existingInfo) {
-        // Update existing record
-        const { data, error } = await this.supabase
-          .from('store_additional_info')
-          .update({ content, updated_at: new Date().toISOString() })
-          .eq('store_id', storeId)
-          .select();
-        
-        if (error) {
-          console.error('Error updating store additional info:', error);
-          throw error;
-        }
-        
-        return data;
-      } else {
-        // Insert new record
-        const { data, error } = await this.supabase
-          .from('store_additional_info')
-          .insert([
-            {
-              store_id: storeId,
-              content,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ])
-          .select();
-        
-        if (error) {
-          console.error('Error inserting store additional info:', error);
-          throw error;
-        }
-        
-        return data;
-      }
-    } catch (err) {
-      console.error('Exception during updating store additional info:', err);
-      throw err;
     }
   }
 }

@@ -1,10 +1,10 @@
-<nav class="navbar navbar-dark bg-primary">
+<nav class="navbar">
   <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/store-library">
-      <i class="bi bi-building"></i> Store Library
-    </a>
+    <div class="nav-left">
+      <span class="nav-title">Store Library</span>
+    </div>
     
-    <a class="nav-link home-icon" routerLink="/dashboard">
+    <a class="home-button-flat" routerLink="/dashboard">
       <i class="bi bi-house-fill"></i>
     </a>
   </div>
@@ -28,7 +28,7 @@
       Search
     </button>
   </div>
-  <small class="search-hint">Press Enter or click Search to find a store</small>
+  <small class="search-hint"></small>
   
   <div *ngIf="filteredOptions.length > 0 && searchTerm.length > 0" class="search-results">
     <div *ngFor="let result of filteredOptions" class="search-result-item" (click)="selectSearchResult(result)">
@@ -51,6 +51,14 @@
 </div>
 
 <div *ngIf="storeDetails" class="store-details-container">
+  <!-- Storefront Image Display - This will be shown at the very top -->
+  <div *ngIf="storefrontImage" class="storefront-image-container">
+    <img [src]="storefrontImage.url" alt="Store Storefront" class="storefront-image">
+    <div *ngIf="storefrontImage.instructions" class="storefront-instructions">
+      <i class="bi bi-info-circle"></i> {{ storefrontImage.instructions }}
+    </div>
+  </div>
+
   <div class="section-card">
     <div class="section-header">
       <h2><i class="bi bi-info-circle"></i> Basic Details</h2>
@@ -70,14 +78,6 @@
             <th>Store Name</th>
             <td>{{ storeDetails.store_name }}</td>
           </tr>
-          <tr>
-            <th>Dispatch Store Name</th>
-            <td>{{ storeDetails.dispatch_store_name }}</td>
-          </tr>
-          <tr>
-            <th>Company</th>
-            <td>{{ storeDetails.store_company }}</td>
-          </tr>
         </tbody>
       </table>
     </div>
@@ -95,14 +95,6 @@
             <td>{{ storeDetails.address_line || 'Not available' }}</td>
           </tr>
           <tr>
-            <th>City</th>
-            <td>{{ storeDetails.City || 'Not available' }}</td>
-          </tr>
-          <tr>
-            <th>County</th>
-            <td>{{ storeDetails.County || 'Not available' }}</td>
-          </tr>
-          <tr>
             <th>Eircode</th>
             <td>{{ storeDetails.eircode || 'Not available' }}</td>
           </tr>
@@ -118,7 +110,7 @@
               <span *ngIf="(!storeDetails.Latitude || !storeDetails.Longitude) && (!storeDetails.latitude || !storeDetails.longitude)">
                 Not available
                 <div class="mt-3">
-                  <button class="btn btn-location" (click)="saveCurrentLocation()" [disabled]="savingLocation">
+                  <button class="btn btn-location compact" (click)="saveCurrentLocation()" [disabled]="savingLocation">
                     <i class="bi bi-geo-alt-fill me-2"></i>
                     <span *ngIf="!savingLocation">Save Current Location</span>
                     <span *ngIf="savingLocation">Saving...</span>
@@ -137,30 +129,52 @@
       <h2><i class="bi bi-shield-lock"></i> Access Information</h2>
     </div>
     <div class="section-content">
-      <table class="info-table">
-        <tbody>
-          <tr>
-            <th>Door Code</th>
-            <td>{{ storeDetails.door_code || 'N/A' }}</td>
-          </tr>
-          <tr>
-            <th>Alarm Code</th>
-            <td>{{ storeDetails.alarm_code || 'N/A' }}</td>
-          </tr>
-          <tr>
-            <th>Fridge Code</th>
-            <td>{{ storeDetails.fridge_code || 'N/A' }}</td>
-          </tr>
-          <tr>
-            <th>Keys Available</th>
-            <td>{{ storeDetails.keys_available || 'No' }}</td>
-          </tr>
-          <tr>
-            <th>Key Code</th>
-            <td>{{ storeDetails.key_code || 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="access-code-container">
+        <div class="access-code-item" *ngIf="storeDetails.door_code">
+          <div class="code-icon">
+            <i class="bi bi-door-open-fill"></i>
+          </div>
+          <div class="code-text">{{ storeDetails.door_code }}</div>
+          <div class="code-label">Door</div>
+        </div>
+        
+        <div class="access-code-item" *ngIf="storeDetails.alarm_code">
+          <div class="code-icon">
+            <i class="bi bi-shield-fill-check"></i>
+          </div>
+          <div class="code-text">{{ storeDetails.alarm_code }}</div>
+          <div class="code-label">Alarm</div>
+        </div>
+        
+        <div class="access-code-item" *ngIf="storeDetails.fridge_code">
+          <div class="code-icon">
+            <i class="bi bi-snow"></i>
+          </div>
+          <div class="code-text">{{ storeDetails.fridge_code }}</div>
+          <div class="code-label">Fridge</div>
+        </div>
+        
+        <div class="access-code-item" *ngIf="storeDetails.key_code">
+          <div class="code-icon">
+            <i class="bi bi-key-fill"></i>
+          </div>
+          <div class="code-text">{{ storeDetails.key_code }}</div>
+          <div class="code-label">Key</div>
+        </div>
+        
+        <div class="access-code-item" *ngIf="storeDetails.keys_available === 'Yes'">
+          <div class="code-icon">
+            <i class="bi bi-key-fill"></i>
+          </div>
+          <div class="code-text yes-label">Available</div>
+          <div class="code-label">Keys</div>
+        </div>
+        
+        <div class="access-code-empty" *ngIf="!storeDetails.door_code && !storeDetails.alarm_code && !storeDetails.fridge_code && !storeDetails.key_code && storeDetails.keys_available !== 'Yes'">
+          <i class="bi bi-exclamation-circle"></i>
+          <p>No access codes available</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -171,14 +185,6 @@
     <div class="section-content">
       <table class="info-table">
         <tbody>
-          <tr>
-            <th>Route</th>
-            <td>{{ storeDetails.route || 'Not assigned' }}</td>
-          </tr>
-          <tr>
-            <th>Registration Required</th>
-            <td>{{ storeDetails.prior_registration_required || 'No' }}</td>
-          </tr>
           <tr>
             <th>24 Hour Access</th>
             <td>{{ storeDetails.hour_access_24 || 'No' }}</td>
@@ -200,18 +206,64 @@
     </div>
   </div>
 
-  <div *ngIf="storeDetails.images" class="section-card">
+  <div class="section-card">
     <div class="section-header">
       <h2><i class="bi bi-images"></i> Store Images</h2>
     </div>
     <div class="section-content">
-      <div class="responsive-images">
-        <div *ngFor="let image of storeDetails.images.split(',')" class="image-container">
-          <img [src]="image" class="store-image" alt="Store image">
+      <div *ngIf="imagesLoading" class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
         </div>
-        <div *ngIf="!storeDetails.images || storeDetails.images === ''">
-          <p>No images available</p>
+        <p>Loading images...</p>
+      </div>
+      
+      <div *ngIf="!imagesLoading && storeImages.length === 0" class="no-content">
+        <i class="bi bi-image"></i>
+        <p>No images available for this store</p>
+      </div>
+      
+      <div *ngIf="!imagesLoading && storeImages.length > 0" class="image-gallery">
+        <div class="image-grid">
+          <div *ngFor="let image of getRegularImages()" class="image-item" (click)="selectImage(image)">
+            <!-- Image container without overlay -->
+            <img [src]="image.url" alt="Store image" class="gallery-image">
+            <!-- Display instructions below the image if available -->
+            <div *ngIf="image.instructions" class="image-instructions-preview">
+              <i class="bi bi-info-circle"></i> {{ image.instructions }}
+            </div>
+          </div>
         </div>
+        
+        <!-- Selected image with annotations -->
+        <div *ngIf="selectedImage" class="selected-image-container">
+          <div class="image-preview">
+            <img [src]="selectedImage.url" alt="Selected store image" class="full-image">
+          </div>
+          <div *ngIf="selectedImage.instructions" class="image-instructions">
+            <h4>Notes:</h4>
+            <p>{{ selectedImage.instructions }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Info Section -->
+  <div class="section-card" *ngIf="additionalInfo">
+    <div class="section-header">
+      <h2><i class="bi bi-info-circle-fill"></i> Additional Information</h2>
+    </div>
+    <div class="section-content">
+      <div *ngIf="additionalInfoLoading" class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p>Loading additional information...</p>
+      </div>
+      
+      <div *ngIf="!additionalInfoLoading" class="additional-info">
+        <p class="info-text">{{ additionalInfo }}</p>
       </div>
     </div>
   </div>

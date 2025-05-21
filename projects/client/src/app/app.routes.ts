@@ -7,8 +7,6 @@ import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.
 import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
-import { FindGeolocationComponent } from './components/find-geolocation/find-geolocation.component';
-import { EircodeFinderComponent } from './components/eircode-finder/eircode-finder.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
 
 export const routes: Routes = [
@@ -32,14 +30,6 @@ export const routes: Routes = [
     {
         path: 'driver-performance',
         component: DriverPerformanceComponent
-    },
-    {
-        path: 'find-geolocation',
-        component: FindGeolocationComponent
-    },
-    {
-        path: 'eircode-finder',
-        component: EircodeFinderComponent
     },
     {
         path: 'store-library',

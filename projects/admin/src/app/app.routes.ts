@@ -8,11 +8,9 @@ import { DriverDashboardComponent } from './components/driver-dashboard/driver-d
 import { DriverFormFillComponent } from './components/driver-form-fill/driver-form-fill.component';
 import { DriverFormContainerComponent } from './components/driver-form-container/driver-form-container.component';
 import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
-import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
-import { RoutePlannerComponent } from './components/route-planner/route-planner.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
-import { StoreLibraryAdminComponent } from './components/store-library-admin/store-library-admin.component';
+import { StoreLibraryComponent } from './components/store-library/store-library.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -33,14 +31,6 @@ export const routes: Routes = [
         component: RosterComponent
     },
     {
-        path: 'view-orders',
-        component: ViewOrdersComponent
-    },
-    {
-        path: 'route-planner',
-        component: RoutePlannerComponent
-    },
-    {
         path: 'import-orders',
         redirectTo: 'route-planner?import=true',
         pathMatch: 'full'
@@ -50,8 +40,8 @@ export const routes: Routes = [
         component: StoreMasterfileComponent
     },
     {
-        path: 'store-library-admin',
-        component: StoreLibraryAdminComponent
+        path: 'store-library',
+        component: StoreLibraryComponent
     },
     {
         path: 'vehicle-crate-tracking',

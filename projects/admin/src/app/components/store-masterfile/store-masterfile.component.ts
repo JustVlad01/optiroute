@@ -550,30 +550,44 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   private standardizeColumnNames(data: any[]): any[] {
     return data.map(row => this.fixColumnNames(row));
   }
-
+  
+  // Fix column names for UI display
   private fixColumnNames(row: any): any {
+    // Create a copy of the row to avoid modifying the original
     const fixedRow = { ...row };
     
-    // Map any database column names to friendly display names if needed
-    const columnMapping: {[key: string]: string} = {
-      // Example: 'database_column_name': 'Friendly Display Name'
-      'address_line': 'address',
-      'store_name': 'store_name',
-      'route': 'route',
-      'key_code': 'key_code',
-      'hour_access_24': '24hr_access'
-    };
+    // Map backend columns to frontend names if needed
+    // This ensures consistent naming in the UI
+    if (fixedRow.store_id !== undefined && fixedRow.id === undefined) {
+      fixedRow.id = fixedRow.store_id;
+    }
     
-    // Apply friendly names if desired (don't apply if we want to keep DB column names)
-    /*
-    Object.keys(columnMapping).forEach(dbName => {
-      if (dbName in fixedRow) {
-        const friendlyName = columnMapping[dbName];
-        fixedRow[friendlyName] = fixedRow[dbName];
-        delete fixedRow[dbName];
+    if (fixedRow.address_line !== undefined && fixedRow.address === undefined) {
+      fixedRow.address = fixedRow.address_line;
+    }
+    
+    if (fixedRow.door_code !== undefined && fixedRow.door === undefined) {
+      fixedRow.door = fixedRow.door_code;
+    }
+    
+    if (fixedRow.keys_available !== undefined && fixedRow.keys === undefined) {
+      fixedRow.keys = fixedRow.keys_available;
+    }
+    
+    // Ensure all Boolean fields are displayed correctly
+    const booleanFields = ['hour_access_24', 'prior_registration_required', 'keys_available'];
+    booleanFields.forEach(field => {
+      if (field in fixedRow) {
+        // Convert various representations to Yes/No for display
+        if (typeof fixedRow[field] === 'boolean') {
+          fixedRow[field] = fixedRow[field] ? 'Yes' : 'No';
+        } else if (fixedRow[field] === true || fixedRow[field] === 'true' || fixedRow[field] === 'Yes' || fixedRow[field] === 'YES' || fixedRow[field] === 'y' || fixedRow[field] === 'Y' || fixedRow[field] === '1') {
+          fixedRow[field] = 'Yes';
+        } else if (fixedRow[field] === false || fixedRow[field] === 'false' || fixedRow[field] === 'No' || fixedRow[field] === 'NO' || fixedRow[field] === 'n' || fixedRow[field] === 'N' || fixedRow[field] === '0') {
+          fixedRow[field] = 'No';
+        }
       }
     });
-    */
     
     return fixedRow;
   }
@@ -858,22 +872,31 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Get a unique key for a row to use with edited cells tracking
+  // Get a unique key for each row based on available identifiers
   getRowKey(rowIndex: number): string {
-    const row = this.pagedData[rowIndex];
-    
-    // Try to use a stable identifier if available
-    if (row.store_id) {
-      return `id:${row.store_id}`;
+    const data = this.pagedData[rowIndex];
+    if (!data) {
+      return `unknown-${rowIndex}`;
+    }
+
+    // Try to get a unique identifier for the row
+    // Primary key: store_id
+    if (data.store_id) {
+      return `id-${data.store_id}`;
     }
     
-    // Otherwise use a composite key
-    if (row.store_code && row.dispatch_code) {
-      return `dispatch_store:${row.dispatch_code}:${row.store_code}`;
+    // Fallback 1: dispatch_code + store_code
+    if (data.dispatch_code && data.store_code) {
+      return `dc-${data.dispatch_code}-sc-${data.store_code}`;
     }
     
-    // Fallback to rowIndex if no stable identifiers are available
-    return `index:${rowIndex}`;
+    // Fallback 2: store_name
+    if (data.store_name) {
+      return `name-${data.store_name.replaceAll(' ', '-')}`;
+    }
+    
+    // Last resort: row index (not reliable if data changes)
+    return `row-${rowIndex}`;
   }
 
   // Toggle segregated routes filter

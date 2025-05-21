@@ -1,29 +1,23 @@
-<div class="dashboard-container">
-  <!-- Welcome section -->
-  <div class="welcome-section">
-    <div class="user-info">
-      <i class="bi bi-person-circle"></i>
-      <span>Welcome, {{driverName}}</span>
+<nav class="navbar">
+  <div class="container-fluid">
+    <div class="nav-left">
+      <div class="user-info">
+        <i class="bi bi-person-circle"></i>
+        <span>Welcome, {{driverName}}</span>
+      </div>
     </div>
-    <button class="btn btn-danger logout-btn" (click)="logout()">
+    
+    <button class="logout-btn" (click)="logout()">
       <i class="bi bi-box-arrow-right"></i> Logout
     </button>
   </div>
+</nav>
 
+<div class="dashboard-container">
   <div class="dashboard-content">
     <!-- Main cards grid -->
     <div class="cards-grid">
-      <!-- My Route Card -->
-      <div class="card feature-card">
-        <div class="card-body">
-          <div class="card-icon">
-            <i class="bi bi-truck"></i>
-          </div>
-          <h5 class="card-title">My Route</h5>
-          <p class="card-text">View and complete your assigned delivery route</p>
-        </div>
-      </div>
-
+  
       <!-- My Driving Performance Card -->
       <div class="card feature-card" routerLink="/driver-performance">
         <div class="card-body">
@@ -43,28 +37,6 @@
           </div>
           <h5 class="card-title">My Forms</h5>
           <p class="card-text">View and complete your assigned forms</p>
-        </div>
-      </div>
-
-      <!-- Find Geolocation Card -->
-      <div class="card feature-card" routerLink="/find-geolocation">
-        <div class="card-body">
-          <div class="card-icon">
-            <i class="bi bi-geo-alt"></i>
-          </div>
-          <h5 class="card-title">Find Geolocation</h5>
-          <p class="card-text">Get location coordinates for dispatch codes or stores</p>
-        </div>
-      </div>
-
-      <!-- Eircode Finder Card -->
-      <div class="card feature-card" routerLink="/eircode-finder">
-        <div class="card-body">
-          <div class="card-icon">
-            <i class="bi bi-search"></i>
-          </div>
-          <h5 class="card-title">Eircode Finder</h5>
-          <p class="card-text">Look up addresses using Eircode with easy copy options</p>
         </div>
       </div>
 
