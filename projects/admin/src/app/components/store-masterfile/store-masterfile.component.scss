@@ -94,7 +94,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   background-color: transparent;
   border: none;
   table-layout: fixed;
@@ -109,6 +109,7 @@
   z-index: 10;
   width: fit-content;
   min-width: 100%;
+  flex-wrap: nowrap;
 }
 
 .header-cell {
@@ -169,12 +170,15 @@
   flex-direction: column;
   width: fit-content;
   min-width: 100%;
+  overflow: auto;
+  max-height: calc(100% - 50px);
 }
 
 .data-row {
   display: flex;
   width: 100%;
   border-bottom: 1px solid #e0e0e0;
+  flex-wrap: nowrap;
   
   &.segregated-row {
     background-color: rgba(255, 107, 107, 0.05);
@@ -844,4 +848,69 @@
   i {
     margin-right: 0.25rem;
   }
+}
+
+/* Add styles for the delivery days buttons */
+.delivery-days-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  
+  .delivery-days-title {
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+  }
+  
+  .delivery-days-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+.day-checkbox {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  
+  &:checked + .day-button {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+  }
+  
+  &:focus + .day-button {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+  }
+}
+
+.day-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 4px 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  color: #6c757d;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  
+  &:hover {
+    background-color: #e9ecef;
+  }
+}
+
+.day-label {
+  display: inline-block;
+  position: relative;
+  margin-right: 2px;
+  cursor: pointer;
 } 

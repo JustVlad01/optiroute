@@ -71,6 +71,9 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadColumnWidthsFromStorage();
     this.loadStoreData();
+    
+    // Set up scroll synchronization after component initialization
+    setTimeout(() => this.setupScrollSync(), 500);
   }
   
   ngOnDestroy(): void {
@@ -173,106 +176,126 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     try {
       const data = await this.supabaseService.getStoreInformation();
       if (data) {
-        // Standardize column names for UI display
         this.storeData = this.standardizeColumnNames(data);
-        
-        // Get the total count directly from the service
         this.totalStoreCount = this.supabaseService.getTotalStoreCount() || data.length;
-        console.log('Total store count in component:', this.totalStoreCount);
-        this.filteredData = [...this.storeData]; // Initialize filtered data with all data
-        
-        // Extract column names from the first data item if available
+        this.filteredData = [...this.storeData];
+
         if (this.storeData.length > 0) {
-          // Define columns we always want to exclude
           const alwaysExcludedColumns = [
-            'image_storage_url', 
-            'delivery_parking_instructions',
+            'store_images',         // Raw data, use 'image_url' or 'image_data' for display
+            'store_additional_info',// Raw data, use 'notes' for display
             'updated_at',
-            'created_at'
+            'created_at',
+            'id',                   // Typically not shown directly in the table UI but used as a key
+            // Fields that are mapped to others and should not be duplicated:
+            'address_line',         // Mapped to 'address'
+            'keys_available',       // Mapped to 'keys'
+            // The following are examples if you have specific UI versions like 'opening_time_sun' vs 'opening_time_sunday'
+            // 'opening_time_sunday', // if UI uses 'opening_time_sun'
+            // 'opening_time_saturday', // if UI uses 'opening_time_sat'
           ];
-          
-          // Get all available columns (except always excluded ones)
+
           this.allColumns = Object.keys(this.storeData[0])
-            .filter(column => !alwaysExcludedColumns.includes(column));
-          
-          // Add new columns that might not be in the data yet
-          const newColumns = [
-            'image_url',
+            .filter(column => !alwaysExcludedColumns.includes(column)); 
+
+          // Add derived/virtual columns if they are not directly in storeData[0]
+          if (!this.allColumns.includes('image_url') && this.storeData[0].store_images) {
+            this.allColumns.push('image_url');
+          }
+          if (!this.allColumns.includes('notes') && this.storeData[0].store_additional_info) {
+            this.allColumns.push('notes');
+          }
+          if (!this.allColumns.includes('delivery_days')) {
+            this.allColumns.push('delivery_days');
+          }
+
+          // Columns expected based on the 'stores' table schema and derived fields
+          // Ensure these are consistent with what `standardizeColumnNames` produces for the UI
+          const expectedUIColumns = [
+            'manual',
+            'image_url', // Derived from store_images
+            'notes',     // Derived from store_additional_info
             'dispatch_code',
             'dispatch_store_name',
             'site_id',
             'store_code',
             'store_company',
             'store_name',
-            'address_line',
+            'address',   // Mapped from address_line
+            'city',
+            'county',
             'eircode',
+            'latitude',
+            'longitude',
             'route',
-            'keys_available',
+            'alarm_code',
+            'fridge_code',
+            'keys',      // Mapped from keys_available
             'key_code',
             'prior_registration_required',
             'hour_access_24',
-            'opening_time_sunday',
-            'earliest_delivery_time',
-            'opening_time_saturday',
-            'opening_time_bankholiday'
+            'opening_time_bankholiday',
+            'opening_time_weekdays',
+            'opening_time_sat',
+            'opening_time_sun',
+            'email',
+            'phone',
+            'delivery_days', // Virtual column for UI
+            // Individual delivery days for toggling, matching DB fields prefixed with 'deliver_'
+            'deliver_monday',
+            'deliver_tuesday',
+            'deliver_wednesday',
+            'deliver_thursday',
+            'deliver_friday',
+            'deliver_saturday',
           ];
-          
-          newColumns.forEach(column => {
-            if (!this.allColumns.includes(column) && !alwaysExcludedColumns.includes(column)) {
+
+          // Add any missing expected columns to allColumns
+          expectedUIColumns.forEach(column => {
+            if (!this.allColumns.includes(column)) {
               this.allColumns.push(column);
             }
           });
           
-          // Initialize columns with default values if not already set
+          // Filter allColumns again to remove any that might have been added but are not in expectedUIColumns, 
+          // unless they were part of the original data and not in alwaysExcluded.
+          // This ensures we only deal with columns we intend to display or manage.
+          const initialColumnsFromData = Object.keys(this.storeData[0]).filter(c => !alwaysExcludedColumns.includes(c));
+          const columnsToKeep = new Set([...initialColumnsFromData, ...expectedUIColumns]);
+          this.allColumns = this.allColumns.filter(column => columnsToKeep.has(column));
+
           this.allColumns.forEach(column => {
-            // Only initialize column visibility if not already set
             if (this.columnVisibility[column] === undefined) {
-              this.columnVisibility[column] = true;
-            }
-            
-            // Only set default column widths if not already stored in localStorage
-            if (this.columnWidths[column] === undefined) {
-              // Set default column widths based on the type or name
-              if (column === 'image_url') {
-                this.columnWidths[column] = 100; // Smaller width for links
-              } else if (column.includes('name') || column.includes('address')) {
-                this.columnWidths[column] = 200; // Wider for names and addresses
+              if (column.startsWith('deliver_') && column !== 'delivery_days') {
+                this.columnVisibility[column] = false; 
               } else {
-                this.columnWidths[column] = 150; // Default width
+                this.columnVisibility[column] = true;
               }
             }
+            if (this.columnWidths[column] === undefined) {
+              if (column === 'image_url') this.columnWidths[column] = 100;
+              else if (column === 'delivery_days') this.columnWidths[column] = 250;
+              else if (column === 'notes') this.columnWidths[column] = 300;
+              else if (column.includes('name') || column.includes('address')) this.columnWidths[column] = 200;
+              else this.columnWidths[column] = 150;
+            }
           });
-          
-          // Set visible columns
+
           this.updateVisibleColumns();
         }
-        
-        // Populate allRoutes with unique values from route column
+
         const routeSet = new Set<string>();
         const segregatedSet = new Set<string>();
-        
         this.storeData.forEach(row => {
           if (row['route']) routeSet.add(row['route']);
-          
-          // Identify segregated routes if applicable
-          // This might need to be updated based on how segregated routes are marked in the new table
-          if (row['is_segregated'] === true || row['is_segregated'] === 'true' || row['is_segregated'] === 'yes') {
+          if (row['is_segregated'] === true || String(row['is_segregated']).toLowerCase() === 'true' || String(row['is_segregated']).toLowerCase() === 'yes') {
             if (row['route']) segregatedSet.add(row['route']);
           }
         });
-        
         this.allRoutes = Array.from(routeSet).filter(r => !!r).sort();
-        
-        // Initialize selectedRoutes map
-        this.allRoutes.forEach(route => {
-          this.selectedRoutes[route] = false; // Initially all routes are unselected
-        });
-        
-        // Initialize segregatedRoutes map
-        Array.from(segregatedSet).forEach(route => {
-          this.segregatedRoutes[route] = true;
-        });
-        
+        this.allRoutes.forEach(route => { this.selectedRoutes[route] = false; });
+        Array.from(segregatedSet).forEach(route => { this.segregatedRoutes[route] = true; });
+
         this.updatePagedData();
       }
     } catch (error) {
@@ -331,9 +354,14 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   }
   
   resetColumnVisibility(): void {
-    this.allColumns.forEach(column => {
+    // Get the filtered list of columns for the modal
+    const visibleColumnsForModal = this.getVisibleColumnsForModal();
+    
+    // Reset visibility only for the columns that should be visible in the modal
+    visibleColumnsForModal.forEach(column => {
       this.columnVisibility[column] = true;
     });
+    
     this.updateVisibleColumns();
     this.saveColumnVisibilityToStorage();
   }
@@ -548,48 +576,78 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   
   // Standardize column names for UI display
   private standardizeColumnNames(data: any[]): any[] {
-    return data.map(row => this.fixColumnNames(row));
+    return data.map(item => this.fixColumnNames(item));
   }
-  
-  // Fix column names for UI display
+
   private fixColumnNames(row: any): any {
-    // Create a copy of the row to avoid modifying the original
-    const fixedRow = { ...row };
-    
-    // Map backend columns to frontend names if needed
-    // This ensures consistent naming in the UI
-    if (fixedRow.store_id !== undefined && fixedRow.id === undefined) {
-      fixedRow.id = fixedRow.store_id;
-    }
-    
-    if (fixedRow.address_line !== undefined && fixedRow.address === undefined) {
-      fixedRow.address = fixedRow.address_line;
-    }
-    
-    if (fixedRow.door_code !== undefined && fixedRow.door === undefined) {
-      fixedRow.door = fixedRow.door_code;
-    }
-    
-    if (fixedRow.keys_available !== undefined && fixedRow.keys === undefined) {
-      fixedRow.keys = fixedRow.keys_available;
-    }
-    
-    // Ensure all Boolean fields are displayed correctly
-    const booleanFields = ['hour_access_24', 'prior_registration_required', 'keys_available'];
-    booleanFields.forEach(field => {
-      if (field in fixedRow) {
-        // Convert various representations to Yes/No for display
-        if (typeof fixedRow[field] === 'boolean') {
-          fixedRow[field] = fixedRow[field] ? 'Yes' : 'No';
-        } else if (fixedRow[field] === true || fixedRow[field] === 'true' || fixedRow[field] === 'Yes' || fixedRow[field] === 'YES' || fixedRow[field] === 'y' || fixedRow[field] === 'Y' || fixedRow[field] === '1') {
-          fixedRow[field] = 'Yes';
-        } else if (fixedRow[field] === false || fixedRow[field] === 'false' || fixedRow[field] === 'No' || fixedRow[field] === 'NO' || fixedRow[field] === 'n' || fixedRow[field] === 'N' || fixedRow[field] === '0') {
-          fixedRow[field] = 'No';
+    const standardizedRow = { ...row };
+
+    // Map database column names to more display-friendly names
+    const columnMapping: { [key: string]: string } = {
+      // Direct mappings from the database to display names
+      'address_line': 'address',
+      'keys_available': 'keys',
+      'opening_time_sunday': 'opening_time_sun',
+      'opening_time_saturday': 'opening_time_sat',
+      
+      // Handle nested data from joined tables
+      'store_additional_info': 'additional_info',
+      'store_images': 'image_data'
+    };
+
+    // Apply the mappings
+    Object.keys(columnMapping).forEach(dbName => {
+      if (dbName in standardizedRow) {
+        const displayName = columnMapping[dbName];
+        standardizedRow[displayName] = standardizedRow[dbName];
+        
+        // Keep the original data for reference
+        if (!dbName.includes('store_')) {  // Don't delete the joined table data
+          delete standardizedRow[dbName];
         }
       }
     });
     
-    return fixedRow;
+    // Handle images - extract URL from the first storefront image if available
+    if (standardizedRow.store_images && Array.isArray(standardizedRow.store_images)) {
+      // Find the first storefront image
+      const storefrontImage = standardizedRow.store_images.find((img: any) => img.is_storefront === 'true');
+      if (storefrontImage) {
+        standardizedRow.image_url = storefrontImage.url;
+      } else if (standardizedRow.store_images.length > 0) {
+        // If no storefront image, use the first image
+        standardizedRow.image_url = standardizedRow.store_images[0].url;
+      }
+    }
+    
+    // Handle additional info - extract content if available
+    if (standardizedRow.store_additional_info && Array.isArray(standardizedRow.store_additional_info) 
+        && standardizedRow.store_additional_info.length > 0) {
+      standardizedRow.notes = standardizedRow.store_additional_info[0].content;
+    }
+
+    // Format Boolean text field values for better display
+    const booleanTextFields = [
+      'keys', 'prior_registration_required', 'hour_access_24'
+    ];
+
+    // Standardize Boolean text field values
+    booleanTextFields.forEach(field => {
+      if (field in standardizedRow) {
+        const value = standardizedRow[field];
+        if (value !== null && value !== undefined) {
+          const lowerValue = value.toString().toLowerCase();
+          if (['true', 'yes', 'y', '1'].includes(lowerValue)) {
+            standardizedRow[field] = 'Yes';
+          } else if (['false', 'no', 'n', '0'].includes(lowerValue)) {
+            standardizedRow[field] = 'No';
+          }
+          // Keep other values as is
+        }
+      }
+    });
+
+    return standardizedRow;
   }
   
   filterData(): void {
@@ -717,9 +775,19 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       // Force redraw of the table
       const tableBody = document.querySelector('.table-body');
+      const headerRow = document.querySelector('.header-row');
+      
       if (tableBody) {
         tableBody.scrollTop = 0;
+        tableBody.scrollLeft = 0; // Reset horizontal scroll
       }
+      
+      if (headerRow) {
+        headerRow.scrollLeft = 0; // Reset header scroll position
+      }
+      
+      // Refresh scroll sync
+      this.setupScrollSync();
     }, 0);
   }
   
@@ -766,38 +834,57 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   
   // Helper to format column name for display
   formatColumnName(column: string): string {
-    // Special cases for specific columns
     const specialCases: { [key: string]: string } = {
       'id': 'ID',
+      'manual': 'Manual',
+      // 'images': 'Images', // Prefer 'image_url' or 'image_data' for UI clarity
       'dispatch_code': 'Dispatch Code',
       'dispatch_store_name': 'Dispatch Store Name',
       'site_id': 'Site ID',
       'store_code': 'Store Code',
       'store_company': 'Store Company',
       'store_name': 'Store Name',
-      'address_line': 'Address',
+      'address': 'Address',         // Mapped from address_line
+      'city': 'City',
+      'county': 'County',
       'eircode': 'Eircode',
+      'latitude': 'Latitude',
+      'longitude': 'Longitude',
       'route': 'Route',
-      'keys_available': 'Keys Available',
+      'alarm_code': 'Alarm Code',
+      'fridge_code': 'Fridge Code',
+      'keys': 'Keys Available',    // Mapped from keys_available
       'key_code': 'Key Code',
       'prior_registration_required': 'Prior Registration Required',
       'hour_access_24': '24-Hour Access',
-      'opening_time_sunday': 'Sunday Opening Time',
-      'earliest_delivery_time': 'Earliest Delivery Time',
-      'opening_time_saturday': 'Saturday Opening Time',
-      'opening_time_bankholiday': 'Bank Holiday Opening Time',
-      'image_url': 'Image URL'
+      'opening_time_bankholiday': 'Bank Holiday Opening',
+      'opening_time_weekdays': 'Weekday Opening',
+      'opening_time_sat': 'Saturday Opening',
+      'opening_time_sun': 'Sunday Opening',
+      'email': 'Email',
+      'phone': 'Phone',
+      'image_url': 'Image Preview', // Derived
+      'notes': 'Notes',           // Derived
+      'additional_info': 'Additional Info', // Original field before mapping to notes
+      'image_data': 'Image Data',       // Original field before mapping to image_url
+      'delivery_days': 'Delivery Days',
+      'deliver_monday': 'Mon Delivery',
+      'deliver_tuesday': 'Tue Delivery',
+      'deliver_wednesday': 'Wed Delivery',
+      'deliver_thursday': 'Thu Delivery',
+      'deliver_friday': 'Fri Delivery',
+      'deliver_saturday': 'Sat Delivery'
     };
-    
+
     if (column in specialCases) {
       return specialCases[column];
     }
-    
+
     // Generic formatting for other columns
     const formattedName = column
-      .replace(/_/g, ' ') // Replace underscores with spaces
+      .replace(/_/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
     
     return formattedName;
@@ -880,9 +967,9 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     }
 
     // Try to get a unique identifier for the row
-    // Primary key: store_id
-    if (data.store_id) {
-      return `id-${data.store_id}`;
+    // Primary key: id (UUID)
+    if (data.id) {
+      return `id-${data.id}`;
     }
     
     // Fallback 1: dispatch_code + store_code
@@ -921,5 +1008,102 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
     return (
       (row['route'] && this.segregatedRoutes[row['route']])
     );
+  }
+
+  // Get filtered columns for the modal (excluding the ones we don't want to show)
+  getVisibleColumnsForModal(): string[] {
+    // Columns from the 'stores' table schema that should be configurable in the modal
+    const storeTableColumns = [
+      'manual',
+      'images', // This will likely be represented as 'image_url' or 'image_data' in the UI
+      'dispatch_code',
+      'dispatch_store_name',
+      'site_id',
+      'store_code',
+      'store_company',
+      'store_name',
+      'address', // Mapped from address_line
+      'city',
+      'county',
+      'eircode',
+      'latitude',
+      'longitude',
+      'route',
+      'alarm_code',
+      'fridge_code',
+      'keys', // Mapped from keys_available
+      'key_code',
+      'prior_registration_required',
+      'hour_access_24',
+      'opening_time_bankholiday',
+      'opening_time_weekdays',
+      'opening_time_sat',
+      'opening_time_sun',
+      'email',
+      'phone',
+      'notes', // From store_additional_info
+      'delivery_days', // Virtual column
+      // Individual delivery day columns, if they are still part of allColumns
+      // and the user wants to toggle them individually.
+      // The current setup hides these by default if 'delivery_days' is present.
+      'deliver_monday',
+      'deliver_tuesday',
+      'deliver_wednesday',
+      'deliver_thursday',
+      'deliver_friday',
+      'deliver_saturday'
+    ];
+    
+    // Filter allColumns to only include those intended for the modal
+    return this.allColumns.filter(column => storeTableColumns.includes(column));
+  }
+
+  // Setup scroll synchronization between header and body
+  setupScrollSync(): void {
+    const tableBody = document.querySelector('.table-body');
+    const headerRow = document.querySelector('.header-row');
+    
+    if (tableBody && headerRow) {
+      // Sync header with table body scroll
+      tableBody.addEventListener('scroll', () => {
+        headerRow.scrollLeft = tableBody.scrollLeft;
+      });
+      
+      console.log('Scroll synchronization set up between header and table body');
+    }
+  }
+
+  // Toggle delivery day value
+  toggleDeliveryDay(rowIndex: number, day: string): void {
+    // Get the column name for this day
+    const column = `delivery_${day.toLowerCase()}`;
+    
+    // Get the current value - default to 'No' if not set
+    const currentValue = this.getCellValue(rowIndex, column) || 'No';
+    
+    // Toggle the value
+    const newValue = currentValue === 'Yes' ? 'No' : 'Yes';
+    
+    // Update the value
+    this.updateEditedValue(rowIndex, column, newValue);
+  }
+  
+  // Check if a delivery day is active (returns true if 'Yes')
+  isDeliveryDayActive(rowIndex: number, day: string): boolean {
+    const column = `delivery_${day.toLowerCase()}`;
+    return this.getCellValue(rowIndex, column) === 'Yes';
+  }
+  
+  // Convert day initial to lowercase day name
+  getDayName(initial: string): string {
+    const dayMap: {[key: string]: string} = {
+      'm': 'monday',
+      't': 'tuesday',
+      'w': 'wednesday',
+      'th': 'thursday',
+      'f': 'friday',
+      's': 'saturday'
+    };
+    return dayMap[initial.toLowerCase()] || initial.toLowerCase();
   }
 } 

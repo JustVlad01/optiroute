@@ -528,9 +528,13 @@ export class SupabaseService {
       while (hasMore) {
         const { data, error } = await this.supabase
           .from('stores')
-          .select('*')
+          .select(`
+            *,
+            store_additional_info(id, content, created_at, updated_at),
+            store_images(id, file_path, url, file_name, instructions, uploaded_at, created_at, is_storefront)
+          `)
           .range(page * pageSize, (page + 1) * pageSize - 1)
-          .order('store_id');
+          .order('store_name');
         
         if (error) {
           console.error(`Error querying stores table page ${page}:`, error.message);
@@ -579,32 +583,25 @@ export class SupabaseService {
         const fixedUpdate = this.fixColumnNames(update);
         console.log('After column name fixing:', JSON.stringify(fixedUpdate));
         
-        // Check if this is a key_code update and ensure it's properly formatted
-        if ('key_code' in fixedUpdate) {
-          console.log('Key code update detected:', fixedUpdate.key_code);
-          // Ensure key_code is a string
-          fixedUpdate.key_code = fixedUpdate.key_code?.toString() || '';
-        }
-        
-        // First priority: Use store_id if available (serial PRIMARY KEY)
-        if (fixedUpdate.store_id) {
+        // First priority: Use id if available (UUID PRIMARY KEY)
+        if (fixedUpdate.id) {
           try {
             const { data, error } = await this.supabase
               .from('stores')
               .update(fixedUpdate)
-              .eq('store_id', fixedUpdate.store_id)
+              .eq('id', fixedUpdate.id)
               .select();
               
             if (error) {
-              console.error('Error updating store by store_id:', error);
+              console.error('Error updating store by id:', error);
               console.error('Failed update payload:', JSON.stringify(fixedUpdate));
               results.push({ success: false, error });
             } else {
-              console.log('Store updated by store_id:', data);
+              console.log('Store updated by id:', data);
               results.push({ success: true, data });
             }
           } catch (err) {
-            console.error('Exception during update by store_id:', err);
+            console.error('Exception during update by id:', err);
             console.error('Failed update payload:', JSON.stringify(fixedUpdate));
             results.push({ success: false, error: { message: err instanceof Error ? err.message : 'Unknown error' } });
           }
@@ -724,20 +721,22 @@ export class SupabaseService {
       'date': 'created_at',
       'door': 'door_code',
       'keys': 'keys_available',
-      'id': 'store_id',
-      'openining_time_bankholiday': 'opening_time_bankholiday'
+      'store_id': 'id', // Map old store_id to new id (UUID)
+      'openining_time_bankholiday': 'opening_time_bankholiday',
+      'opening_time_sun': 'opening_time_sunday',
+      'opening_time_sat': 'opening_time_saturday'
       // Add any other mismatched column names here
     };
     
     // Handle text fields specifically to ensure proper type conversion
     const textFields = [
-      'images', 'dispatch_code', 'dispatch_store_name', 
+      'manual', 'images', 'dispatch_code', 'dispatch_store_name', 'site_id',
       'store_code', 'store_company', 'store_name', 'address_line',
       'city', 'county', 'eircode', 'latitude', 'longitude', 'route', 
-      'door_code', 'alarm_code', 'fridge_code', 'keys_available', 'key_code',
+      'alarm_code', 'fridge_code', 'keys_available', 'key_code',
       'prior_registration_required', 'hour_access_24',
-      'earliest_delivery_time', 'opening_time_saturday', 
-      'opening_time_bankholiday'
+      'opening_time_bankholiday', 'opening_time_weekdays',
+      'opening_time_sat', 'opening_time_sun', 'email', 'phone'
     ];
     
     // Replace any mismatched column names
@@ -749,12 +748,30 @@ export class SupabaseService {
       }
     });
     
-    // Ensure all text fields are properly converted to strings
-    Object.keys(fixedRow).forEach(key => {
-      if (textFields.includes(key) && fixedRow[key] !== null && fixedRow[key] !== undefined) {
-        fixedRow[key] = String(fixedRow[key]);
+    // Ensure all text fields are properly stored as strings
+    textFields.forEach(field => {
+      if (field in fixedRow && fixedRow[field] !== null && fixedRow[field] !== undefined) {
+        fixedRow[field] = fixedRow[field].toString();
       }
     });
+    
+    // Remove any legacy fields that don't exist in the new schema
+    // but keep track of them in case we want to restore later
+    const legacyFields = ['custom_id', 'delivery_parking_instructions', 'door_code'];
+    const removedFields: {[key: string]: any} = {};
+    
+    legacyFields.forEach(field => {
+      if (field in fixedRow) {
+        removedFields[field] = fixedRow[field];
+        delete fixedRow[field];
+      }
+    });
+    
+    // If we have legacy fields, consider storing them in a notes field or additional_info
+    if (Object.keys(removedFields).length > 0) {
+      console.log('Removed legacy fields:', removedFields);
+      // You might want to add code here to store this information in a compatible field
+    }
     
     return fixedRow;
   }
@@ -1166,6 +1183,261 @@ export class SupabaseService {
     if (error) {
       console.error('Error updating store:', error);
       throw error;
+    }
+  }
+
+  // Method to get store information by ID with related data
+  async getStoreById(storeId: string): Promise<any | null> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return null;
+    }
+
+    try {
+      console.log(`Getting store information for ID: ${storeId}`);
+      
+      // Fetch the store record by ID
+      const { data, error } = await this.supabase
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (!data) {
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching store by ID:', error);
+      return null;
+    }
+  }
+
+  // Method to get store additional information
+  async getStoreAdditionalInfo(storeId: string): Promise<any[] | null> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return null;
+    }
+
+    try {
+      console.log(`Getting additional info for store ID: ${storeId}`);
+      
+      const { data, error } = await this.supabase
+        .from('store_additional_info')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching store additional info:', error);
+      return null;
+    }
+  }
+
+  // Method to add additional info for a store
+  async addStoreAdditionalInfo(infoData: any): Promise<any> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { error: { message: 'Supabase client is not initialized.' } };
+    }
+
+    try {
+      console.log('Adding additional info:', infoData);
+      
+      const { data, error } = await this.supabase
+        .from('store_additional_info')
+        .insert(infoData);
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { data };
+    } catch (error) {
+      console.error('Error adding store additional info:', error);
+      return { error };
+    }
+  }
+
+  // Method to get store images
+  async getStoreImages(storeId: string): Promise<any[] | null> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return null;
+    }
+
+    try {
+      console.log(`Getting images for store ID: ${storeId}`);
+      
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('uploaded_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching store images:', error);
+      return null;
+    }
+  }
+
+  // Method to upload a store image
+  async uploadStoreImage(imageData: { store_id: string, file: File, is_storefront: string, instructions?: string }): Promise<any> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { error: { message: 'Supabase client is not initialized.' } };
+    }
+
+    try {
+      const { store_id, file, is_storefront, instructions } = imageData;
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileExt}`;
+      const filePath = `stores/${store_id}/${fileName}`;
+      
+      console.log(`Uploading image to ${filePath}`);
+      
+      // Upload the file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await this.supabase.storage
+        .from('store-images')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL for the file
+      const { data: urlData } = this.supabase.storage
+        .from('store-images')
+        .getPublicUrl(filePath);
+      
+      if (!urlData || !urlData.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
+      }
+      
+      // Create a database record for the image
+      const imageRecord = {
+        store_id,
+        file_path: filePath,
+        url: urlData.publicUrl,
+        file_name: fileName,
+        is_storefront,
+        instructions: instructions || '',
+        uploaded_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      
+      const { data: dbData, error: dbError } = await this.supabase
+        .from('store_images')
+        .insert(imageRecord);
+      
+      if (dbError) {
+        throw dbError;
+      }
+      
+      return { data: dbData };
+    } catch (error) {
+      console.error('Error uploading store image:', error);
+      return { error };
+    }
+  }
+
+  // Method to update a store image (e.g., change annotation or storefront status)
+  async updateStoreImage(updates: { id: string, is_storefront?: string, instructions?: string }): Promise<any> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { error: { message: 'Supabase client is not initialized.' } };
+    }
+
+    try {
+      console.log('Updating store image:', updates);
+      
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .update({
+          is_storefront: updates.is_storefront,
+          instructions: updates.instructions,
+          // Don't include undefined values in the update
+        })
+        .eq('id', updates.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { data };
+    } catch (error) {
+      console.error('Error updating store image:', error);
+      return { error };
+    }
+  }
+
+  // Method to delete a store image
+  async deleteStoreImage(imageId: string): Promise<any> {
+    if (!this.supabase) {
+      console.error('Supabase client is not initialized.');
+      return { error: { message: 'Supabase client is not initialized.' } };
+    }
+
+    try {
+      console.log(`Deleting image with ID: ${imageId}`);
+      
+      // First, get the image record to get the file path
+      const { data: imageData, error: getError } = await this.supabase
+        .from('store_images')
+        .select('file_path')
+        .eq('id', imageId)
+        .single();
+      
+      if (getError) {
+        throw getError;
+      }
+      
+      if (!imageData || !imageData.file_path) {
+        throw new Error('Image not found or file path is missing');
+      }
+      
+      // Delete the file from storage
+      const { error: storageError } = await this.supabase.storage
+        .from('store-images')
+        .remove([imageData.file_path]);
+      
+      if (storageError) {
+        console.warn('Error deleting file from storage:', storageError);
+        // Continue with deleting the database record even if storage deletion fails
+      }
+      
+      // Delete the database record
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .delete()
+        .eq('id', imageId);
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { data };
+    } catch (error) {
+      console.error('Error deleting store image:', error);
+      return { error };
     }
   }
 }

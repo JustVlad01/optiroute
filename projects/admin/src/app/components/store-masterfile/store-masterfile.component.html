@@ -170,8 +170,65 @@
                        />
               </ng-container>
               
+              <!-- Special handling for delivery_days column -->
+              <ng-container *ngIf="column === 'delivery_days'">
+                <div class="delivery-days-container" (click)="$event.stopPropagation()">
+                  <div class="delivery-days-title">DELIVERY DAYS</div>
+                  <div class="delivery-days-row">
+                    <!-- Monday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'monday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'monday')">
+                      <span class="day-button">M</span>
+                    </label>
+                    
+                    <!-- Tuesday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'tuesday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'tuesday')">
+                      <span class="day-button">T</span>
+                    </label>
+                    
+                    <!-- Wednesday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'wednesday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'wednesday')">
+                      <span class="day-button">W</span>
+                    </label>
+                    
+                    <!-- Thursday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'thursday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'thursday')">
+                      <span class="day-button">Th</span>
+                    </label>
+                    
+                    <!-- Friday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'friday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'friday')">
+                      <span class="day-button">F</span>
+                    </label>
+                    
+                    <!-- Saturday -->
+                    <label class="day-label">
+                      <input type="checkbox" class="day-checkbox"
+                             [checked]="isDeliveryDayActive(rowIndex, 'saturday')" 
+                             (change)="toggleDeliveryDay(rowIndex, 'saturday')">
+                      <span class="day-button">S</span>
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
+              
               <!-- Editable input for all other columns -->
-              <input *ngIf="column !== 'location_link'" 
+              <input *ngIf="column !== 'location_link' && column !== 'delivery_days' 
+                            && !column.startsWith('delivery_')" 
                      class="edit-input"
                      type="text" 
                      [value]="getCellValue(rowIndex, column)"
@@ -236,7 +293,7 @@
       </div>
       <div class="modal-body">
         <div class="column-list">
-          <div *ngFor="let column of allColumns" class="column-item">
+          <div *ngFor="let column of getVisibleColumnsForModal()" class="column-item">
             <label class="column-checkbox">
               <input 
                 type="checkbox" 
@@ -244,57 +301,6 @@
                 (change)="toggleColumnVisibility(column)"
               >
               <span class="column-name">{{ formatColumnName(column) }}</span>
-            </label>
-          </div>
-          <!-- Add specific checkboxes for new columns to ensure they're available -->
-          <div *ngIf="allColumns.indexOf('manual') === -1" class="column-item">
-            <label class="column-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="columnVisibility['manual']" 
-                (change)="toggleColumnVisibility('manual')"
-              >
-              <span class="column-name">Manual</span>
-            </label>
-          </div>
-          <div *ngIf="allColumns.indexOf('new_route_08_05') === -1" class="column-item">
-            <label class="column-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="columnVisibility['new_route_08_05']" 
-                (change)="toggleColumnVisibility('new_route_08_05')"
-              >
-              <span class="column-name">New Route (08/05)</span>
-            </label>
-          </div>
-          <div *ngIf="allColumns.indexOf('route8_5_25') === -1" class="column-item">
-            <label class="column-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="columnVisibility['route8_5_25']" 
-                (change)="toggleColumnVisibility('route8_5_25')"
-              >
-              <span class="column-name">Route 8.5.25</span>
-            </label>
-          </div>
-          <div *ngIf="allColumns.indexOf('opening_time_sunday') === -1" class="column-item">
-            <label class="column-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="columnVisibility['opening_time_sunday']" 
-                (change)="toggleColumnVisibility('opening_time_sunday')"
-              >
-              <span class="column-name">Opening Time Sunday</span>
-            </label>
-          </div>
-          <div *ngIf="allColumns.indexOf('key_code') === -1" class="column-item">
-            <label class="column-checkbox">
-              <input 
-                type="checkbox" 
-                [checked]="columnVisibility['key_code']" 
-                (change)="toggleColumnVisibility('key_code')"
-              >
-              <span class="column-name">Key Code</span>
             </label>
           </div>
         </div>

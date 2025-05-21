@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,679 +11,770 @@ import { SupabaseService } from '../../services/supabase.service';
   templateUrl: './store-library.component.html',
   styleUrl: './store-library.component.scss'
 })
-export class StoreLibraryComponent implements OnInit, OnDestroy {
-  // Store data
-  stores: any[] = [];
-  filteredStores: any[] = [];
-  selectedStore: any = null;
-  
-  // Search
-  searchTerm: string = '';
-  suggestedStores: any[] = [];
-  showSuggestions: boolean = false;
-  
-  // Images
-  storeImages: any[] = [];
-  selectedImage: any = null;
-  imageFile: File | null = null;
-  imagePreviewUrl: string = '';
-  imageAnnotation: string = '';
-  imageUploading: boolean = false;
-  storefrontSaving: boolean = false;
-  
-  // Shop storefront image
-  shopImageFile: File | null = null;
-  shopImagePreviewUrl: string = '';
-  shopImageAnnotation: string = '';
-  shopImageUploading: boolean = false;
-  
-  // Additional Info
-  additionalInfo: string = '';
-  additionalInfoLoading: boolean = false;
-  additionalInfoSaving: boolean = false;
-  
-  // UI state
+export class StoreLibraryComponent implements OnInit {
+  // Search and store data
+  searchQuery: string = '';
   loading: boolean = false;
-  imageTabActive: boolean = true;
-  hasSearched: boolean = false;
-  error: string = '';
+  filteredStores: any[] = [];
+  showSuggestions: boolean = false;
+  filteredSuggestions: any[] = [];
+  searchPerformed: boolean = false;
+  allStores: any[] = [];
+
+  // Selected store
+  selectedStore: any = null;
+  editableStore: any = null;
+  editMode: boolean = false;
+  savingChanges: boolean = false;
+
+  // Access codes toggle
+  showAccessCodes: boolean = false;
+
+  // Status message
+  statusMessage: {show: boolean, type: string, text: string} = {
+    show: false, 
+    type: '', 
+    text: ''
+  };
   
-  constructor(private supabaseService: SupabaseService) {}
+  // Delivery day status
+  savingDeliveryDay: string | null = null;
+  dayUpdateStatus: {show: boolean, type: string, text: string} = {
+    show: false,
+    type: '',
+    text: ''
+  };
+
+  // Tab management
+  activeTab: 'details' | 'additional-info' | 'images' = 'details';
+
+  // Additional info
+  additionalInfoEditing: boolean = false;
+  additionalInfoText: string = '';
+  savingAdditionalInfo: boolean = false;
+
+  // Image uploads
+  storefrontPreviewSrc: string | null = null;
+  storefrontAnnotation: string = '';
+  storefrontFile: File | null = null;
+  uploadingStorefront: boolean = false;
+
+  regularPreviewSrc: string | null = null;
+  regularAnnotation: string = '';
+  regularFile: File | null = null;
+  uploadingRegular: boolean = false;
+
+  storeImages: any[] = [];
+
+  // Loading overlay
+  showLoadingOverlay: boolean = false;
+  loadingMessage: string = 'Loading...';
   
+  // Compact mode
+  compactMode: boolean = true;
+
+  constructor(
+    private supabaseService: SupabaseService,
+    private ngZone: NgZone
+  ) { }
+
   ngOnInit(): void {
-    // Don't load stores initially
-    
-    // Add event listeners for global paste events when in the image tab
-    document.addEventListener('paste', this.handleGlobalPaste);
-  }
-  
-  // Handle pastes at the document level - this allows pasting anywhere in the component
-  private handleGlobalPaste = (event: ClipboardEvent) => {
-    // Only process if we're on the image tab and have a selected store
-    if (!this.imageTabActive || !this.selectedStore) return;
-    
-    // Determine which paste handler to use based on which tab/section is active
-    const activeElement = document.activeElement;
-    const isTextArea = activeElement instanceof HTMLTextAreaElement || activeElement instanceof HTMLInputElement;
-    
-    // Skip if user is pasting into a text field
-    if (isTextArea) return;
-    
-    // Check if storefront upload is visible/focused
-    const isShopSection = 
-      document.querySelector('.shop-image-upload-container')?.contains(activeElement as Node) ||
-      !document.querySelector('.image-upload-container');
-    
-    this.handlePastedImage(event, isShopSection);
-  }
-  
-  ngOnDestroy(): void {
-    // Remove event listeners when component is destroyed
-    document.removeEventListener('paste', this.handleGlobalPaste);
-  }
-  
-  // Handle input changes for auto-suggest
-  async onSearchInput(): Promise<void> {
-    // Load stores if they haven't been loaded yet
-    if (this.stores.length === 0 && this.searchTerm.trim().length > 0) {
-      this.loading = true;
-      try {
-        const data = await this.supabaseService.getStoreInformation();
-        if (data) {
-          this.stores = data;
-        }
-      } catch (error) {
-        console.error('Error loading stores:', error);
-      } finally {
-        this.loading = false;
-      }
-    }
-    
-    // Show suggestions when there's text in the search box
-    if (this.searchTerm.trim().length > 0) {
-      this.showSuggestions = true;
-      const searchTermLower = this.searchTerm.toLowerCase();
-      
-      // Filter to find matching stores
-      this.suggestedStores = this.stores.filter(store => {
-        return (store.store_name?.toLowerCase().includes(searchTermLower) ||
-                store.store_code?.toLowerCase().includes(searchTermLower) ||
-                store.dispatch_code?.toLowerCase().includes(searchTermLower) ||
-                store.address_line?.toLowerCase().includes(searchTermLower) ||
-                store.eircode?.toLowerCase().includes(searchTermLower));
-      }).slice(0, 6); // Limit to 6 suggestions
-    } else {
-      this.showSuggestions = false;
-      this.suggestedStores = [];
+    this.loadAllStores();
+    // Try to load compact mode preference from localStorage
+    const savedCompactMode = localStorage.getItem('storeLibraryCompactMode');
+    if (savedCompactMode !== null) {
+      this.compactMode = savedCompactMode === 'true';
     }
   }
-  
-  // Select a suggestion
-  selectSuggestion(store: any): void {
-    this.searchTerm = store.store_name || store.store_code || '';
-    this.showSuggestions = false;
-    this.suggestedStores = [];
-    this.selectedStore = store;
-    this.loadStoreImages();
-    this.loadAdditionalInfo();
+
+  // Toggle compact mode
+  toggleCompactMode(): void {
+    this.compactMode = !this.compactMode;
+    // Save preference to localStorage
+    localStorage.setItem('storeLibraryCompactMode', this.compactMode.toString());
   }
-  
-  // Hide suggestions when clicking elsewhere
-  hideSuggestions(): void {
-    // Small delay to allow selecting a suggestion before hiding
-    setTimeout(() => {
-      this.showSuggestions = false;
-    }, 200);
-  }
-  
-  // Modify searchStores method to include delivery day filtering
-  async searchStores(): Promise<void> {
-    // Existing search code
+
+  // --- Store Data Management ---
+  async loadAllStores() {
     this.loading = true;
-    this.hasSearched = true;
-    this.error = '';
-    
     try {
-      let stores = [];
-      
-      if (this.searchTerm.trim() === '') {
-        stores = await this.supabaseService.getAllStores();
-      } else {
-        stores = await this.supabaseService.searchStores(this.searchTerm);
-      }
-      
-      this.filteredStores = stores;
-      
-      if (this.filteredStores.length === 0) {
-        this.error = 'No stores found matching your search criteria.';
+      const data = await this.supabaseService.getStoreInformation();
+      if (data) {
+        this.allStores = data.map(store => this.standardizeStoreData(store));
       }
     } catch (error) {
-      console.error('Error searching stores:', error);
-      this.error = 'An error occurred while searching for stores.';
+      console.error('Error loading stores:', error);
+      this.showStatusMessage('error', 'Failed to load stores. Please try again later.');
     } finally {
       this.loading = false;
     }
   }
-  
-  // Filter stores based on search term
-  filterStores(): void {
-    if (!this.searchTerm.trim()) {
+
+  // Standardize store data structure
+  standardizeStoreData(store: any): any {
+    // Handle the different structure from database
+    return {
+      ...store,
+      // Normalize address field from address_line if not present
+      address: store.address || store.address_line
+    };
+  }
+
+  // --- Search Functionality ---
+  onSearchInputChange() {
+    // Show suggestions if there's search input
+    this.showSuggestions = !!this.searchQuery && this.searchQuery.length > 1;
+    
+    if (this.showSuggestions) {
+      this.filterSuggestions();
+    }
+  }
+
+  filterSuggestions() {
+    const query = this.searchQuery.toLowerCase();
+    this.filteredSuggestions = this.allStores.filter(store => {
+      return (
+        (store.store_name && store.store_name.toLowerCase().includes(query)) ||
+        (store.store_code && store.store_code.toLowerCase().includes(query)) ||
+        (store.dispatch_code && store.dispatch_code.toLowerCase().includes(query)) ||
+        (store.address && store.address.toLowerCase().includes(query)) ||
+        (store.city && store.city.toLowerCase().includes(query))
+      );
+    }).slice(0, 7); // Limit suggestions
+  }
+
+  selectSuggestion(suggestion: any) {
+    this.searchQuery = suggestion.store_name || suggestion.store_code || '';
+    this.showSuggestions = false;
+    this.searchStores();
+  }
+
+  searchStores() {
+    this.loading = true;
+    this.searchPerformed = true;
+    
+    const query = this.searchQuery.toLowerCase();
+    if (!query) {
       this.filteredStores = [];
+      this.loading = false;
       return;
     }
     
-    const searchTermLower = this.searchTerm.toLowerCase();
-    this.filteredStores = this.stores.filter(store => {
-      // Search by store name, code, address, etc.
-      return store.store_name?.toLowerCase().includes(searchTermLower) ||
-             store.store_code?.toLowerCase().includes(searchTermLower) ||
-             store.dispatch_code?.toLowerCase().includes(searchTermLower) ||
-             store.address_line?.toLowerCase().includes(searchTermLower) ||
-             store.eircode?.toLowerCase().includes(searchTermLower);
+    this.filteredStores = this.allStores.filter(store => {
+      return (
+        (store.store_name && store.store_name.toLowerCase().includes(query)) ||
+        (store.store_code && store.store_code.toLowerCase().includes(query)) ||
+        (store.dispatch_code && store.dispatch_code.toLowerCase().includes(query)) ||
+        (store.address && store.address.toLowerCase().includes(query)) ||
+        (store.city && store.city.toLowerCase().includes(query)) ||
+        (store.county && store.county.toLowerCase().includes(query)) ||
+        (store.eircode && store.eircode.toLowerCase().includes(query))
+      );
     });
-  }
-  
-  // Clear search results
-  clearSearch(): void {
-    this.searchTerm = '';
-    this.filteredStores = [];
-    this.suggestedStores = [];
+    
+    this.loading = false;
     this.showSuggestions = false;
-    this.hasSearched = false;
   }
-  
-  // Select a store
-  async selectStore(store: any): Promise<void> {
-    this.selectedStore = store;
-    this.loadStoreImages();
-    this.loadAdditionalInfo();
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.filteredStores = [];
+    this.showSuggestions = false;
+    this.searchPerformed = false;
   }
-  
-  // Load store images
-  async loadStoreImages(): Promise<void> {
-    if (!this.selectedStore?.store_id) return;
+
+  // --- Store Selection and Editing ---
+  async selectStore(store: any) {
+    this.showLoadingOverlay = true;
+    this.loadingMessage = 'Loading store details...';
     
     try {
-      // Get store images from Supabase
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .select('*')
-        .eq('store_id', this.selectedStore.store_id);
+      // Get complete store data including related data
+      const storeData = await this.supabaseService.getStoreById(store.id);
       
-      if (error) {
-        console.error('Error fetching store images:', error);
-        return;
+      if (!storeData) {
+        throw new Error('Store data not available');
       }
       
-      this.storeImages = data || [];
-      this.selectedImage = null;
-    } catch (error) {
-      console.error('Exception during image fetch:', error);
-    }
-  }
-  
-  // Load additional info
-  async loadAdditionalInfo(): Promise<void> {
-    if (!this.selectedStore?.store_id) return;
-    
-    this.additionalInfoLoading = true;
-    
-    try {
-      // Get additional info from Supabase
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_additional_info')
-        .select('content')
-        .eq('store_id', this.selectedStore.store_id)
-        .maybeSingle();
+      this.selectedStore = this.standardizeStoreData(storeData);
+      this.editableStore = null;
+      this.editMode = false;
       
-      if (error) {
-        console.error('Error fetching additional info:', error);
-        this.additionalInfo = '';
-        return;
-      }
+      // Reset tabs
+      this.activeTab = 'details';
       
-      this.additionalInfo = data?.content || '';
-    } catch (error) {
-      console.error('Exception during additional info fetch:', error);
-    } finally {
-      this.additionalInfoLoading = false;
-    }
-  }
-  
-  // Select an image
-  selectImage(image: any): void {
-    this.selectedImage = image;
-    this.imageAnnotation = image.instructions || '';
-  }
-  
-  // Handle file input change
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    
-    const file = input.files[0];
-    this.imageFile = file;
-    
-    // Create a preview URL
-    this.imagePreviewUrl = URL.createObjectURL(file);
-  }
-  
-  // Clear selected file
-  clearSelectedFile(): void {
-    this.imageFile = null;
-    this.imagePreviewUrl = '';
-    this.imageAnnotation = '';
-  }
-  
-  // Upload image to Supabase
-  async uploadImage(): Promise<void> {
-    if (!this.imageFile || !this.selectedStore?.store_id) return;
-    
-    this.imageUploading = true;
-    
-    try {
-      // 1. Upload to storage bucket
-      const fileName = `${Date.now()}_${this.imageFile.name}`;
-      const filePath = `stores/${this.selectedStore.store_id}/${fileName}`;
-      
-      const { data: uploadData, error: uploadError } = await this.supabaseService.getSupabase()
-        .storage
-        .from('store-images')
-        .upload(filePath, this.imageFile);
-      
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        return;
-      }
-      
-      // 2. Get public URL
-      const { data: urlData } = await this.supabaseService.getSupabase()
-        .storage
-        .from('store-images')
-        .getPublicUrl(filePath);
-      
-      // 3. Save to store_images table
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .insert([{
-          store_id: this.selectedStore.store_id,
-          file_path: filePath,
-          url: urlData.publicUrl,
-          file_name: fileName,
-          instructions: this.imageAnnotation,
-          uploaded_at: new Date().toISOString()
-        }])
-        .select();
-      
-      if (error) {
-        console.error('Error saving image data:', error);
-        return;
-      }
-      
-      // Reload images and clear form
-      this.loadStoreImages();
-      this.clearSelectedFile();
-    } catch (error) {
-      console.error('Exception during image upload:', error);
-    } finally {
-      this.imageUploading = false;
-    }
-  }
-  
-  // Update image annotation
-  async updateImageAnnotation(): Promise<void> {
-    if (!this.selectedImage?.id) return;
-    
-    try {
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .update({ instructions: this.imageAnnotation })
-        .eq('id', this.selectedImage.id)
-        .select();
-      
-      if (error) {
-        console.error('Error updating image annotation:', error);
-        return;
-      }
-      
-      // Update the selected image with the new data
-      this.selectedImage = data[0];
-      
-      // Also update in the array
-      const index = this.storeImages.findIndex(img => img.id === this.selectedImage.id);
-      if (index !== -1) {
-        this.storeImages[index] = this.selectedImage;
-      }
-    } catch (error) {
-      console.error('Exception during annotation update:', error);
-    }
-  }
-  
-  // Set image as storefront
-  async setAsStorefront(image: any): Promise<void> {
-    if (!image?.id || !this.selectedStore?.store_id) return;
-    
-    this.storefrontSaving = true;
-    
-    try {
-      // First, unset any existing storefront images for this store
-      await this.supabaseService.getSupabase()
-        .from('store_images')
-        .update({ is_storefront: false })
-        .eq('store_id', this.selectedStore.store_id)
-        .eq('is_storefront', true);
-      
-      // Then set this image as storefront
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .update({ is_storefront: true })
-        .eq('id', image.id)
-        .select();
-      
-      if (error) {
-        console.error('Error setting storefront image:', error);
-        return;
-      }
-      
-      // Reload images to reflect the change
+      // Load store images
       await this.loadStoreImages();
       
-      // Update the selected image if it's the one that was modified
-      if (this.selectedImage?.id === image.id) {
-        this.selectedImage = this.storeImages.find(img => img.id === image.id);
+      // Load additional info
+      await this.loadAdditionalInfo();
+    } catch (error) {
+      console.error('Error loading store details:', error);
+      this.showStatusMessage('error', 'Failed to load store details. Please try again later.');
+    } finally {
+      this.showLoadingOverlay = false;
+    }
+  }
+
+  // Update delivery day checkbox value
+  updateDeliveryDay(dayField: string, event: any): void {
+    if (!this.editableStore) return;
+    
+    // Set the field value to 'yes' if checked, 'no' if unchecked
+    this.editableStore[dayField] = event.target.checked ? 'yes' : 'no';
+  }
+
+  // Toggle and immediately save a delivery day setting
+  async toggleAndSaveDeliveryDay(dayField: string): Promise<void> {
+    if (!this.selectedStore || this.savingDeliveryDay) return;
+    
+    try {
+      // Set the saving state for visual feedback
+      this.savingDeliveryDay = dayField;
+      
+      // Toggle the current value
+      const currentValue = this.selectedStore[dayField] === 'yes' ? 'no' : 'yes';
+      
+      // Optimistically update the UI
+      this.selectedStore[dayField] = currentValue;
+      
+      // Create the changes object with just this field
+      const changes: any = {
+        id: this.selectedStore.id,
+        [dayField]: currentValue
+      };
+      
+      // Save to Supabase
+      const result = await this.supabaseService.updateStoreInformation([changes]);
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
       }
       
+      // Update the filtered/all stores arrays
+      this.updateStoreInArrays(this.selectedStore.id, { [dayField]: currentValue });
+      
+      // Show a success indicator briefly
+      this.showDayUpdateStatus('success', `Updated delivery schedule`);
     } catch (error) {
-      console.error('Exception during storefront setting:', error);
+      console.error(`Error toggling delivery day ${dayField}:`, error);
+      
+      // Revert the UI change on failure
+      this.selectedStore[dayField] = this.selectedStore[dayField] === 'yes' ? 'no' : 'yes';
+      
+      this.showDayUpdateStatus('error', `Failed to update delivery day. Please try again.`);
     } finally {
-      this.storefrontSaving = false;
+      // Clear the saving state
+      setTimeout(() => {
+        this.savingDeliveryDay = null;
+      }, 300);
     }
   }
   
-  // Remove storefront status
-  async removeStorefrontStatus(image: any): Promise<void> {
-    if (!image?.id) return;
+  // Update store in filteredStores and allStores arrays
+  private updateStoreInArrays(storeId: string, changes: any): void {
+    // Update in filteredStores
+    const filteredIndex = this.filteredStores.findIndex(s => s.id === storeId);
+    if (filteredIndex !== -1) {
+      this.filteredStores[filteredIndex] = { 
+        ...this.filteredStores[filteredIndex], 
+        ...changes 
+      };
+    }
     
-    this.storefrontSaving = true;
-    
-    try {
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .update({ is_storefront: false })
-        .eq('id', image.id)
-        .select();
-      
-      if (error) {
-        console.error('Error removing storefront status:', error);
-        return;
-      }
-      
-      // Reload images to reflect the change
-      await this.loadStoreImages();
-      
-      // Update the selected image if it's the one that was modified
-      if (this.selectedImage?.id === image.id) {
-        this.selectedImage = this.storeImages.find(img => img.id === image.id);
-      }
-      
-    } catch (error) {
-      console.error('Exception during storefront removal:', error);
-    } finally {
-      this.storefrontSaving = false;
+    // Update in allStores
+    const allIndex = this.allStores.findIndex(s => s.id === storeId);
+    if (allIndex !== -1) {
+      this.allStores[allIndex] = { 
+        ...this.allStores[allIndex], 
+        ...changes 
+      };
     }
   }
   
-  // Delete image
-  async deleteImage(image: any): Promise<void> {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+  // Show day-specific update status
+  private showDayUpdateStatus(type: 'success' | 'error', text: string): void {
+    this.dayUpdateStatus = {
+      show: true,
+      type,
+      text
+    };
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      this.dayUpdateStatus.show = false;
+    }, 3000);
+  }
+
+  toggleEditMode() {
+    if (!this.editMode) {
+      // Create a deep copy of the selected store
+      this.editableStore = JSON.parse(JSON.stringify(this.selectedStore));
+      
+      // Initialize delivery day fields if they don't exist
+      const deliveryDays = ['deliver_monday', 'deliver_tuesday', 'deliver_wednesday', 
+                            'deliver_thursday', 'deliver_friday', 'deliver_saturday'];
+      
+      deliveryDays.forEach(day => {
+        if (!this.editableStore[day]) {
+          this.editableStore[day] = 'no';
+        }
+      });
+      
+      this.editMode = true;
+    } else {
+      this.saveChanges();
+    }
+  }
+
+  cancelEdit() {
+    this.editMode = false;
+    this.editableStore = null;
+  }
+
+  async saveChanges() {
+    if (!this.editableStore || !this.selectedStore) return;
+    
+    this.savingChanges = true;
     
     try {
-      // 1. Delete from storage
-      const { error: storageError } = await this.supabaseService.getSupabase()
-        .storage
-        .from('store-images')
-        .remove([image.file_path]);
+      // Compare fields to see if any have changed
+      const changes: any = {};
+      let hasChanges = false;
       
-      if (storageError) {
-        console.error('Error deleting image from storage:', storageError);
+      // Check all fields in editableStore against selectedStore
+      for (const key in this.editableStore) {
+        // Only include fields that have changed
+        if (this.editableStore[key] !== this.selectedStore[key]) {
+          changes[key] = this.editableStore[key];
+          hasChanges = true;
+        }
       }
       
-      // 2. Delete from database
-      const { error: dbError } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .delete()
-        .eq('id', image.id);
-      
-      if (dbError) {
-        console.error('Error deleting image from database:', dbError);
+      if (!hasChanges) {
+        this.showStatusMessage('info', 'No changes were made.');
+        this.savingChanges = false;
+        this.editMode = false;
         return;
       }
       
-      // Reload images and clear selection
+      // Add the id to the changes
+      changes.id = this.selectedStore.id;
+      
+      // Update the store in Supabase
+      const result = await this.supabaseService.updateStoreInformation([changes]);
+      
+      // Check if result contains an error property
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Update local data
+      this.selectedStore = { ...this.selectedStore, ...this.editableStore };
+      
+      // Update the store in the filteredStores array
+      const storeIndex = this.filteredStores.findIndex(s => s.id === this.selectedStore.id);
+      if (storeIndex !== -1) {
+        this.filteredStores[storeIndex] = { ...this.filteredStores[storeIndex], ...this.editableStore };
+      }
+      
+      // Update the store in the allStores array
+      const allStoreIndex = this.allStores.findIndex(s => s.id === this.selectedStore.id);
+      if (allStoreIndex !== -1) {
+        this.allStores[allStoreIndex] = { ...this.allStores[allStoreIndex], ...this.editableStore };
+      }
+      
+      this.showStatusMessage('success', 'Changes saved successfully!');
+      this.editMode = false;
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      this.showStatusMessage('error', 'Failed to save changes. Please try again.');
+    } finally {
+      this.savingChanges = false;
+    }
+  }
+
+  // Helper to edit a specific field
+  editField(fieldName: string) {
+    if (this.editMode) return; // Already in edit mode
+    
+    // Create a deep copy of the selected store
+    this.editableStore = JSON.parse(JSON.stringify(this.selectedStore));
+    this.editMode = true;
+    
+    // Scroll to the field after the view updates
+    setTimeout(() => {
+      const element = document.querySelector(`[ng-reflect-model='${this.editableStore[fieldName]}']`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (element as HTMLInputElement).focus();
+      }
+    }, 100);
+  }
+
+  // --- Tab Management ---
+  setActiveTab(tab: 'details' | 'additional-info' | 'images') {
+    this.activeTab = tab;
+    
+    // If switching to images tab, make sure we've loaded images
+    if (tab === 'images' && this.selectedStore) {
       this.loadStoreImages();
-      if (this.selectedImage?.id === image.id) {
-        this.selectedImage = null;
-      }
-    } catch (error) {
-      console.error('Exception during image deletion:', error);
+    }
+    
+    // If switching to additional info tab, make sure we've loaded data
+    if (tab === 'additional-info' && this.selectedStore) {
+      this.loadAdditionalInfo();
     }
   }
-  
-  // Save additional info
-  async saveAdditionalInfo(): Promise<void> {
-    if (!this.selectedStore?.store_id) return;
-    
-    this.additionalInfoSaving = true;
+
+  // --- Additional Info Management ---
+  async loadAdditionalInfo() {
+    if (!this.selectedStore) return;
     
     try {
-      // Check if store has an existing additional info record
-      const { data: existingData, error: checkError } = await this.supabaseService.getSupabase()
-        .from('store_additional_info')
-        .select('id')
-        .eq('store_id', this.selectedStore.store_id)
-        .maybeSingle();
+      const additionalInfo = await this.supabaseService.getStoreAdditionalInfo(this.selectedStore.id);
+      this.selectedStore.additionalInfo = additionalInfo || [];
       
-      let result;
-      
-      if (existingData?.id) {
-        // Update existing record
-        result = await this.supabaseService.getSupabase()
-          .from('store_additional_info')
-          .update({ 
-            content: this.additionalInfo,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingData.id);
+      // Prepare text for editing - use the most recent one
+      if (additionalInfo && additionalInfo.length > 0) {
+        // Sort by created_at in descending order
+        const sortedInfo = [...additionalInfo].sort((a, b) => {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+        this.additionalInfoText = sortedInfo[0].content;
       } else {
-        // Insert new record
-        result = await this.supabaseService.getSupabase()
-          .from('store_additional_info')
-          .insert({
-            store_id: this.selectedStore.store_id,
-            content: this.additionalInfo,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-      }
-      
-      if (result.error) {
-        console.error('Error saving additional info:', result.error);
+        this.additionalInfoText = '';
       }
     } catch (error) {
-      console.error('Exception during additional info save:', error);
-    } finally {
-      this.additionalInfoSaving = false;
+      console.error('Error loading additional info:', error);
     }
   }
-  
-  // Switch tabs
-  setActiveTab(isImageTab: boolean): void {
-    this.imageTabActive = isImageTab;
+
+  startEditingAdditionalInfo() {
+    this.additionalInfoEditing = true;
   }
-  
-  // Navigation
-  navigateTo(url: string): void {
-    window.location.href = url;
-  }
-  
-  // Handle shop file input change
-  onShopFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
+
+  cancelAdditionalInfoEdit() {
+    this.additionalInfoEditing = false;
     
-    const file = input.files[0];
-    this.shopImageFile = file;
+    // Reset to original value
+    if (this.selectedStore.additionalInfo && this.selectedStore.additionalInfo.length > 0) {
+      const sortedInfo = [...this.selectedStore.additionalInfo].sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      this.additionalInfoText = sortedInfo[0].content;
+    } else {
+      this.additionalInfoText = '';
+    }
+  }
+
+  async saveAdditionalInfo() {
+    if (!this.selectedStore) return;
     
-    // Create a preview URL
-    this.shopImagePreviewUrl = URL.createObjectURL(file);
-  }
-  
-  // Clear selected shop file
-  clearShopSelectedFile(): void {
-    this.shopImageFile = null;
-    this.shopImagePreviewUrl = '';
-    this.shopImageAnnotation = '';
-  }
-  
-  // Get current shop image if exists
-  getShopImage(): any {
-    return this.storeImages.find(img => img.is_shop_image === true);
-  }
-  
-  // Upload shop image to Supabase
-  async uploadShopImage(): Promise<void> {
-    if (!this.shopImageFile || !this.selectedStore?.store_id) return;
-    
-    this.shopImageUploading = true;
+    this.savingAdditionalInfo = true;
     
     try {
-      // 1. Upload to storage bucket
-      const fileName = `shop_${Date.now()}_${this.shopImageFile.name}`;
-      const filePath = `stores/${this.selectedStore.store_id}/${fileName}`;
+      // Create new entry - we always add a new record to maintain history
+      const result = await this.supabaseService.addStoreAdditionalInfo({
+        store_id: this.selectedStore.id,
+        content: this.additionalInfoText,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       
-      const { data: uploadData, error: uploadError } = await this.supabaseService.getSupabase()
-        .storage
-        .from('store-images')
-        .upload(filePath, this.shopImageFile);
-      
-      if (uploadError) {
-        console.error('Error uploading shop image:', uploadError);
-        return;
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
       }
       
-      // 2. Get public URL
-      const { data: urlData } = await this.supabaseService.getSupabase()
-        .storage
-        .from('store-images')
-        .getPublicUrl(filePath);
+      // Reload additional info
+      await this.loadAdditionalInfo();
       
-      // 3. First, remove any existing shop image flag
-      if (this.getShopImage()) {
-        await this.supabaseService.getSupabase()
-          .from('store_images')
-          .update({ is_shop_image: false })
-          .eq('store_id', this.selectedStore.store_id)
-          .eq('is_shop_image', true);
-      }
-      
-      // 4. Save to store_images table with shop image flag
-      const { data, error } = await this.supabaseService.getSupabase()
-        .from('store_images')
-        .insert([{
-          store_id: this.selectedStore.store_id,
-          file_path: filePath,
-          url: urlData.publicUrl,
-          file_name: fileName,
-          instructions: this.shopImageAnnotation,
-          uploaded_at: new Date().toISOString(),
-          is_shop_image: true,
-          is_storefront: true // Also set as storefront for the driver view
-        }])
-        .select();
-      
-      if (error) {
-        console.error('Error saving shop image data:', error);
-        return;
-      }
-      
-      // Reload images and clear form
-      this.loadStoreImages();
-      this.clearShopSelectedFile();
+      this.additionalInfoEditing = false;
+      this.showStatusMessage('success', 'Additional information saved successfully!');
     } catch (error) {
-      console.error('Exception during shop image upload:', error);
+      console.error('Error saving additional info:', error);
+      this.showStatusMessage('error', 'Failed to save additional information. Please try again.');
     } finally {
-      this.shopImageUploading = false;
+      this.savingAdditionalInfo = false;
     }
   }
-  
-  // Handle pasted image for regular store images 
-  onImagePaste(event: ClipboardEvent): void {
-    this.handlePastedImage(event, false);
+
+  // --- Image Management ---
+  async loadStoreImages() {
+    if (!this.selectedStore) return;
+    
+    try {
+      const images = await this.supabaseService.getStoreImages(this.selectedStore.id);
+      this.storeImages = images || [];
+    } catch (error) {
+      console.error('Error loading store images:', error);
+      this.showStatusMessage('error', 'Failed to load store images. Please try again later.');
+    }
   }
-  
-  // Handle pasted image for storefront
-  onShopImagePaste(event: ClipboardEvent): void {
-    this.handlePastedImage(event, true);
+
+  // Focus on paste area when clicked
+  focusPasteArea(event: Event) {
+    (event.target as HTMLElement).focus();
   }
-  
-  // Common handler for pasted images
-  private handlePastedImage(event: ClipboardEvent, isShopImage: boolean): void {
+
+  // --- Storefront Image Handling ---
+  onStorefrontImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.storefrontFile = input.files[0];
+      this.createStorefrontPreview();
+    }
+  }
+
+  onStorefrontImagePasted(event: ClipboardEvent) {
     event.preventDefault();
-    event.stopPropagation();
     
     const items = event.clipboardData?.items;
     if (!items) return;
     
-    // Look for image items in clipboard
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
-        // Get the image as a blob
         const blob = items[i].getAsFile();
-        if (!blob) continue;
-        
-        // Create a unique filename for the pasted image
-        const filename = `pasted_image_${new Date().getTime()}.png`;
-        
-        // Create a File object from the blob
-        const file = new File([blob], filename, { type: blob.type });
-        
-        // Update the appropriate image field
-        if (isShopImage) {
-          this.shopImageFile = file;
-          this.shopImagePreviewUrl = URL.createObjectURL(blob);
-        } else {
-          this.imageFile = file;
-          this.imagePreviewUrl = URL.createObjectURL(blob);
+        if (blob) {
+          this.storefrontFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+          this.createStorefrontPreview();
+          break;
         }
-        
-        console.log(`Pasted image processed as ${filename}`);
-        
-        // Show feedback (optional)
-        const pasteArea = document.querySelector(isShopImage ? '.shop-image-upload-container .paste-area' : '.image-upload-container .paste-area');
-        if (pasteArea) {
-          pasteArea.classList.add('paste-active');
-          setTimeout(() => {
-            pasteArea.classList.remove('paste-active');
-          }, 1000);
-        }
-        
-        break; // Process only the first image
       }
     }
   }
+
+  createStorefrontPreview() {
+    if (!this.storefrontFile) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.ngZone.run(() => {
+        this.storefrontPreviewSrc = e.target?.result as string;
+      });
+    };
+    reader.readAsDataURL(this.storefrontFile);
+  }
+
+  cancelStorefrontUpload() {
+    this.storefrontFile = null;
+    this.storefrontPreviewSrc = null;
+    this.storefrontAnnotation = '';
+  }
+
+  async uploadStorefrontImage() {
+    if (!this.selectedStore || !this.storefrontFile) return;
+    
+    this.uploadingStorefront = true;
+    
+    try {
+      // First, set all existing storefront images to false
+      await this.clearExistingStorefrontImages();
+      
+      // Upload the new storefront image
+      const result = await this.supabaseService.uploadStoreImage({
+        store_id: this.selectedStore.id,
+        file: this.storefrontFile,
+        is_storefront: 'true',
+        instructions: this.storefrontAnnotation
+      });
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Reload images
+      await this.loadStoreImages();
+      
+      this.cancelStorefrontUpload();
+      this.showStatusMessage('success', 'Storefront image uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading storefront image:', error);
+      this.showStatusMessage('error', 'Failed to upload storefront image. Please try again.');
+    } finally {
+      this.uploadingStorefront = false;
+    }
+  }
+
+  // --- Regular Image Handling ---
+  onRegularImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.regularFile = input.files[0];
+      this.createRegularPreview();
+    }
+  }
+
+  onRegularImagePasted(event: ClipboardEvent) {
+    event.preventDefault();
+    
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile();
+        if (blob) {
+          this.regularFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+          this.createRegularPreview();
+          break;
+        }
+      }
+    }
+  }
+
+  createRegularPreview() {
+    if (!this.regularFile) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.ngZone.run(() => {
+        this.regularPreviewSrc = e.target?.result as string;
+      });
+    };
+    reader.readAsDataURL(this.regularFile);
+  }
+
+  cancelRegularUpload() {
+    this.regularFile = null;
+    this.regularPreviewSrc = null;
+    this.regularAnnotation = '';
+  }
+
+  async uploadRegularImage() {
+    if (!this.selectedStore || !this.regularFile) return;
+    
+    this.uploadingRegular = true;
+    
+    try {
+      const result = await this.supabaseService.uploadStoreImage({
+        store_id: this.selectedStore.id,
+        file: this.regularFile,
+        is_storefront: 'false',
+        instructions: this.regularAnnotation
+      });
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Reload images
+      await this.loadStoreImages();
+      
+      this.cancelRegularUpload();
+      this.showStatusMessage('success', 'Image uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      this.showStatusMessage('error', 'Failed to upload image. Please try again.');
+    } finally {
+      this.uploadingRegular = false;
+    }
+  }
   
-  // Add method to update store delivery day fields
-  updateStoreField(field: string, value: string): void {
+  // --- Image Actions ---
+  async deleteImage(image: any) {
+    if (!confirm('Are you sure you want to delete this image?')) {
+      return;
+    }
+    
+    try {
+      const result = await this.supabaseService.deleteStoreImage(image.id);
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Reload images
+      await this.loadStoreImages();
+      
+      this.showStatusMessage('success', 'Image deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      this.showStatusMessage('error', 'Failed to delete image. Please try again.');
+    }
+  }
+
+  async setAsStorefront(image: any) {
+    try {
+      // First, set all existing storefront images to false
+      await this.clearExistingStorefrontImages();
+      
+      // Then, set this image as the storefront
+      const result = await this.supabaseService.updateStoreImage({
+        id: image.id,
+        is_storefront: 'true'
+      });
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Reload images
+      await this.loadStoreImages();
+      
+      this.showStatusMessage('success', 'Image set as storefront successfully!');
+    } catch (error) {
+      console.error('Error setting image as storefront:', error);
+      this.showStatusMessage('error', 'Failed to set image as storefront. Please try again.');
+    }
+  }
+
+  async editImageAnnotation(image: any) {
+    const newAnnotation = prompt('Enter image annotation:', image.instructions || '');
+    
+    if (newAnnotation === null) return; // User cancelled
+    
+    try {
+      const result = await this.supabaseService.updateStoreImage({
+        id: image.id,
+        instructions: newAnnotation
+      });
+      
+      if (result && 'error' in result && result.error) {
+        throw new Error(result.error.toString());
+      }
+      
+      // Reload images
+      await this.loadStoreImages();
+      
+      this.showStatusMessage('success', 'Image annotation updated successfully!');
+    } catch (error) {
+      console.error('Error updating image annotation:', error);
+      this.showStatusMessage('error', 'Failed to update image annotation. Please try again.');
+    }
+  }
+
+  // Helper to clear all storefront flags
+  async clearExistingStorefrontImages() {
     if (!this.selectedStore) return;
     
-    this.supabaseService.updateStore(this.selectedStore.store_id, { [field]: value })
-      .then(() => {
-        console.log(`Updated store ${field} to ${value}`);
-        // Update the local selectedStore object
-        this.selectedStore[field] = value;
-      })
-      .catch((error: any) => {
-        console.error(`Error updating store ${field}:`, error);
-      });
+    try {
+      // Find existing storefront images
+      const storefrontImages = this.storeImages.filter(img => img.is_storefront === 'true');
+      
+      for (const img of storefrontImages) {
+        await this.supabaseService.updateStoreImage({
+          id: img.id,
+          is_storefront: 'false'
+        });
+      }
+    } catch (error) {
+      console.error('Error clearing existing storefront images:', error);
+      throw error;
+    }
+  }
+
+  // --- Utility Functions ---
+  showStatusMessage(type: 'success' | 'error' | 'warning' | 'info', text: string) {
+    this.statusMessage = {
+      show: true,
+      type,
+      text
+    };
+    
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      this.statusMessage.show = false;
+    }, 4000);
   }
 }

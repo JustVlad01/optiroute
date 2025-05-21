@@ -1,151 +1,373 @@
-// Variables
-$primary-color: #2778c4;
-$primary-dark: #1e5f9e;
-$primary-light: #e8f1f9;
-$secondary-color: #4caf50;
-$secondary-dark: #388e3c;
-$secondary-light: #e8f5e9;
-$grey-light: #f5f5f5;
-$grey-medium: #e0e0e0;
-$grey-dark: #757575;
-$error-color: #f44336;
-$text-dark: #333;
-$text-light: #fff;
-$border-radius: 4px;
-$shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+// Variables - Updated with a more corporate color palette
+$primary-color: #1a5276; // Darker blue for corporate look
+$primary-dark: #0d3c5a;
+$primary-light: #d4e6f1;
+$accent-color: #1abc9c; // Teal as accent color
+$accent-dark: #16a085;
+$accent-light: #e8f8f5;
+$grey-light: #f8f9fa;
+$grey-medium: #e9ecef;
+$grey-dark: #6c757d;
+$neutral-bg: #f5f7fa;
+$border-color: #dee2e6;
+$error-color: #e74c3c;
+$success-color: #2ecc71;
+$warning-color: #f39c12;
+$text-dark: #2c3e50;
+$text-light: #ffffff;
+$text-muted: #95a5a6;
+$border-radius: 3px;
+$shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.05);
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+$shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 5px 15px rgba(0, 0, 0, 0.1);
+$font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+// Mixins for reusable styles
+@mixin button-reset {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+@mixin button-primary {
+  background-color: $primary-color;
+  color: $text-light;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: $border-radius;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: $primary-dark;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    background-color: $grey-medium;
+    color: $grey-dark;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-secondary {
+  background-color: $grey-light;
+  color: $text-dark;
+  border: 1px solid $border-color;
+  padding: 0.4rem 0.8rem;
+  border-radius: $border-radius;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: $grey-medium;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    background-color: $grey-light;
+    color: $grey-dark;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-success {
+  background-color: $success-color;
+  color: $text-light;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: $border-radius;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: darken($success-color, 10%);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-danger {
+  background-color: $error-color;
+  color: $text-light;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: $border-radius;
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: darken($error-color, 10%);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin input-style {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  font-size: 0.8rem;
+  color: $text-dark;
+  background-color: $text-light;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.1);
+    outline: none;
+  }
+  
+  &:disabled {
+    background-color: $grey-light;
+    cursor: not-allowed;
+  }
+}
+
+@mixin card-style {
+  background-color: $text-light;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
+  overflow: hidden;
+}
+
+@mixin section-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid $border-color;
+}
+
+// Animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// Reset & Basic Elements
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-family;
+  color: $text-dark;
+  background-color: $neutral-bg;
+  line-height: 1.4;
+  font-size: 0.85rem;
+}
+
+a {
+  color: $primary-color;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
 
 // Container styles
 .store-library-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f0f2f5;
+  background-color: $neutral-bg;
+  font-family: $font-family;
 }
 
-// Header/Navbar
+// Header/Navbar with a more corporate styling
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: $primary-color;
   color: $text-light;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   box-shadow: $shadow;
   
   .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: 1.1rem;
+    font-weight: 700;
     letter-spacing: 1px;
+    text-transform: uppercase;
   }
   
   .nav-links {
     display: flex;
-    gap: 1rem;
+    gap: 0.7rem;
     
     .nav-pill {
       display: flex;
       align-items: center;
-      padding: 0.5rem 1rem;
+      padding: 0.3rem 0.7rem;
       background-color: rgba(255, 255, 255, 0.1);
       border-radius: $border-radius;
       color: $text-light;
       font-weight: 500;
+      font-size: 0.8rem;
       text-decoration: none;
-      transition: background-color 0.2s;
-      cursor: pointer;
+      transition: all 0.2s;
       
       i {
-        margin-right: 0.5rem;
+        margin-right: 0.3rem;
       }
       
       &:hover {
         background-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        transform: translateY(0);
       }
     }
   }
 }
 
-// Content area
+// Content area with improved spacing
 .content {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
   
   .page-title {
-    margin: 0 0 1.5rem;
-    font-size: 1.75rem;
+    margin: 0 0 0.8rem;
+    font-size: 1.3rem;
+    font-weight: 600;
     color: $text-dark;
+    position: relative;
+    
+    &:after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 2px;
+      background-color: $accent-color;
+      margin-top: 0.3rem;
+    }
   }
 }
 
 // Library container layout
 .library-container {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 1.5rem;
-  height: calc(100vh - 140px);
+  grid-template-columns: 270px 1fr;
+  gap: 1rem;
+  height: calc(100vh - 120px);
   
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     grid-template-columns: 1fr;
     height: auto;
+    gap: 1rem;
   }
 }
 
-// Search panel
+// Search panel with improved styling
 .search-panel {
-  background-color: $text-light;
-  border-radius: $border-radius;
-  box-shadow: $shadow;
-  padding: 1rem;
+  @include card-style;
+  padding: 0.8rem;
   display: flex;
   flex-direction: column;
   height: 100%;
   
   h3 {
-    margin: 0 0 1rem;
-    font-size: 1.25rem;
-    color: $text-dark;
+    @include section-heading;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+    
+    i {
+      margin-right: 0.3rem;
+      color: $primary-color;
+    }
   }
   
   .search-box {
     position: relative;
-    margin-bottom: 1rem;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    margin-bottom: 0.8rem;
     
-    i {
+    i.bi-search {
       position: absolute;
-      left: 0.75rem;
+      left: 0.5rem;
       top: 50%;
       transform: translateY(-50%);
       color: $grey-dark;
+      pointer-events: none;
+      font-size: 0.7rem;
     }
     
     .search-input {
-      flex: 1;
-      width: 100%;
-      padding: 0.75rem 2.5rem 0.75rem 2.25rem;
-      border: 1px solid $grey-medium;
-      border-radius: $border-radius;
-      font-size: 1rem;
-      outline: none;
-      
-      &:focus {
-        border-color: $primary-color;
-        box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
-      }
+      @include input-style;
+      padding-left: 1.8rem;
+      padding-right: 4.5rem;
+      height: 2rem;
     }
     
     .clear-btn {
+      @include button-reset;
       position: absolute;
-      right: 6.25rem; // Adjusted to make room for search button
+      right: 4rem;
       top: 50%;
       transform: translateY(-50%);
-      background: none;
-      border: none;
       color: $grey-dark;
-      cursor: pointer;
-      padding: 0.25rem;
+      padding: 0.3rem;
       
       &:hover {
         color: $error-color;
@@ -153,49 +375,42 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     
     .search-btn {
-      padding: 0.75rem 1rem;
-      background-color: $primary-color;
-      color: white;
-      border: none;
-      border-radius: $border-radius;
-      font-weight: 500;
-      cursor: pointer;
-      min-width: 5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      @include button-primary;
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
       
       i {
-        position: static;
-        transform: none;
-        margin-right: 0.5rem;
-        color: white;
-      }
-      
-      &:hover {
-        background-color: $primary-dark;
+        margin-right: 0.3rem;
+        font-size: 0.7rem;
       }
     }
     
-    // Suggestions dropdown styles
+    // Enhanced suggestions dropdown
     .suggestions-dropdown {
       position: absolute;
       top: 100%;
       left: 0;
-      right: 6.5rem;
-      margin-top: 0.25rem;
-      background-color: white;
-      border: 1px solid $grey-medium;
+      right: 0;
+      margin-top: 0.2rem;
+      background-color: $text-light;
+      border: 1px solid $border-color;
       border-radius: $border-radius;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: $shadow-lg;
       z-index: 100;
-      max-height: 300px;
+      max-height: 200px;
       overflow-y: auto;
+      animation: fadeIn 0.2s ease-out;
+      font-size: 0.8rem;
       
       .suggestion-item {
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.7rem;
         cursor: pointer;
         border-bottom: 1px solid $grey-light;
+        transition: background-color 0.1s;
         
         &:last-child {
           border-bottom: none;
@@ -206,13 +421,14 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         .suggestion-store-name {
-          font-weight: 500;
-          margin-bottom: 0.25rem;
+          font-weight: 600;
+          margin-bottom: 0.15rem;
           color: $text-dark;
+          font-size: 0.8rem;
         }
         
         .suggestion-store-details {
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: $grey-dark;
         }
       }
@@ -222,54 +438,61 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   .store-list-container {
     flex: 1;
     overflow-y: auto;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    background-color: $grey-light;
     
     .loading-spinner {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem 0;
+      padding: 1.5rem 0;
       
       .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid $grey-medium;
+        width: 24px;
+        height: 24px;
+        border: 2px solid rgba($primary-color, 0.2);
         border-top-color: $primary-color;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
       
       p {
-        margin-top: 1rem;
+        margin-top: 0.6rem;
         color: $grey-dark;
+        font-weight: 500;
+        font-size: 0.8rem;
       }
     }
     
     .no-results, .search-prompt {
       text-align: center;
-      padding: 2rem 0;
+      padding: 1.5rem 1rem;
       color: $grey-dark;
       
       i {
-        font-size: 2rem;
-        margin-bottom: 1rem;
+        font-size: 1.5rem;
         color: $grey-dark;
+        margin-bottom: 0.6rem;
+        opacity: 0.6;
       }
       
       p {
-        margin: 0;
+        font-size: 0.8rem;
       }
     }
     
     .store-list {
       .store-item {
-        padding: 0.75rem;
-        border-bottom: 1px solid $grey-medium;
+        padding: 0.6rem 0.7rem;
+        border-bottom: 1px solid $border-color;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
+        background-color: $text-light;
         
         &:hover {
-          background-color: $grey-light;
+          background-color: $primary-light;
         }
         
         &.active {
@@ -278,19 +501,20 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         .store-name {
-          font-weight: 500;
-          margin-bottom: 0.25rem;
+          font-weight: 600;
+          font-size: 0.85rem;
+          margin-bottom: 0.15rem;
           color: $text-dark;
         }
         
         .store-details {
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: $grey-dark;
-          margin-bottom: 0.25rem;
+          margin-bottom: 0.15rem;
         }
         
         .store-address {
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: $grey-dark;
         }
       }
@@ -300,757 +524,1104 @@ $shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 
 // Details panel
 .details-panel {
-  background-color: $text-light;
-  border-radius: $border-radius;
-  box-shadow: $shadow;
-  padding: 1.5rem;
+  @include card-style;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   
   .no-store-selected {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    color: $grey-dark;
+    padding: 1.5rem;
+    text-align: center;
     
     i {
-      font-size: 3rem;
+      font-size: 2.5rem;
+      color: $grey-dark;
       margin-bottom: 1rem;
+      opacity: 0.3;
     }
     
     p {
-      font-size: 1.25rem;
+      font-size: 0.9rem;
+      color: $grey-dark;
     }
   }
   
   .store-details-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    
     .store-header {
-      margin-bottom: 1rem;
+      padding: 0.8rem 1rem;
+      background-color: $primary-color;
+      color: $text-light;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       
-      h3 {
-        margin: 0 0 0.5rem;
-        font-size: 1.5rem;
-        color: $text-dark;
+      .store-code-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        i {
+          font-size: 1.2rem;
+        }
+        
+        h3 {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin: 0;
+        }
       }
       
       .store-location {
-        color: $grey-dark;
+        font-size: 0.8rem;
+        opacity: 0.9;
+      }
+      
+      .edit-button {
+        @include button-secondary;
+        padding: 0.3rem;
+        width: auto;
+        height: auto;
+        
+        i {
+          font-size: 0.9rem;
+        }
       }
     }
     
-    // Store Info Box
-    .store-info-box {
+    .edit-mode-controls {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem 0.8rem;
       background-color: $grey-light;
-      border-radius: $border-radius;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
+      border-bottom: 1px solid $border-color;
       
-      .info-row {
-        display: flex;
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-        line-height: 1.4;
+      .cancel-edit-btn {
+        @include button-secondary;
+      }
+      
+      .save-changes-btn {
+        @include button-success;
+        flex: 1;
         
-        &:last-child {
-          margin-bottom: 0;
+        &.saving {
+          opacity: 0.8;
+          pointer-events: none;
         }
         
-        .info-label {
-          width: 40%;
-          font-weight: 500;
-          color: $grey-dark;
-        }
-        
-        .info-value {
-          width: 60%;
-          color: $text-dark;
+        .spinner {
+          width: 12px;
+          height: 12px;
+          border: 2px solid rgba($text-light, 0.3);
+          border-top-color: $text-light;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-right: 0.4rem;
         }
       }
     }
   }
   
-  // Tab navigation
+  // Store info box with more professional styling
+  .store-info-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.8rem;
+    
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 0.7rem;
+      margin-bottom: 0.5rem;
+      color: $text-dark;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid $grey-medium;
+      
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+    
+    .info-row {
+      display: flex;
+      margin-bottom: 0.6rem;
+      align-items: flex-start;
+      
+      .info-label {
+        width: 120px;
+        flex-shrink: 0;
+        font-weight: 600;
+        color: $text-dark;
+        font-size: 0.8rem;
+        padding-top: 0.4rem;
+        
+        i {
+          margin-right: 0.4rem;
+          color: $primary-color;
+          font-size: 0.9rem;
+        }
+      }
+      
+      .info-value {
+        flex: 1;
+        color: $text-dark;
+        font-size: 0.8rem;
+        
+        &.view-mode {
+          padding: 0.4rem 0;
+          min-height: 30px;
+        }
+        
+        input, textarea, select {
+          @include input-style;
+        }
+        
+        textarea {
+          min-height: 60px;
+          resize: vertical;
+        }
+        
+        &.edited {
+          background-color: $accent-light;
+          border-radius: $border-radius;
+        }
+      }
+    }
+    
+    // Enhanced delivery days styling
+    .delivery-days-section {
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      
+      .delivery-days-chips, .delivery-days-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        
+        .delivery-day-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.4rem 0.8rem;
+          background-color: $grey-light;
+          border: 1px solid $border-color;
+          border-radius: 30px;
+          cursor: pointer;
+          transition: all 0.2s;
+          user-select: none;
+          
+          input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+          }
+          
+          span {
+            font-weight: 500;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            
+            i {
+              margin-right: 0.4rem;
+              font-size: 0.9rem;
+              
+              &.spin-icon {
+                margin-left: 0.4rem;
+                margin-right: 0;
+                animation: spin 1s linear infinite;
+                font-size: 0.7rem;
+              }
+            }
+          }
+          
+          &:hover {
+            background-color: $grey-medium;
+            transform: translateY(-1px);
+            box-shadow: $shadow-xs;
+          }
+          
+          &.active {
+            background-color: $primary-color;
+            color: $text-light;
+            border-color: $primary-color;
+          }
+          
+          &.saving {
+            pointer-events: none;
+            opacity: 0.8;
+          }
+        }
+      }
+      
+      .delivery-day-status {
+        display: flex;
+        align-items: center;
+        margin-top: 0.75rem;
+        padding: 0.5rem;
+        border-radius: $border-radius;
+        background-color: rgba($grey-light, 0.6);
+        animation: fadeIn 0.3s ease-in-out;
+        
+        i {
+          margin-right: 0.5rem;
+          font-size: 0.9rem;
+          
+          &.success-icon {
+            color: $success-color;
+          }
+          
+          &.error-icon {
+            color: $error-color;
+          }
+        }
+        
+        span {
+          font-size: 0.8rem;
+          
+          &.success-text {
+            color: darken($success-color, 10%);
+          }
+          
+          &.error-text {
+            color: darken($error-color, 10%);
+          }
+        }
+      }
+      
+      .delivery-days-display {
+        .delivery-day-chip {
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          
+          &:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.2s;
+          }
+          
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: $shadow-sm;
+            
+            &:after {
+              opacity: 1;
+            }
+          }
+          
+          &:active {
+            transform: translateY(1px);
+          }
+          
+          &.active {
+            background-color: $primary-color;
+            font-weight: 600;
+            
+            &:hover {
+              background-color: darken($primary-color, 5%);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Tab Navigation
   .tab-navigation {
     display: flex;
-    border-bottom: 1px solid $grey-medium;
-    margin-bottom: 1.5rem;
+    background-color: $grey-light;
+    border-top: 1px solid $border-color;
     
     .tab-btn {
-      padding: 0.75rem 1.25rem;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      font-size: 1rem;
-      font-weight: 500;
+      @include button-reset;
+      flex: 1;
+      padding: 0.6rem;
+      text-align: center;
+      font-weight: 600;
       color: $grey-dark;
-      cursor: pointer;
       transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
       
       i {
-        margin-right: 0.5rem;
+        margin-right: 0.3rem;
       }
       
       &:hover {
-        color: $primary-color;
+        background-color: $grey-medium;
       }
       
       &.active {
         color: $primary-color;
         border-bottom-color: $primary-color;
+        background-color: $text-light;
       }
     }
   }
   
-  // Tab content
+  // Tab Content
   .tab-content {
-    h4 {
-      margin: 0 0 1rem;
-      font-size: 1.25rem;
-      color: $text-dark;
-    }
-  }
-  
-  // Images tab
-  .images-tab {
-    .section-description {
-      color: $grey-dark;
-      font-size: 0.9rem;
-      margin-bottom: 1rem;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.8rem;
+    
+    &.images-tab {
+      background-color: $grey-light;
     }
     
-    h5 {
-      margin: 0 0 0.5rem;
-      font-size: 1.1rem;
-      color: $text-dark;
-    }
-    
-    h6 {
-      margin: 1rem 0 0.5rem;
-      font-size: 1rem;
-      color: $text-dark;
-    }
-    
-    .section-divider {
-      height: 1px;
-      background-color: $grey-medium;
-      margin: 1.5rem 0;
-    }
-    
-    .shop-image-upload-container {
-      margin-bottom: 1.5rem;
-      padding: 1.5rem;
-      background-color: rgba(40, 167, 69, 0.05);
-      border-radius: $border-radius;
-      border: 1px solid rgba(40, 167, 69, 0.1);
+    .section-title {
+      @include section-heading;
+      margin-top: 1rem;
       
-      .special-upload {
-        background-color: #ffffff;
-        border: 1px solid rgba(40, 167, 69, 0.3);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        padding: 0.75rem 1.5rem;
-        
-        i {
-          color: #28a745;
-        }
-        
-        &:hover {
-          background-color: rgba(40, 167, 69, 0.05);
-        }
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+    
+    // Additional Info tab
+    .additional-info-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      
+      textarea {
+        @include input-style;
+        flex: 1;
+        min-height: 150px;
+        resize: none;
+        margin-bottom: 0.7rem;
       }
       
-      .image-preview-container {
-        margin-top: 1rem;
-        border: 1px solid rgba(40, 167, 69, 0.2);
-        background-color: #ffffff;
-        border-radius: $border-radius;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      }
-      
-      .shop-upload-btn {
-        background-color: #28a745;
+      .info-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
         
-        &:hover {
-          background-color: darken(#28a745, 5%);
+        .cancel-btn {
+          @include button-secondary;
+        }
+        
+        .save-btn {
+          @include button-success;
+          min-width: 100px;
+          
+          &.saving {
+            opacity: 0.8;
+            pointer-events: none;
+          }
+          
+          .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba($text-light, 0.3);
+            border-top-color: $text-light;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.4rem;
+          }
         }
       }
-      
-      .current-shop-image {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background-color: #ffffff;
-        border: 1px solid rgba(40, 167, 69, 0.2);
-        border-radius: $border-radius;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    // Enhanced image gallery
+    .image-gallery {
+      .shop-image-upload-container, .image-upload-container {
+        @include card-style;
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
+        background-color: $text-light;
         
-        .shop-image-display {
+        h5 {
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin-bottom: 0.6rem;
+          color: $text-dark;
           display: flex;
-          flex-direction: column;
-          
-          .shop-image {
-            width: 100%;
-            max-height: 200px;
-            object-fit: cover;
-            border-radius: $border-radius;
-            margin-bottom: 0.75rem;
-          }
-          
-          .shop-image-info {
-            padding: 0.5rem;
-            
-            .image-name {
-              font-weight: 500;
-              font-size: 0.9rem;
-              margin-bottom: 0.25rem;
-            }
-            
-            .image-date {
-              font-size: 0.8rem;
-              color: $grey-dark;
-              margin-bottom: 0.5rem;
-            }
-            
-            .image-annotation-preview {
-              padding: 0.5rem;
-              background-color: $primary-light;
-              border-radius: $border-radius;
-              font-size: 0.8rem;
-              
-              i {
-                color: $primary-color;
-                margin-right: 0.5rem;
-              }
-              
-              span {
-                white-space: pre-wrap;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    .image-upload-container {
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid $grey-medium;
-      
-      .upload-form {
-        .file-input-label {
-          display: inline-flex;
           align-items: center;
-          padding: 0.75rem 1.25rem;
-          background-color: $grey-light;
-          border: 1px solid $grey-medium;
-          border-radius: $border-radius;
-          cursor: pointer;
-          transition: background-color 0.2s;
           
           i {
-            margin-right: 0.75rem;
+            margin-right: 0.3rem;
             color: $primary-color;
           }
-          
-          &:hover {
-            background-color: darken($grey-light, 5%);
-          }
         }
         
-        .file-input {
-          display: none;
-        }
-        
-        // Paste area styles
-        .paste-container {
-          margin: 15px 0;
-          width: 100%;
-        }
-        
-        .paste-area {
-          border: 2px dashed #e0e0e0;
-          border-radius: 8px;
-          padding: 20px;
-          text-align: center;
-          cursor: pointer;
-          background-color: #f8f9fa;
-          transition: all 0.2s ease;
-          outline: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 80px;
-          
-          i {
-            font-size: 24px;
-            color: #6c757d;
-            margin-right: 10px;
-            vertical-align: middle;
-          }
-          
-          .paste-text {
-            color: #6c757d;
-            font-size: 15px;
-            vertical-align: middle;
-            font-weight: 500;
-          }
-          
-          &:hover, &:focus {
-            background-color: #e9ecef;
-            border-color: #6c757d;
-          }
-          
-          &.paste-active {
-            border-color: #FF5252;
-            background-color: rgba(255, 82, 82, 0.05);
-          }
-          
-          &.storefront-paste-area {
-            border-color: rgba(255, 82, 82, 0.3);
-            background-color: rgba(255, 82, 82, 0.03);
+        .upload-form {
+          .upload-options {
+            margin-bottom: 0.6rem;
             
-            &:hover, &:focus {
-              background-color: rgba(255, 82, 82, 0.05);
-              border-color: #FF5252;
-            }
-          }
-          
-          &.regular-paste-area {
-            border-color: rgba(40, 120, 196, 0.3);
-            
-            &:hover, &:focus {
-              background-color: rgba(40, 120, 196, 0.05);
-              border-color: rgba(40, 120, 196, 0.7);
-            }
-          }
-        }
-        
-        .upload-options {
-          margin-bottom: 15px;
-        }
-        
-        .image-preview-container {
-          margin-top: 1rem;
-          border: 1px solid $grey-medium;
-          border-radius: $border-radius;
-          padding: 1rem;
-          
-          .image-preview {
-            max-width: 100%;
-            max-height: 300px;
-            display: block;
-            margin-bottom: 1rem;
-            border-radius: $border-radius;
-          }
-          
-          .image-annotation-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid $grey-medium;
-            border-radius: $border-radius;
-            font-size: 1rem;
-            min-height: 100px;
-            resize: vertical;
-            margin-bottom: 1rem;
-            
-            &:focus {
-              border-color: $primary-color;
-              outline: none;
-            }
-          }
-          
-          .upload-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            
-            .cancel-btn {
-              padding: 0.75rem 1.25rem;
-              background-color: $grey-light;
-              border: 1px solid $grey-medium;
-              border-radius: $border-radius;
-              cursor: pointer;
-              
-              &:hover {
-                background-color: darken($grey-light, 5%);
-              }
-            }
-            
-            .upload-btn {
-              padding: 0.75rem 1.25rem;
-              background-color: $primary-color;
-              color: $text-light;
-              border: none;
-              border-radius: $border-radius;
-              cursor: pointer;
-              
-              i.spinning {
-                animation: spin 1s linear infinite;
-                margin-right: 0.5rem;
-              }
-              
-              &:hover {
-                background-color: $primary-dark;
-              }
-              
-              &:disabled {
-                background-color: $grey-medium;
-                cursor: not-allowed;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    .existing-images {
-      margin-bottom: 2rem;
-      
-      .no-images {
-        text-align: center;
-        padding: 2rem;
-        background-color: $grey-light;
-        border-radius: $border-radius;
-        color: $grey-dark;
-        
-        i {
-          font-size: 2.5rem;
-          margin-bottom: 1rem;
-        }
-      }
-      
-      .image-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1.5rem;
-        
-        .image-card {
-          position: relative;
-          border-radius: $border-radius;
-          box-shadow: $shadow;
-          overflow: hidden;
-          transition: transform 0.2s, box-shadow 0.2s;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          
-          &.active {
-            box-shadow: 0 0 0 3px $primary-color;
-          }
-          
-          &.is-storefront {
-            box-shadow: 0 0 0 3px #28a745; // Green border for storefront images
-          }
-          
-          &:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            
-            .delete-image-btn {
-              opacity: 1;
-            }
-          }
-          
-          .storefront-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: #28a745;
-            color: white;
-            font-size: 0.7rem;
-            padding: 3px 6px;
-            border-radius: 3px;
-            z-index: 5;
-            display: flex;
-            align-items: center;
-            
-            i {
-              margin-right: 3px;
-              font-size: 0.8rem;
-            }
-          }
-          
-          .image-container {
-            height: 180px;
-            overflow: hidden;
-            
-            .store-image {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            }
-          }
-          
-          .image-info {
-            padding: 0.75rem;
-            
-            .image-name {
-              font-size: 0.875rem;
-              white-space: nowrap;
+            .file-input-label {
+              @include button-primary;
+              display: inline-flex;
+              padding: 0.4rem 0.8rem;
               overflow: hidden;
               text-overflow: ellipsis;
-            }
-            
-            .image-date {
-              font-size: 0.75rem;
-              color: $grey-dark;
+              white-space: nowrap;
+              max-width: 100%;
+              
+              &.special-upload {
+                background-color: $accent-color;
+                
+                &:hover {
+                  background-color: $accent-dark;
+                }
+              }
+              
+              input[type="file"] {
+                position: absolute;
+                width: 0;
+                height: 0;
+                opacity: 0;
+              }
             }
           }
           
-          // Add styles for image annotation preview
-          .image-annotation-preview {
-            padding: 0.5rem 0.75rem;
-            background-color: $primary-light;
-            border-top: 1px solid $grey-medium;
+          .paste-container {
+            margin-bottom: 0.6rem;
+            
+            .paste-area {
+              border: 2px dashed $border-color;
+              border-radius: $border-radius;
+              padding: 1rem;
+              text-align: center;
+              cursor: pointer;
+              transition: all 0.2s;
+              
+              &:hover, &:focus {
+                border-color: $primary-color;
+                background-color: $primary-light;
+                outline: none;
+              }
+              
+              i {
+                font-size: 1.1rem;
+                color: $grey-dark;
+                margin-bottom: 0.3rem;
+                display: block;
+              }
+              
+              .paste-text {
+                color: $grey-dark;
+                font-size: 0.75rem;
+              }
+              
+              &.storefront-paste-area {
+                border-color: $accent-color;
+                
+                &:hover, &:focus {
+                  border-color: $accent-dark;
+                  background-color: $accent-light;
+                }
+              }
+            }
+          }
+          
+          .image-preview-container {
+            margin-top: 0.8rem;
+            
+            .image-preview {
+              width: 100%;
+              max-height: 200px;
+              object-fit: contain;
+              margin-bottom: 0.6rem;
+              border-radius: $border-radius;
+              border: 1px solid $border-color;
+            }
+            
+            .image-annotation-input {
+              @include input-style;
+              min-height: 60px;
+              margin-bottom: 0.6rem;
+              resize: vertical;
+            }
+            
+            .upload-actions {
+              display: flex;
+              justify-content: flex-end;
+              gap: 0.5rem;
+              
+              .cancel-btn {
+                @include button-secondary;
+              }
+              
+              .upload-btn {
+                @include button-primary;
+                min-width: 100px;
+                
+                &.shop-upload-btn {
+                  background-color: $accent-color;
+                  
+                  &:hover {
+                    background-color: $accent-dark;
+                  }
+                }
+                
+                .spinning {
+                  animation: spin 1s linear infinite;
+                  margin-right: 0.3rem;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .existing-images {
+        margin-top: 1rem;
+        
+        h5 {
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin-bottom: 0.6rem;
+          color: $text-dark;
+        }
+        
+        .no-images-message {
+          text-align: center;
+          padding: 1.5rem;
+          background-color: $text-light;
+          border-radius: $border-radius;
+          
+          i {
+            font-size: 2rem;
+            color: $grey-dark;
+            margin-bottom: 0.6rem;
+            opacity: 0.3;
+          }
+          
+          p {
+            color: $grey-dark;
             font-size: 0.8rem;
-            color: $text-dark;
-            /* Remove max-height to show all content */
-            /* max-height: 80px; */
-            /* Remove overflow to prevent scrollbar */
-            /* overflow-y: auto; */
-            
-            i {
-              color: $primary-color;
-              margin-right: 0.5rem;
-              font-size: 0.9rem;
-              vertical-align: text-top;
-            }
-            
-            span {
-              display: inline-block;
-              white-space: pre-wrap;
-              line-height: 1.4;
-            }
           }
+        }
+        
+        .image-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 0.7rem;
           
-          .delete-image-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            width: 30px;
-            height: 30px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: $error-color;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
+          .image-card {
+            @include card-style;
+            position: relative;
+            background-color: $text-light;
+            transition: transform 0.2s;
             
             &:hover {
-              background-color: $error-color;
-              color: $text-light;
+              transform: translateY(-2px);
+              box-shadow: $shadow-lg;
+            }
+            
+            .image-wrapper {
+              position: relative;
+              padding-top: 75%; // 4:3 aspect ratio
+              overflow: hidden;
+              
+              img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+              
+              .storefront-badge {
+                position: absolute;
+                top: 0.3rem;
+                right: 0.3rem;
+                background-color: $accent-color;
+                color: $text-light;
+                padding: 0.15rem 0.3rem;
+                border-radius: $border-radius;
+                font-size: 0.65rem;
+                font-weight: 600;
+              }
+            }
+            
+            .image-details {
+              padding: 0.6rem;
+              
+              .image-annotation {
+                font-size: 0.75rem;
+                margin-bottom: 0.5rem;
+                color: $text-dark;
+                max-height: 40px;
+                overflow: hidden;
+              }
+              
+              .image-actions {
+                display: flex;
+                justify-content: space-between;
+                
+                .action-btn {
+                  @include button-secondary;
+                  padding: 0.25rem 0.35rem;
+                  font-size: 0.7rem;
+                  
+                  &.delete-btn {
+                    color: $error-color;
+                    
+                    &:hover {
+                      background-color: rgba($error-color, 0.1);
+                    }
+                  }
+                  
+                  &.edit-btn {
+                    color: $primary-color;
+                    
+                    &:hover {
+                      background-color: rgba($primary-color, 0.1);
+                    }
+                  }
+                  
+                  &.storefront-btn {
+                    color: $accent-color;
+                    
+                    &:hover {
+                      background-color: rgba($accent-color, 0.1);
+                    }
+                  }
+                }
+              }
             }
           }
         }
       }
+    }
+  }
+}
+
+// Status messages
+.status-message {
+  padding: 0.5rem 0.7rem;
+  border-radius: $border-radius;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  animation: fadeIn 0.3s;
+  font-size: 0.8rem;
+  
+  i {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  &.success {
+    background-color: rgba($success-color, 0.1);
+    color: darken($success-color, 10%);
+    border-left: 2px solid $success-color;
+  }
+  
+  &.error {
+    background-color: rgba($error-color, 0.1);
+    color: darken($error-color, 10%);
+    border-left: 2px solid $error-color;
+  }
+  
+  &.warning {
+    background-color: rgba($warning-color, 0.1);
+    color: darken($warning-color, 10%);
+    border-left: 2px solid $warning-color;
+  }
+  
+  &.info {
+    background-color: rgba($primary-color, 0.1);
+    color: darken($primary-color, 10%);
+    border-left: 2px solid $primary-color;
+  }
+}
+
+// Loading overlay
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba($primary-color, 0.3);
+    border-radius: 50%;
+    border-top-color: $primary-color;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  .loading-message {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-dark;
+  }
+}
+
+// Edit field hover effect
+.editable-field {
+  position: relative;
+  
+  &:hover:after {
+    content: "Edit";
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: $primary-light;
+    color: $primary-color;
+    padding: 0.15rem 0.3rem;
+    border-radius: $border-radius;
+    font-size: 0.65rem;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  
+  &.view-mode {
+    padding: 0.4rem;
+    min-height: 30px;
+    border: 1px solid transparent;
+    border-radius: $border-radius;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: $grey-light;
+      border-color: $border-color;
+    }
+  }
+}
+
+// Responsiveness improvements
+@media (max-width: 1200px) {
+  .library-container {
+    grid-template-columns: 240px 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .content {
+    padding: 1rem;
+  }
+  
+  .library-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  
+  .search-panel, .details-panel {
+    height: auto;
+    max-height: 500px;
+  }
+}
+
+@media (max-width: 576px) {
+  .content {
+    padding: 0.7rem;
+  }
+  
+  .page-title {
+    font-size: 1.1rem;
+  }
+  
+  .store-header {
+    h3 {
+      font-size: 1rem;
+    }
+  }
+  
+  .search-box {
+    flex-direction: column;
+    
+    .search-input {
+      padding-right: 2rem;
     }
     
-    .selected-image-details {
-      padding: 1.5rem;
-      background-color: $grey-light;
+    .clear-btn {
+      right: 0.5rem;
+    }
+    
+    .search-btn {
+      position: static;
+      width: 100%;
+      margin-top: 0.4rem;
       border-radius: $border-radius;
-      
-      .selected-image-container {
-        .selected-image {
-          max-width: 100%;
-          max-height: 400px;
-          display: block;
-          margin-bottom: 1rem;
-          border-radius: $border-radius;
-        }
-        
-        .image-annotation-container {
-          .image-annotation-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid $grey-medium;
-            border-radius: $border-radius;
-            font-size: 1rem;
-            min-height: 100px;
-            resize: vertical;
-            margin-bottom: 1rem;
-            background-color: $text-light;
-            
-            &:focus {
-              border-color: $primary-color;
-              outline: none;
-            }
-          }
-          
-          .image-action-buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            
-            .save-annotation-btn {
-              padding: 0.75rem 1.25rem;
-              background-color: $primary-color;
-              color: $text-light;
-              border: none;
-              border-radius: $border-radius;
-              cursor: pointer;
-              
-              &:hover {
-                background-color: $primary-dark;
-              }
-            }
-            
-            .storefront-btn {
-              padding: 0.75rem 1.25rem;
-              background-color: #28a745; // Green color for storefront
-              color: $text-light;
-              border: none;
-              border-radius: $border-radius;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              
-              i {
-                margin-right: 8px;
-              }
-              
-              &:hover {
-                background-color: darken(#28a745, 5%);
-              }
-              
-              &:disabled {
-                background-color: $grey-medium;
-                cursor: not-allowed;
-              }
-            }
-            
-            .remove-storefront-btn {
-              padding: 0.75rem 1.25rem;
-              background-color: #6c757d; // Grey color for removing status
-              color: $text-light;
-              border: none;
-              border-radius: $border-radius;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              
-              i {
-                margin-right: 8px;
-              }
-              
-              &:hover {
-                background-color: darken(#6c757d, 5%);
-              }
-              
-              &:disabled {
-                background-color: $grey-medium;
-                cursor: not-allowed;
-              }
-            }
-          }
-        }
-      }
     }
   }
   
-  // Additional Info tab
-  .info-tab {
-    .additional-info-container {      
-      .info-editor {
-        .additional-info-input {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid $grey-medium;
-          border-radius: $border-radius;
-          font-size: 1rem;
-          resize: vertical;
-          margin-bottom: 1rem;
-          
-          &:focus {
-            border-color: $primary-color;
-            outline: none;
-          }
-        }
-        
-        .save-info-btn {
-          padding: 0.75rem 1.25rem;
-          background-color: $primary-color;
-          color: $text-light;
-          border: none;
-          border-radius: $border-radius;
-          cursor: pointer;
-          float: right;
-          
-          i.spinning {
-            animation: spin 1s linear infinite;
-            margin-right: 0.5rem;
-          }
-          
-          &:hover {
-            background-color: $primary-dark;
-          }
-          
-          &:disabled {
-            background-color: $grey-medium;
-            cursor: not-allowed;
-          }
-        }
-      }
+  .delivery-days-chips {
+    .delivery-day-chip {
+      padding: 0.25rem 0.5rem;
     }
   }
 }
 
-// Animations
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Delivery days section in store details */
-.delivery-days-section {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.delivery-days-label {
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.delivery-days-chips {
+// Compact mode toggle button
+.compact-toggle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  
+  i {
+    margin-right: 0.3rem;
+  }
 }
 
-.delivery-day-chip {
-  display: inline-flex;
+// Compact mode styles
+.compact-mode {
+  // Reduce font sizes
+  .section-title {
+    font-size: 0.8rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+  
+  .section-header {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.6rem !important;
+    margin-top: 0.6rem !important;
+  }
+  
+  .info-label {
+    font-size: 0.7rem !important;
+    width: 100px !important;
+  }
+  
+  .info-value {
+    font-size: 0.7rem !important;
+    
+    &.view-mode {
+      padding: 0.3rem 0 !important;
+      min-height: 24px !important;
+    }
+    
+    input, select, textarea {
+      padding: 0.3rem 0.5rem !important;
+      font-size: 0.7rem !important;
+    }
+  }
+  
+  .info-row {
+    margin-bottom: 0.4rem !important;
+  }
+  
+  // Adjust paddings and margins
+  .info-section-card {
+    padding: 0.6rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .delivery-days-section {
+    margin-top: 0.6rem !important;
+    margin-bottom: 0.8rem !important;
+
+    .delivery-day-chip {
+      padding: 0.3rem 0.6rem !important;
+      
+      span {
+        font-size: 0.75rem !important;
+      }
+    }
+  }
+  
+  .tab-btn {
+    padding: 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  // Smaller buttons
+  .btn {
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+// Section title with toggle
+.section-title {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  background-color: #f5f5f5;
-  border-radius: 30px;
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
   
-  input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    
+    .toggle-label {
+      font-size: 0.75rem;
+      font-weight: normal;
+      margin-right: 0.5rem;
+      color: $grey-dark;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        
+        &:checked + .toggle-slider {
+          background-color: $primary-color;
+        }
+        
+        &:checked + .toggle-slider:before {
+          transform: translateX(16px);
+        }
+      }
+      
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: $grey-medium;
+        transition: .3s;
+        border-radius: 20px;
+        
+        &:before {
+          position: absolute;
+          content: "";
+          height: 16px;
+          width: 16px;
+          left: 2px;
+          bottom: 2px;
+          background-color: $text-light;
+          transition: .3s;
+          border-radius: 50%;
+        }
+      }
+    }
+  }
+}
+
+// Access codes container
+.access-codes-container {
+  &.hidden {
+    display: none;
+  }
+}
+
+// Section headers with navigation-style look
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: $primary-light;
+  color: $primary-color;
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: $border-radius $border-radius 0 0;
+  margin-top: 1rem;
+  border-left: 3px solid $primary-color;
+  
+  .header-title {
+    display: flex;
+    align-items: center;
+    
+    i {
+      margin-right: 0.25rem;
+      font-size: 0.9rem;
+    }
   }
   
-  &.active {
-    background-color: rgba(255, 82, 82, 0.15);
-    color: #FF5252;
-    font-weight: 600;
+  &:first-child {
+    margin-top: 0;
   }
   
-  &:hover {
-    background-color: rgba(255, 82, 82, 0.05);
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    
+    .toggle-label {
+      font-size: 0.75rem;
+      font-weight: normal;
+      margin-right: 0.5rem;
+      color: $grey-dark;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        
+        &:checked + .toggle-slider {
+          background-color: $primary-color;
+        }
+        
+        &:checked + .toggle-slider:before {
+          transform: translateX(16px);
+        }
+      }
+      
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: $grey-medium;
+        transition: .3s;
+        border-radius: 20px;
+        
+        &:before {
+          position: absolute;
+          content: "";
+          height: 16px;
+          width: 16px;
+          left: 2px;
+          bottom: 2px;
+          background-color: $text-light;
+          transition: .3s;
+          border-radius: 50%;
+        }
+      }
+    }
   }
+}
+
+// Info section cards
+.info-section-card {
+  background-color: $text-light;
+  border: 1px solid $border-color;
+  border-radius: 0 0 $border-radius $border-radius;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  box-shadow: $shadow-xs;
 }

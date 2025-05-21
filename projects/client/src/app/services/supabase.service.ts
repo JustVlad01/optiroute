@@ -24,7 +24,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('stores')
-        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name');
+        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday');
       
       if (error) {
         console.error('Error fetching all stores:', error);
@@ -47,7 +47,7 @@ export class SupabaseService {
       // First try exact matches on the most common fields
       const { data: exactMatches, error: exactError } = await this.supabase
         .from('stores')
-        .select('*')
+        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
         .or(`store_code.eq.${searchTerm},dispatch_code.eq.${searchTerm}`);
       
       if (exactError) {
@@ -63,7 +63,7 @@ export class SupabaseService {
       // If no exact matches, try partial matches on store name
       const { data: partialMatches, error: partialError } = await this.supabase
         .from('stores')
-        .select('*')
+        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
         .or(`dispatch_store_name.ilike.%${searchTerm}%,store_name.ilike.%${searchTerm}%`);
       
       if (partialError) {
@@ -86,7 +86,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('stores')
-        .select('*')
+        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
         .eq(field, value);
       
       if (error) {

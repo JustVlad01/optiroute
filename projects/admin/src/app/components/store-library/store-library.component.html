@@ -1,310 +1,591 @@
-<div class="store-library-container">
-  <!-- Header/Navbar -->
-  <header class="navbar">
-    <div class="logo">OPTIROUTE</div>
+<div class="store-library-container" [class.compact-mode]="compactMode">
+  <!-- Professional Navbar -->
+  <div class="navbar">
+    <div class="logo">Store Library</div>
     <div class="nav-links">
-      <a class="nav-pill" [routerLink]="['/dashboard']">
-        <i class="bi bi-house"></i> DASHBOARD
+      <a class="nav-pill" routerLink="/dashboard">
+        <i class="bi bi-house-fill"></i> Home
       </a>
     </div>
-  </header>
+  </div>
 
+  <!-- Main Content Area -->
   <div class="content">
-    <h2 class="page-title">Store Library</h2>
-    
+
+
+    <!-- Library Container: Search Panel + Details Panel -->
     <div class="library-container">
-      <!-- Store Search Panel -->
+      <!-- Search Panel -->
       <div class="search-panel">
-        <h3>Find a Store</h3>
+        <h3><i class="bi bi-search"></i> Find Stores</h3>
+        
+        <!-- Search Box -->
         <div class="search-box">
           <i class="bi bi-search"></i>
-          <input 
-            type="text" 
-            [(ngModel)]="searchTerm" 
-            placeholder="Search by name, code, or address..." 
-            class="search-input"
-            (input)="onSearchInput()"
-            (keyup.enter)="searchStores()"
-            (blur)="hideSuggestions()"
-          >
-          <button *ngIf="searchTerm" (click)="clearSearch()" class="clear-btn">
-            <i class="bi bi-x"></i>
+          <input type="text" class="search-input" placeholder="Search by name, code or address..." 
+                [(ngModel)]="searchQuery" 
+                (keyup.enter)="searchStores()"
+                (input)="onSearchInputChange()">
+          <button *ngIf="searchQuery" class="clear-btn" (click)="clearSearch()">
+            <i class="bi bi-x-circle"></i>
           </button>
           <button class="search-btn" (click)="searchStores()">
             <i class="bi bi-search"></i> Search
           </button>
           
-          <!-- Auto-suggest dropdown -->
-          <div *ngIf="showSuggestions && suggestedStores.length > 0" class="suggestions-dropdown">
-            <div 
-              *ngFor="let store of suggestedStores" 
-              class="suggestion-item" 
-              (mousedown)="selectSuggestion(store)"
-            >
-              <div class="suggestion-store-name">{{ store.store_name }}</div>
-              <div class="suggestion-store-details">
-                <span *ngIf="store.store_code">{{ store.store_code }}</span>
-                <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
-                <span *ngIf="store.address_line"> - {{ store.address_line }}</span>
-              </div>
+          <!-- Search Suggestions -->
+          <div class="suggestions-dropdown" *ngIf="showSuggestions && filteredSuggestions.length > 0">
+            <div class="suggestion-item" *ngFor="let suggestion of filteredSuggestions" (click)="selectSuggestion(suggestion)">
+              <div class="suggestion-store-name">{{ suggestion.store_name }}</div>
+              <div class="suggestion-store-details">{{ suggestion.store_code }} - {{ suggestion.address }}</div>
             </div>
           </div>
         </div>
         
         <!-- Store List -->
         <div class="store-list-container">
-          <div *ngIf="loading" class="loading-spinner">
+          <!-- Loading Spinner -->
+          <div class="loading-spinner" *ngIf="loading">
             <div class="spinner"></div>
-            <p>Searching stores...</p>
+            <p>Loading stores...</p>
           </div>
           
-          <div *ngIf="!loading && hasSearched && filteredStores.length === 0" class="no-results">
-            <p>No stores match your search criteria.</p>
+          <!-- Search Prompt -->
+          <div class="search-prompt" *ngIf="!loading && (!filteredStores || filteredStores.length === 0) && !searchPerformed">
+            <i class="bi bi-shop"></i>
+            <p>Search for stores to view details</p>
           </div>
           
-          <div *ngIf="!loading && !hasSearched" class="search-prompt">
-            <i class="bi bi-building"></i>
-            <p>Enter search terms and click Search to find stores</p>
+          <!-- No Results -->
+          <div class="no-results" *ngIf="!loading && searchPerformed && (!filteredStores || filteredStores.length === 0)">
+            <i class="bi bi-exclamation-circle"></i>
+            <p>No stores found matching your search.</p>
           </div>
           
-          <div *ngIf="!loading && filteredStores.length > 0" class="store-list">
-            <div 
-              *ngFor="let store of filteredStores" 
-              class="store-item" 
-              [class.active]="selectedStore && selectedStore.store_id === store.store_id"
-              (click)="selectStore(store)"
-            >
-              <div class="store-name">{{ store.store_name }}</div>
+          <!-- Store List -->
+          <div class="store-list" *ngIf="!loading && filteredStores && filteredStores.length > 0">
+            <div class="store-item" *ngFor="let store of filteredStores" 
+                 [class.active]="selectedStore && selectedStore.id === store.id"
+                 (click)="selectStore(store)">
+              <div class="store-name">{{ store.store_name || 'Unnamed Store' }}</div>
               <div class="store-details">
                 <span *ngIf="store.store_code">{{ store.store_code }}</span>
                 <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
               </div>
-              <div class="store-address">
-                {{ store.address_line }}
-                <span *ngIf="store.eircode">, {{ store.eircode }}</span>
-              </div>
+              <div class="store-address">{{ store.address || store.address_line || 'No address' }}</div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Store Details Panel -->
+      <!-- Details Panel -->
       <div class="details-panel">
-        <div *ngIf="!selectedStore" class="no-store-selected">
+        <!-- No Store Selected Message -->
+        <div class="no-store-selected" *ngIf="!selectedStore">
           <i class="bi bi-building"></i>
           <p>Select a store to view details</p>
         </div>
         
-        <div *ngIf="selectedStore" class="store-details-container">
+        <!-- Store Details Container -->
+        <div class="store-details-container" *ngIf="selectedStore">
+          <!-- Store Header -->
           <div class="store-header">
-            <h3>{{ selectedStore.store_name }}</h3>
-            <div class="store-location">
-              {{ selectedStore.address_line }}
-              <span *ngIf="selectedStore.eircode">, {{ selectedStore.eircode }}</span>
+            <div class="store-code-container">
+              <i class="bi bi-shop"></i>
+              <h3>{{ selectedStore.store_code || 'Store Code' }}</h3>
             </div>
+            <button class="edit-button" (click)="toggleEditMode()" *ngIf="!editMode">
+              <i class="bi bi-pencil-square"></i>
+            </button>
           </div>
           
-          <!-- Store Details Box -->
-          <div class="store-info-box">
-            <div class="info-row">
-              <div class="info-label">Dispatch Code:</div>
-              <div class="info-value">{{ selectedStore.dispatch_code || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Store Code:</div>
-              <div class="info-value">{{ selectedStore.store_code || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">City:</div>
-              <div class="info-value">{{ selectedStore.city || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">County:</div>
-              <div class="info-value">{{ selectedStore.county || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Eircode:</div>
-              <div class="info-value">{{ selectedStore.eircode || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Route:</div>
-              <div class="info-value">{{ selectedStore.route || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Door Code:</div>
-              <div class="info-value">{{ selectedStore.door_code || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Alarm Code:</div>
-              <div class="info-value">{{ selectedStore.alarm_code || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Fridge Code:</div>
-              <div class="info-value">{{ selectedStore.fridge_code || 'N/A' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Keys Available:</div>
-              <div class="info-value">{{ selectedStore.keys_available || 'No' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">24-Hour Access:</div>
-              <div class="info-value">{{ selectedStore.hour_access_24 || 'No' }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Earliest Delivery:</div>
-              <div class="info-value">{{ selectedStore.earliest_delivery_time || 'N/A' }}</div>
-            </div>
-            
-            <!-- Add Delivery Days section -->
-            <div class="delivery-days-section">
-              <div class="info-label delivery-days-label">Delivery Days:</div>
-              <div class="delivery-days-chips">
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_monday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_monday" [value]="'Yes'" (change)="updateStoreField('delivery_monday', selectedStore.delivery_monday === true ? 'Yes' : 'No')">
-                  <span>Mon</span>
-                </label>
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_tuesday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_tuesday" [value]="'Yes'" (change)="updateStoreField('delivery_tuesday', selectedStore.delivery_tuesday === true ? 'Yes' : 'No')">
-                  <span>Tue</span>
-                </label>
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_wednesday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_wednesday" [value]="'Yes'" (change)="updateStoreField('delivery_wednesday', selectedStore.delivery_wednesday === true ? 'Yes' : 'No')">
-                  <span>Wed</span>
-                </label>
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_thursday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_thursday" [value]="'Yes'" (change)="updateStoreField('delivery_thursday', selectedStore.delivery_thursday === true ? 'Yes' : 'No')">
-                  <span>Thu</span>
-                </label>
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_friday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_friday" [value]="'Yes'" (change)="updateStoreField('delivery_friday', selectedStore.delivery_friday === true ? 'Yes' : 'No')">
-                  <span>Fri</span>
-                </label>
-                <label class="delivery-day-chip" [class.active]="selectedStore.delivery_saturday === 'Yes'">
-                  <input type="checkbox" [(ngModel)]="selectedStore.delivery_saturday" [value]="'Yes'" (change)="updateStoreField('delivery_saturday', selectedStore.delivery_saturday === true ? 'Yes' : 'No')">
-                  <span>Sat</span>
-                </label>
-              </div>
-            </div>
+          <!-- Edit Mode Controls -->
+          <div class="edit-mode-controls" *ngIf="editMode">
+            <button class="cancel-edit-btn" (click)="cancelEdit()">
+              <i class="bi bi-x-circle"></i> Cancel
+            </button>
+            <button class="save-changes-btn" [class.saving]="savingChanges" (click)="saveChanges()">
+              <span class="spinner" *ngIf="savingChanges"></span>
+              <i class="bi bi-check-circle" *ngIf="!savingChanges"></i> Save
+            </button>
+          </div>
+          
+          <!-- Status Messages -->
+          <div class="status-message success" *ngIf="statusMessage.show && statusMessage.type === 'success'">
+            <i class="bi bi-check-circle"></i> {{ statusMessage.text }}
+          </div>
+          <div class="status-message error" *ngIf="statusMessage.show && statusMessage.type === 'error'">
+            <i class="bi bi-exclamation-triangle"></i> {{ statusMessage.text }}
           </div>
           
           <!-- Tab Navigation -->
           <div class="tab-navigation">
-            <button 
-              class="tab-btn" 
-              [class.active]="imageTabActive" 
-              (click)="setActiveTab(true)"
-            >
-              <i class="bi bi-images"></i> Images
+            <button class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">
+              <i class="bi bi-info-circle"></i> Details
             </button>
-            <button 
-              class="tab-btn" 
-              [class.active]="!imageTabActive" 
-              (click)="setActiveTab(false)"
-            >
-              <i class="bi bi-info-circle"></i> Additional Info
+            <button class="tab-btn" [class.active]="activeTab === 'additional-info'" (click)="setActiveTab('additional-info')">
+              <i class="bi bi-journal-text"></i> Info
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'images'" (click)="setActiveTab('images')">
+              <i class="bi bi-images"></i> Images
             </button>
           </div>
           
-          <!-- Images Tab -->
-          <div *ngIf="imageTabActive" class="tab-content images-tab">
-            <div class="image-gallery">
+          <!-- Details Tab -->
+          <div class="store-info-box" *ngIf="activeTab === 'details'">
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-shop"></i>Store Information</div>
+            </div>
+            <div class="info-section-card">
+              <!-- Basic Store Details -->
+              <div class="info-row" *ngIf="selectedStore.id" style="display: none;">
+                <div class="info-label">Store ID</div>
+                <div class="info-value">{{ selectedStore.id }}</div>
+              </div>
               
-              <!-- Shop Storefront Image Upload -->
-              <div class="shop-image-upload-container">
-                <h5>Storefront Image</h5>
-                <div class="upload-form">
-                  <div class="upload-options">
-                    <label class="file-input-label special-upload">
-                      <i class="bi bi-building"></i>
-                      <span>{{ shopImageFile ? shopImageFile.name : 'Choose storefront image' }}</span>
-                      <input type="file" accept="image/*" (change)="onShopFileSelected($event)" class="file-input">
-                    </label>
+              <div class="info-row">
+                <div class="info-label">Store Name</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_name')" *ngIf="!editMode">
+                  {{ selectedStore.store_name || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.store_name" placeholder="Enter store name">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Store Code</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_code')" *ngIf="!editMode">
+                  {{ selectedStore.store_code || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.store_code" placeholder="Enter store code">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Dispatch Code</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_code')" *ngIf="!editMode">
+                  {{ selectedStore.dispatch_code || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.dispatch_code" placeholder="Enter dispatch code">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Dispatch Name</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_store_name')" *ngIf="!editMode">
+                  {{ selectedStore.dispatch_store_name || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.dispatch_store_name" placeholder="Enter dispatch store name">
+                </div>
+              </div>
+              
+              <div class="info-row" style="display: none;">
+                <div class="info-label">Company</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_company')" *ngIf="!editMode">
+                  {{ selectedStore.store_company || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.store_company" placeholder="Enter store company">
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-geo-alt"></i>Location Information</div>
+            </div>
+            <div class="info-section-card">
+              <div class="info-row">
+                <div class="info-label">Address</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('address_line')" *ngIf="!editMode">
+                  {{ selectedStore.address_line || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.address_line" placeholder="Enter address">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">City</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('city')" *ngIf="!editMode">
+                  {{ selectedStore.city || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.city" placeholder="Enter city">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">County</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('county')" *ngIf="!editMode">
+                  {{ selectedStore.county || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.county" placeholder="Enter county">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Eircode</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('eircode')" *ngIf="!editMode">
+                  {{ selectedStore.eircode || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.eircode" placeholder="Enter eircode">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Coordinates</div>
+                <div class="info-value" *ngIf="!editMode">
+                  <span *ngIf="selectedStore.latitude && selectedStore.longitude">
+                    {{ selectedStore.latitude }}, {{ selectedStore.longitude }}
+                  </span>
+                  <span *ngIf="!selectedStore.latitude || !selectedStore.longitude">Not specified</span>
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <div style="display: flex; gap: 5px;">
+                    <input type="text" [(ngModel)]="editableStore.latitude" placeholder="Lat" style="flex: 1;">
+                    <input type="text" [(ngModel)]="editableStore.longitude" placeholder="Long" style="flex: 1;">
                   </div>
-                  
-                  <!-- Enhanced, more visible paste area for storefront -->
-                  <div class="paste-container">
-                    <div class="paste-area storefront-paste-area" (paste)="onShopImagePaste($event)" tabindex="0">
-                      <i class="bi bi-clipboard"></i>
-                      <span class="paste-text">or paste image here (Ctrl+V)</span>
-                    </div>
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Route</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('route')" *ngIf="!editMode">
+                  {{ selectedStore.route || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.route" placeholder="Enter route">
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-key"></i>Access Information</div>
+            </div>
+            <div class="info-section-card">
+              <div class="access-codes-container">
+                <div class="info-row">
+                  <div class="info-label">
+                    <i class="bi bi-shield-lock"></i> Alarm Code
                   </div>
-                  
-                  <div *ngIf="shopImageFile" class="image-preview-container">
-                    <img [src]="shopImagePreviewUrl" alt="Shop Preview" class="image-preview">
-                    <textarea 
-                      [(ngModel)]="shopImageAnnotation" 
-                      placeholder="Add notes about this storefront..."
-                      class="image-annotation-input"
-                    ></textarea>
-                    <div class="upload-actions">
-                      <button class="cancel-btn" (click)="clearShopSelectedFile()">Cancel</button>
-                      <button 
-                        class="upload-btn shop-upload-btn" 
-                        [disabled]="shopImageUploading" 
-                        (click)="uploadShopImage()"
-                      >
-                        <i *ngIf="shopImageUploading" class="bi bi-arrow-repeat spinning"></i>
-                        <span>{{ shopImageUploading ? 'Uploading...' : 'Upload Storefront Image' }}</span>
-                      </button>
-                    </div>
+                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('alarm_code')" *ngIf="!editMode">
+                    {{ selectedStore.alarm_code || 'Not specified' }}
+                  </div>
+                  <div class="info-value" *ngIf="editMode">
+                    <input type="text" [(ngModel)]="editableStore.alarm_code" placeholder="Enter alarm code">
                   </div>
                 </div>
                 
-                <!-- Display current shop image if exists -->
-                <div *ngIf="storeImages.length > 0 && getShopImage()" class="current-shop-image">
+                <div class="info-row">
+                  <div class="info-label">
+                    <i class="bi bi-thermometer-snow"></i> Fridge Code
+                  </div>
+                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('fridge_code')" *ngIf="!editMode">
+                    {{ selectedStore.fridge_code || 'Not specified' }}
+                  </div>
+                  <div class="info-value" *ngIf="editMode">
+                    <input type="text" [(ngModel)]="editableStore.fridge_code" placeholder="Enter fridge code">
+                  </div>
+                </div>
+                
+                <div class="info-row">
+                  <div class="info-label">
+                    <i class="bi bi-key-fill"></i> Key Code
+                  </div>
+                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('key_code')" *ngIf="!editMode">
+                    {{ selectedStore.key_code || 'Not specified' }}
+                  </div>
+                  <div class="info-value" *ngIf="editMode">
+                    <input type="text" [(ngModel)]="editableStore.key_code" placeholder="Enter key code">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-clock"></i>Operating Hours</div>
+            </div>
+            <div class="info-section-card">
+              <div class="info-row">
+                <div class="info-label">Weekdays</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_weekdays')" *ngIf="!editMode">
+                  {{ selectedStore.opening_time_weekdays || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.opening_time_weekdays" placeholder="e.g. 9:00 - 17:30">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Saturday</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_sat')" *ngIf="!editMode">
+                  {{ selectedStore.opening_time_sat || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.opening_time_sat" placeholder="e.g. 10:00 - 17:00">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Sunday</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_sun')" *ngIf="!editMode">
+                  {{ selectedStore.opening_time_sun || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.opening_time_sun" placeholder="e.g. 12:00 - 16:00">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Bank Holidays</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('openining_time_bankholiday')" *ngIf="!editMode">
+                  {{ selectedStore.openining_time_bankholiday || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="text" [(ngModel)]="editableStore.openining_time_bankholiday" placeholder="e.g. 10:00 - 16:00">
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-truck"></i>Delivery Days</div>
+            </div>
+            <div class="info-section-card">
+              <div class="delivery-days-section">
+                <div class="delivery-days-chips" *ngIf="editMode">
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_monday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_monday" [checked]="editableStore?.deliver_monday === 'yes'" (change)="updateDeliveryDay('deliver_monday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Monday</span>
+                  </label>
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_tuesday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_tuesday" [checked]="editableStore?.deliver_tuesday === 'yes'" (change)="updateDeliveryDay('deliver_tuesday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Tuesday</span>
+                  </label>
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_wednesday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_wednesday" [checked]="editableStore?.deliver_wednesday === 'yes'" (change)="updateDeliveryDay('deliver_wednesday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Wednesday</span>
+                  </label>
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_thursday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_thursday" [checked]="editableStore?.deliver_thursday === 'yes'" (change)="updateDeliveryDay('deliver_thursday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Thursday</span>
+                  </label>
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_friday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_friday" [checked]="editableStore?.deliver_friday === 'yes'" (change)="updateDeliveryDay('deliver_friday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Friday</span>
+                  </label>
+                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_saturday === 'yes'">
+                    <input type="checkbox" [(ngModel)]="editableStore.deliver_saturday" [checked]="editableStore?.deliver_saturday === 'yes'" (change)="updateDeliveryDay('deliver_saturday', $event)">
+                    <span><i class="bi bi-calendar-date"></i> Saturday</span>
+                  </label>
+                </div>
+                
+                <div class="delivery-days-display" *ngIf="!editMode">
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_monday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_monday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_monday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_monday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_monday === 'yes'}"></i>
+                      Monday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_monday'"></i>
+                    </span>
+                  </div>
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_tuesday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_tuesday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_tuesday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_tuesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_tuesday === 'yes'}"></i>
+                      Tuesday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_tuesday'"></i>
+                    </span>
+                  </div>
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_wednesday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_wednesday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_wednesday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_wednesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_wednesday === 'yes'}"></i>
+                      Wednesday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_wednesday'"></i>
+                    </span>
+                  </div>
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_thursday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_thursday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_thursday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_thursday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_thursday === 'yes'}"></i>
+                      Thursday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_thursday'"></i>
+                    </span>
+                  </div>
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_friday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_friday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_friday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_friday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_friday === 'yes'}"></i>
+                      Friday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_friday'"></i>
+                    </span>
+                  </div>
+                  <div class="delivery-day-chip" 
+                       [class.active]="selectedStore?.deliver_saturday === 'yes'" 
+                       [class.saving]="savingDeliveryDay === 'deliver_saturday'"
+                       (click)="toggleAndSaveDeliveryDay('deliver_saturday')">
+                    <span>
+                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_saturday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_saturday === 'yes'}"></i>
+                      Saturday
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_saturday'"></i>
+                    </span>
+                  </div>
+                </div>
+                
+                <!-- Day-specific saving indicator for better visual feedback -->
+                <div class="delivery-day-status" *ngIf="dayUpdateStatus.show">
+                  <i class="bi" [ngClass]="dayUpdateStatus.type === 'success' ? 'bi-check-circle-fill success-icon' : 'bi-exclamation-triangle-fill error-icon'"></i>
+                  <span [class.success-text]="dayUpdateStatus.type === 'success'" [class.error-text]="dayUpdateStatus.type === 'error'">
+                    {{ dayUpdateStatus.text }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
+              <div class="header-title"><i class="bi bi-envelope"></i>Contact Information</div>
+            </div>
+            <div class="info-section-card">
+              <div class="info-row">
+                <div class="info-label">Email</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('email')" *ngIf="!editMode">
+                  {{ selectedStore.email || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="email" [(ngModel)]="editableStore.email" placeholder="Enter email address">
+                </div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-label">Phone</div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('phone')" *ngIf="!editMode">
+                  {{ selectedStore.phone || 'Not specified' }}
+                </div>
+                <div class="info-value" *ngIf="editMode">
+                  <input type="tel" [(ngModel)]="editableStore.phone" placeholder="Enter phone number">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Additional Info Tab -->
+          <div class="tab-content" *ngIf="activeTab === 'additional-info'">
+            <div class="additional-info-container">
+              <h4 class="section-title">Additional Information</h4>
+              <p *ngIf="!additionalInfoEditing && (!selectedStore.additionalInfo || selectedStore.additionalInfo.length === 0)" class="text-muted">
+                No additional information available. Click edit to add notes.
+              </p>
+              
+              <div *ngIf="!additionalInfoEditing && selectedStore.additionalInfo && selectedStore.additionalInfo.length > 0" class="info-content">
+                <div *ngFor="let info of selectedStore.additionalInfo" class="info-item">
+                  <div class="info-text">{{ info.content }}</div>
+                  <div class="info-date">Added: {{ info.created_at | date:'medium' }}</div>
+                </div>
+              </div>
+              
+              <button *ngIf="!additionalInfoEditing" class="edit-info-btn" (click)="startEditingAdditionalInfo()">
+                <i class="bi bi-pencil-square"></i> Add/Edit Notes
+              </button>
+              
+              <textarea *ngIf="additionalInfoEditing" [(ngModel)]="additionalInfoText" 
+                placeholder="Enter additional notes, instructions or information about this store..."></textarea>
+              
+              <div class="info-actions" *ngIf="additionalInfoEditing">
+                <button class="cancel-btn" (click)="cancelAdditionalInfoEdit()">
+                  <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="save-btn" [class.saving]="savingAdditionalInfo" (click)="saveAdditionalInfo()">
+                  <span class="spinner" *ngIf="savingAdditionalInfo"></span>
+                  <i class="bi bi-check-circle" *ngIf="!savingAdditionalInfo"></i> Save
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Images Tab -->
+          <div class="tab-content images-tab" *ngIf="activeTab === 'images'">
+            <div class="image-gallery">
+              <!-- Storefront Image Upload -->
+              <div class="shop-image-upload-container">
+                <h5><i class="bi bi-shop"></i> Upload Storefront Image</h5>
+                <div class="upload-form">
+                  <div class="upload-options">
+                    <label class="file-input-label special-upload">
+                      <i class="bi bi-upload"></i> Select Storefront
+                      <input type="file" accept="image/*" (change)="onStorefrontImageSelected($event)">
+                    </label>
+                  </div>
                   
-                  <div class="shop-image-display">
-                    <img [src]="getShopImage().url" alt="Current Storefront Image" class="shop-image">
-                    <div class="shop-image-info">
-                      <div class="image-name">{{ getShopImage().file_name }}</div>
-                      <div class="image-date">{{ getShopImage().uploaded_at | date }}</div>
-                      <div *ngIf="getShopImage().instructions" class="image-annotation-preview">
-                        <i class="bi bi-info-circle"></i>
-                        <span>{{ getShopImage().instructions }}</span>
-                      </div>
+                  <div class="paste-container">
+                    <div class="paste-area storefront-paste-area" tabindex="0" (paste)="onStorefrontImagePasted($event)" (click)="focusPasteArea($event)">
+                      <i class="bi bi-clipboard"></i>
+                      <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
+                    </div>
+                  </div>
+                  
+                  <div class="image-preview-container" *ngIf="storefrontPreviewSrc">
+                    <img [src]="storefrontPreviewSrc" class="image-preview" alt="Storefront preview">
+                    <textarea class="image-annotation-input" [(ngModel)]="storefrontAnnotation" 
+                      placeholder="Add notes about this storefront image..."></textarea>
+                    <div class="upload-actions">
+                      <button class="cancel-btn" (click)="cancelStorefrontUpload()">
+                        <i class="bi bi-x-circle"></i> Cancel
+                      </button>
+                      <button class="upload-btn shop-upload-btn" [disabled]="uploadingStorefront" (click)="uploadStorefrontImage()">
+                        <i class="bi bi-upload" [class.spinning]="uploadingStorefront"></i>
+                        {{ uploadingStorefront ? 'Uploading...' : 'Upload' }}
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div class="section-divider"></div>
-              
-              <!-- Regular Image Upload Form -->
+              <!-- Regular Image Upload -->
               <div class="image-upload-container">
-                <h5>Store Images</h5>
+                <h5><i class="bi bi-image"></i> Upload Store Images</h5>
                 <div class="upload-form">
                   <div class="upload-options">
                     <label class="file-input-label">
-                      <i class="bi bi-upload"></i>
-                      <span>{{ imageFile ? imageFile.name : 'Choose an image' }}</span>
-                      <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
+                      <i class="bi bi-upload"></i> Select Image
+                      <input type="file" accept="image/*" (change)="onRegularImageSelected($event)">
                     </label>
                   </div>
                   
-                  <!-- Enhanced, more visible paste area for regular images -->
                   <div class="paste-container">
-                    <div class="paste-area regular-paste-area" (paste)="onImagePaste($event)" tabindex="0">
+                    <div class="paste-area" tabindex="0" (paste)="onRegularImagePasted($event)" (click)="focusPasteArea($event)">
                       <i class="bi bi-clipboard"></i>
-                      <span class="paste-text">or paste image here (Ctrl+V)</span>
+                      <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
                     </div>
                   </div>
                   
-                  <div *ngIf="imageFile" class="image-preview-container">
-                    <img [src]="imagePreviewUrl" alt="Preview" class="image-preview">
-                    <textarea 
-                      [(ngModel)]="imageAnnotation" 
-                      placeholder="Add notes or instructions for this image..."
-                      class="image-annotation-input"
-                    ></textarea>
+                  <div class="image-preview-container" *ngIf="regularPreviewSrc">
+                    <img [src]="regularPreviewSrc" class="image-preview" alt="Image preview">
+                    <textarea class="image-annotation-input" [(ngModel)]="regularAnnotation" 
+                      placeholder="Add notes about this image..."></textarea>
                     <div class="upload-actions">
-                      <button class="cancel-btn" (click)="clearSelectedFile()">Cancel</button>
-                      <button 
-                        class="upload-btn" 
-                        [disabled]="imageUploading" 
-                        (click)="uploadImage()"
-                      >
-                        <i *ngIf="imageUploading" class="bi bi-arrow-repeat spinning"></i>
-                        <span>{{ imageUploading ? 'Uploading...' : 'Upload Image' }}</span>
+                      <button class="cancel-btn" (click)="cancelRegularUpload()">
+                        <i class="bi bi-x-circle"></i> Cancel
+                      </button>
+                      <button class="upload-btn" [disabled]="uploadingRegular" (click)="uploadRegularImage()">
+                        <i class="bi bi-upload" [class.spinning]="uploadingRegular"></i>
+                        {{ uploadingRegular ? 'Uploading...' : 'Upload' }}
                       </button>
                     </div>
                   </div>
@@ -313,120 +594,48 @@
               
               <!-- Existing Images -->
               <div class="existing-images">
-                <div *ngIf="storeImages.length === 0" class="no-images">
-                  <i class="bi bi-image"></i>
-                  <p>No images for this store yet</p>
+                <h5>Store Images</h5>
+                
+                <div class="no-images-message" *ngIf="!storeImages || storeImages.length === 0">
+                  <i class="bi bi-images"></i>
+                  <p>No images uploaded for this store yet.</p>
                 </div>
                 
-                <div *ngIf="storeImages.length > 0" class="image-grid">
-                  <div 
-                    *ngFor="let image of storeImages" 
-                    class="image-card"
-                    [class.active]="selectedImage && selectedImage.id === image.id"
-                    [class.is-storefront]="image.is_storefront"
-                    (click)="selectImage(image)"
-                  >
-                    <!-- Storefront badge -->
-                    <div *ngIf="image.is_storefront" class="storefront-badge">
-                      <i class="bi bi-building-check"></i>
-                      <span>Storefront</span>
+                <div class="image-grid" *ngIf="storeImages && storeImages.length > 0">
+                  <div class="image-card" *ngFor="let image of storeImages">
+                    <div class="image-wrapper">
+                      <img [src]="image.url" alt="Store image">
+                      <span class="storefront-badge" *ngIf="image.is_storefront === 'true'">Storefront</span>
                     </div>
-                  
-                    <div class="image-container">
-                      <img [src]="image.url" alt="Store image" class="store-image">
-                    </div>
-                    <div class="image-info">
-                      <div class="image-name">{{ image.file_name }}</div>
-                      <div class="image-date">{{ image.uploaded_at | date }}</div>
-                    </div>
-                    <!-- Display image annotations directly beneath each image -->
-                    <div *ngIf="image.instructions" class="image-annotation-preview">
-                      <i class="bi bi-info-circle"></i>
-                      <span>{{ image.instructions }}</span>
-                    </div>
-                    <button class="delete-image-btn" (click)="$event.stopPropagation(); deleteImage(image)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Selected Image Details -->
-              <div *ngIf="selectedImage" class="selected-image-details">
-                <h4>Image Details</h4>
-                <div class="selected-image-container">
-                  <img [src]="selectedImage.url" alt="Selected image" class="selected-image">
-                  <div class="image-annotation-container">
-                    <textarea 
-                      [(ngModel)]="imageAnnotation" 
-                      placeholder="Add notes or instructions for this image..."
-                      class="image-annotation-input"
-                    ></textarea>
-                    <div class="image-action-buttons">
-                      <button class="save-annotation-btn" (click)="updateImageAnnotation()">
-                        Save Notes
-                      </button>
-                      
-                      <!-- Storefront toggle button -->
-                      <button 
-                        *ngIf="!selectedImage.is_storefront" 
-                        class="storefront-btn" 
-                        [disabled]="storefrontSaving" 
-                        (click)="setAsStorefront(selectedImage)"
-                      >
-                        <i *ngIf="storefrontSaving" class="bi bi-arrow-repeat spinning"></i>
-                        <i *ngIf="!storefrontSaving" class="bi bi-building"></i>
-                        Set as Storefront
-                      </button>
-                      
-                      <button 
-                        *ngIf="selectedImage.is_storefront" 
-                        class="remove-storefront-btn" 
-                        [disabled]="storefrontSaving" 
-                        (click)="removeStorefrontStatus(selectedImage)"
-                      >
-                        <i *ngIf="storefrontSaving" class="bi bi-arrow-repeat spinning"></i>
-                        <i *ngIf="!storefrontSaving" class="bi bi-building-slash"></i>
-                        Remove as Storefront
-                      </button>
+                    <div class="image-details">
+                      <div class="image-annotation" *ngIf="image.instructions">{{ image.instructions }}</div>
+                      <div class="image-actions">
+                        <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
+                          <i class="bi bi-shop"></i>
+                        </button>
+                        <button class="action-btn delete-btn" (click)="deleteImage(image)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Additional Info Tab -->
-          <div *ngIf="!imageTabActive" class="tab-content info-tab">
-            <div class="additional-info-container">
-              <h4>Additional Store Information</h4>
-              
-              <div *ngIf="additionalInfoLoading" class="loading-spinner">
-                <div class="spinner"></div>
-                <p>Loading information...</p>
-              </div>
-              
-              <div *ngIf="!additionalInfoLoading" class="info-editor">
-                <textarea 
-                  [(ngModel)]="additionalInfo" 
-                  placeholder="Enter additional information about this store..."
-                  class="additional-info-input"
-                  rows="15"
-                ></textarea>
-                
-                <button 
-                  class="save-info-btn" 
-                  [disabled]="additionalInfoSaving"
-                  (click)="saveAdditionalInfo()"
-                >
-                  <i *ngIf="additionalInfoSaving" class="bi bi-arrow-repeat spinning"></i>
-                  <span>{{ additionalInfoSaving ? 'Saving...' : 'Save Information' }}</span>
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+  
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="showLoadingOverlay">
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>{{ loadingMessage }}</p>
     </div>
   </div>
 </div>

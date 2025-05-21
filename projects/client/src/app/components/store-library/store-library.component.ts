@@ -70,10 +70,76 @@ export class StoreLibraryComponent implements OnInit {
     }
   }
   
+  // Helper method to normalize delivery day values
+  private normalizeDeliveryDays(storeData: any): void {
+    // First check if we have store data
+    if (!storeData) return;
+    
+    // Define the days to check
+    const deliveryDays = [
+      'delivery_monday', 
+      'delivery_tuesday', 
+      'delivery_wednesday', 
+      'delivery_thursday', 
+      'delivery_friday', 
+      'delivery_saturday'
+    ];
+    
+    // Process each day
+    deliveryDays.forEach(day => {
+      // If the value is undefined or null, set it to 'No'
+      if (storeData[day] === undefined || storeData[day] === null) {
+        storeData[day] = 'No';
+      } 
+      // Convert boolean true to 'Yes'
+      else if (storeData[day] === true) {
+        storeData[day] = 'Yes';
+      }
+      // Convert boolean false to 'No'
+      else if (storeData[day] === false) {
+        storeData[day] = 'No';
+      }
+      // Convert string 'true' to 'Yes'
+      else if (typeof storeData[day] === 'string' && storeData[day].toLowerCase() === 'true') {
+        storeData[day] = 'Yes';
+      }
+      // Convert string 'false' to 'No'
+      else if (typeof storeData[day] === 'string' && storeData[day].toLowerCase() === 'false') {
+        storeData[day] = 'No';
+      }
+      // If it's any other value, ensure it's either 'Yes' or 'No'
+      else if (storeData[day] !== 'Yes') {
+        storeData[day] = 'No';
+      }
+    });
+    
+    console.log('Normalized delivery days:', {
+      monday: storeData.delivery_monday,
+      tuesday: storeData.delivery_tuesday,
+      wednesday: storeData.delivery_wednesday,
+      thursday: storeData.delivery_thursday,
+      friday: storeData.delivery_friday,
+      saturday: storeData.delivery_saturday
+    });
+  }
+  
   selectSearchResult(result: any): void {
     this.searchTerm = result.code || result.name;
     this.filteredOptions = [];
     this.storeDetails = result.data;
+    
+    // Normalize delivery day values
+    this.normalizeDeliveryDays(this.storeDetails);
+    
+    // Log delivery day fields to verify they're being received
+    console.log('Selected store delivery days:', {
+      monday: this.storeDetails.delivery_monday,
+      tuesday: this.storeDetails.delivery_tuesday,
+      wednesday: this.storeDetails.delivery_wednesday,
+      thursday: this.storeDetails.delivery_thursday,
+      friday: this.storeDetails.delivery_friday,
+      saturday: this.storeDetails.delivery_saturday
+    });
     
     // Load store images and additional info when a store is selected
     this.loadStoreImages();
@@ -95,8 +161,22 @@ export class StoreLibraryComponent implements OnInit {
     // If we already have matching results in filteredOptions, use the first one
     if (this.filteredOptions.length > 0) {
       this.storeDetails = this.filteredOptions[0].data;
+      
+      // Normalize delivery day values
+      this.normalizeDeliveryDays(this.storeDetails);
+      
       this.filteredOptions = [];
       this.loading = false;
+      
+      // Log delivery day fields to verify they're being received
+      console.log('Selected store delivery days:', {
+        monday: this.storeDetails.delivery_monday,
+        tuesday: this.storeDetails.delivery_tuesday,
+        wednesday: this.storeDetails.delivery_wednesday,
+        thursday: this.storeDetails.delivery_thursday,
+        friday: this.storeDetails.delivery_friday,
+        saturday: this.storeDetails.delivery_saturday
+      });
       
       // Load store images and additional info
       this.loadStoreImages();
@@ -110,6 +190,9 @@ export class StoreLibraryComponent implements OnInit {
         this.loading = false;
         if (result && result.length > 0) {
           this.storeDetails = result[0];
+          
+          // Normalize delivery day values
+          this.normalizeDeliveryDays(this.storeDetails);
           
           // Load store images and additional info
           this.loadStoreImages();
