@@ -639,7 +639,7 @@ a {
     padding: 0.8rem;
     
     .section-title {
-      font-size: 0.9rem;
+        font-size: 0.9rem;
       font-weight: 600;
       margin-top: 0.7rem;
       margin-bottom: 0.5rem;
@@ -656,8 +656,8 @@ a {
       display: flex;
       margin-bottom: 0.6rem;
       align-items: flex-start;
-      
-      .info-label {
+        
+        .info-label {
         width: 120px;
         flex-shrink: 0;
         font-weight: 600;
@@ -670,11 +670,11 @@ a {
           color: $primary-color;
           font-size: 0.9rem;
         }
-      }
-      
-      .info-value {
+        }
+        
+        .info-value {
         flex: 1;
-        color: $text-dark;
+          color: $text-dark;
         font-size: 0.8rem;
         
         &.view-mode {
@@ -701,7 +701,7 @@ a {
     // Enhanced delivery days styling
     .delivery-days-section {
       margin-top: 1rem;
-      margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
       position: relative;
       
       .delivery-days-chips, .delivery-days-display {
@@ -716,8 +716,8 @@ a {
           background-color: $grey-light;
           border: 1px solid $border-color;
           border-radius: 30px;
-          cursor: pointer;
-          transition: all 0.2s;
+      cursor: pointer;
+      transition: all 0.2s;
           user-select: none;
           
           input[type="checkbox"] {
@@ -744,15 +744,15 @@ a {
                 font-size: 0.7rem;
               }
             }
-          }
-          
-          &:hover {
+      }
+      
+      &:hover {
             background-color: $grey-medium;
             transform: translateY(-1px);
             box-shadow: $shadow-xs;
-          }
-          
-          &.active {
+      }
+      
+      &.active {
             background-color: $primary-color;
             color: $text-light;
             border-color: $primary-color;
@@ -776,7 +776,7 @@ a {
         
         i {
           margin-right: 0.5rem;
-          font-size: 0.9rem;
+      font-size: 0.9rem;
           
           &.success-icon {
             color: $success-color;
@@ -816,9 +816,9 @@ a {
             background: rgba(255, 255, 255, 0.1);
             opacity: 0;
             transition: opacity 0.2s;
-          }
-          
-          &:hover {
+        }
+        
+        &:hover {
             transform: translateY(-2px);
             box-shadow: $shadow-sm;
             
@@ -834,8 +834,8 @@ a {
           &.active {
             background-color: $primary-color;
             font-weight: 600;
-            
-            &:hover {
+        
+        &:hover {
               background-color: darken($primary-color, 5%);
             }
           }
@@ -859,7 +859,7 @@ a {
       color: $grey-dark;
       transition: all 0.2s;
       border-bottom: 2px solid transparent;
-      display: flex;
+          display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
@@ -981,8 +981,8 @@ a {
               
               &.special-upload {
                 background-color: $accent-color;
-                
-                &:hover {
+          
+          &:hover {
                   background-color: $accent-dark;
                 }
               }
@@ -996,21 +996,21 @@ a {
             }
           }
           
-          .paste-container {
+        .paste-container {
             margin-bottom: 0.6rem;
-            
-            .paste-area {
+        
+        .paste-area {
               border: 2px dashed $border-color;
               border-radius: $border-radius;
               padding: 1rem;
-              text-align: center;
-              cursor: pointer;
+          text-align: center;
+          cursor: pointer;
               transition: all 0.2s;
               
               &:hover, &:focus {
                 border-color: $primary-color;
                 background-color: $primary-light;
-                outline: none;
+          outline: none;
               }
               
               i {
@@ -1018,60 +1018,60 @@ a {
                 color: $grey-dark;
                 margin-bottom: 0.3rem;
                 display: block;
-              }
-              
-              .paste-text {
+          }
+          
+          .paste-text {
                 color: $grey-dark;
                 font-size: 0.75rem;
-              }
-              
-              &.storefront-paste-area {
+          }
+          
+          &.storefront-paste-area {
                 border-color: $accent-color;
-                
-                &:hover, &:focus {
+            
+            &:hover, &:focus {
                   border-color: $accent-dark;
                   background-color: $accent-light;
                 }
               }
             }
           }
-          
-          .image-preview-container {
+        
+        .image-preview-container {
             margin-top: 0.8rem;
-            
-            .image-preview {
+          
+          .image-preview {
               width: 100%;
               max-height: 200px;
               object-fit: contain;
               margin-bottom: 0.6rem;
-              border-radius: $border-radius;
+            border-radius: $border-radius;
               border: 1px solid $border-color;
-            }
-            
-            .image-annotation-input {
+          }
+          
+          .image-annotation-input {
               @include input-style;
               min-height: 60px;
               margin-bottom: 0.6rem;
-              resize: vertical;
+            resize: vertical;
+          }
+          
+          .upload-actions {
+            display: flex;
+            justify-content: flex-end;
+              gap: 0.5rem;
+            
+            .cancel-btn {
+                @include button-secondary;
             }
             
-            .upload-actions {
-              display: flex;
-              justify-content: flex-end;
-              gap: 0.5rem;
-              
-              .cancel-btn {
-                @include button-secondary;
-              }
-              
-              .upload-btn {
+            .upload-btn {
                 @include button-primary;
                 min-width: 100px;
                 
                 &.shop-upload-btn {
                   background-color: $accent-color;
-                  
-                  &:hover {
+              
+              &:hover {
                     background-color: $accent-dark;
                   }
                 }
@@ -1079,14 +1079,14 @@ a {
                 .spinning {
                   animation: spin 1s linear infinite;
                   margin-right: 0.3rem;
-                }
               }
             }
           }
         }
       }
-      
-      .existing-images {
+    }
+    
+    .existing-images {
         margin-top: 1rem;
         
         h5 {
@@ -1097,10 +1097,10 @@ a {
         }
         
         .no-images-message {
-          text-align: center;
+        text-align: center;
           padding: 1.5rem;
           background-color: $text-light;
-          border-radius: $border-radius;
+        border-radius: $border-radius;
           
           i {
             font-size: 2rem;
@@ -1112,17 +1112,17 @@ a {
           p {
             color: $grey-dark;
             font-size: 0.8rem;
-          }
         }
-        
-        .image-grid {
-          display: grid;
+      }
+      
+      .image-grid {
+        display: grid;
           grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
           gap: 0.7rem;
-          
-          .image-card {
+        
+        .image-card {
             @include card-style;
-            position: relative;
+          position: relative;
             background-color: $text-light;
             transition: transform 0.2s;
             
@@ -1134,7 +1134,7 @@ a {
             .image-wrapper {
               position: relative;
               padding-top: 75%; // 4:3 aspect ratio
-              overflow: hidden;
+          overflow: hidden;
               
               img {
                 position: absolute;
@@ -1170,7 +1170,7 @@ a {
               }
               
               .image-actions {
-                display: flex;
+            display: flex;
                 justify-content: space-between;
                 
                 .action-btn {
@@ -1219,11 +1219,11 @@ a {
   display: flex;
   align-items: center;
   animation: fadeIn 0.3s;
-  font-size: 0.8rem;
-  
-  i {
-    margin-right: 0.5rem;
-    font-size: 0.9rem;
+            font-size: 0.8rem;
+            
+            i {
+              margin-right: 0.5rem;
+              font-size: 0.9rem;
   }
   
   &.success {
@@ -1253,16 +1253,16 @@ a {
 
 // Loading overlay
 .loading-overlay {
-  position: absolute;
+            position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.85);
-  display: flex;
+            display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+            align-items: center;
+            justify-content: center;
   z-index: 999;
   
   .spinner {
@@ -1295,7 +1295,7 @@ a {
     background-color: $primary-light;
     color: $primary-color;
     padding: 0.15rem 0.3rem;
-    border-radius: $border-radius;
+          border-radius: $border-radius;
     font-size: 0.65rem;
     font-weight: 600;
     opacity: 0.8;
@@ -1305,7 +1305,7 @@ a {
     padding: 0.4rem;
     min-height: 30px;
     border: 1px solid transparent;
-    border-radius: $border-radius;
+            border-radius: $border-radius;
     cursor: pointer;
     
     &:hover {
@@ -1368,7 +1368,7 @@ a {
       position: static;
       width: 100%;
       margin-top: 0.4rem;
-      border-radius: $border-radius;
+              border-radius: $border-radius;
     }
   }
   
@@ -1381,10 +1381,10 @@ a {
 
 // Compact mode toggle button
 .compact-toggle {
-  display: flex;
-  align-items: center;
-  
-  i {
+              display: flex;
+              align-items: center;
+              
+              i {
     margin-right: 0.3rem;
   }
 }
@@ -1471,7 +1471,7 @@ a {
     .toggle-label {
       font-size: 0.75rem;
       font-weight: normal;
-      margin-right: 0.5rem;
+            margin-right: 0.5rem;
       color: $grey-dark;
     }
     
@@ -1542,9 +1542,9 @@ a {
   border-radius: $border-radius $border-radius 0 0;
   margin-top: 1rem;
   border-left: 3px solid $primary-color;
-  
+
   .header-title {
-    display: flex;
+  display: flex;
     align-items: center;
     
     i {
@@ -1559,7 +1559,7 @@ a {
   
   .toggle-container {
     display: flex;
-    align-items: center;
+  align-items: center;
     margin-left: auto;
     
     .toggle-label {
@@ -1576,8 +1576,8 @@ a {
       height: 20px;
       
       input {
-        opacity: 0;
-        width: 0;
+    opacity: 0;
+    width: 0;
         height: 0;
         
         &:checked + .toggle-slider {

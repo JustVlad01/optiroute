@@ -77,7 +77,7 @@ export class StoreLibraryComponent implements OnInit {
     private supabaseService: SupabaseService,
     private ngZone: NgZone
   ) { }
-
+  
   ngOnInit(): void {
     this.loadAllStores();
     // Try to load compact mode preference from localStorage
@@ -96,20 +96,20 @@ export class StoreLibraryComponent implements OnInit {
 
   // --- Store Data Management ---
   async loadAllStores() {
-    this.loading = true;
-    try {
-      const data = await this.supabaseService.getStoreInformation();
-      if (data) {
+      this.loading = true;
+      try {
+        const data = await this.supabaseService.getStoreInformation();
+        if (data) {
         this.allStores = data.map(store => this.standardizeStoreData(store));
-      }
-    } catch (error) {
-      console.error('Error loading stores:', error);
+        }
+      } catch (error) {
+        console.error('Error loading stores:', error);
       this.showStatusMessage('error', 'Failed to load stores. Please try again later.');
-    } finally {
-      this.loading = false;
+      } finally {
+        this.loading = false;
+      }
     }
-  }
-
+    
   // Standardize store data structure
   standardizeStoreData(store: any): any {
     // Handle the different structure from database
@@ -145,10 +145,10 @@ export class StoreLibraryComponent implements OnInit {
 
   selectSuggestion(suggestion: any) {
     this.searchQuery = suggestion.store_name || suggestion.store_code || '';
-    this.showSuggestions = false;
+      this.showSuggestions = false;
     this.searchStores();
   }
-
+  
   searchStores() {
     this.loading = true;
     this.searchPerformed = true;
@@ -478,9 +478,9 @@ export class StoreLibraryComponent implements OnInit {
       const result = await this.supabaseService.addStoreAdditionalInfo({
         store_id: this.selectedStore.id,
         content: this.additionalInfoText,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
       
       if (result && 'error' in result && result.error) {
         throw new Error(result.error.toString());

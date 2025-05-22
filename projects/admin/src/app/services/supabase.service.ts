@@ -713,6 +713,19 @@ export class SupabaseService {
   private fixColumnNames(row: any): any {
     const fixedRow = { ...row };
     
+    // Remove additionalInfo from the update object as it's stored in a separate table
+    if ('additionalInfo' in fixedRow) {
+      delete fixedRow.additionalInfo;
+    }
+    
+    // Remove fields that don't exist in the database schema
+    const nonExistentColumns = ['opening_time_bankholiday', 'opening_time_sunday', 'opening_time_saturday', 'openining_time_sunday'];
+    nonExistentColumns.forEach(column => {
+      if (column in fixedRow) {
+        delete fixedRow[column];
+      }
+    });
+    
     // Map of frontend column names to database column names
     const columnMapping: {[key: string]: string} = {
       'address': 'address_line',
@@ -721,11 +734,8 @@ export class SupabaseService {
       'date': 'created_at',
       'door': 'door_code',
       'keys': 'keys_available',
-      'store_id': 'id', // Map old store_id to new id (UUID)
-      'openining_time_bankholiday': 'opening_time_bankholiday',
-      'opening_time_sun': 'opening_time_sunday',
-      'opening_time_sat': 'opening_time_saturday'
-      // Add any other mismatched column names here
+      'store_id': 'id' // Map old store_id to new id (UUID)
+      // Note: Removed the problematic mapping for opening_time fields
     };
     
     // Handle text fields specifically to ensure proper type conversion
@@ -735,8 +745,7 @@ export class SupabaseService {
       'city', 'county', 'eircode', 'latitude', 'longitude', 'route', 
       'alarm_code', 'fridge_code', 'keys_available', 'key_code',
       'prior_registration_required', 'hour_access_24',
-      'opening_time_bankholiday', 'opening_time_weekdays',
-      'opening_time_sat', 'opening_time_sun', 'email', 'phone'
+      'email', 'phone'
     ];
     
     // Replace any mismatched column names
@@ -1175,10 +1184,33 @@ export class SupabaseService {
 
   // Update store
   async updateStore(storeId: string, updates: any): Promise<void> {
+    // Create a copy of the updates object to avoid modifying the original
+    const storeUpdates = { ...updates };
+    
+    // Remove additionalInfo from updates as it's stored in a separate table
+    if ('additionalInfo' in storeUpdates) {
+      delete storeUpdates.additionalInfo;
+    }
+    
+    // Remove fields that don't exist in the database schema
+    const nonExistentColumns = ['opening_time_bankholiday', 'opening_time_sunday', 'opening_time_saturday', 'openining_time_sunday'];
+    nonExistentColumns.forEach(column => {
+      if (column in storeUpdates) {
+        delete storeUpdates[column];
+      }
+    });
+    
+    // Log the update payload for debugging
+    console.log('Updating store with payload:', storeUpdates);
+    
+    // Determine which ID field to use for the where clause
+    const idField = storeId.includes('-') ? 'id' : 'store_id';
+    console.log(`Using ${idField} for update where clause with value: ${storeId}`);
+    
     const { error } = await this.supabase
       .from('stores')
-      .update(updates)
-      .eq('store_id', storeId);
+      .update(storeUpdates)
+      .eq(idField, storeId);
       
     if (error) {
       console.error('Error updating store:', error);

@@ -179,7 +179,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         this.storeData = this.standardizeColumnNames(data);
         this.totalStoreCount = this.supabaseService.getTotalStoreCount() || data.length;
         this.filteredData = [...this.storeData];
-
+        
         if (this.storeData.length > 0) {
           const alwaysExcludedColumns = [
             'store_images',         // Raw data, use 'image_url' or 'image_data' for display
@@ -196,8 +196,8 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           ];
 
           this.allColumns = Object.keys(this.storeData[0])
-            .filter(column => !alwaysExcludedColumns.includes(column)); 
-
+            .filter(column => !alwaysExcludedColumns.includes(column));
+          
           // Add derived/virtual columns if they are not directly in storeData[0]
           if (!this.allColumns.includes('image_url') && this.storeData[0].store_images) {
             this.allColumns.push('image_url');
@@ -208,7 +208,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           if (!this.allColumns.includes('delivery_days')) {
             this.allColumns.push('delivery_days');
           }
-
+          
           // Columns expected based on the 'stores' table schema and derived fields
           // Ensure these are consistent with what `standardizeColumnNames` produces for the UI
           const expectedUIColumns = [
@@ -267,7 +267,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
           this.allColumns.forEach(column => {
             if (this.columnVisibility[column] === undefined) {
               if (column.startsWith('deliver_') && column !== 'delivery_days') {
-                this.columnVisibility[column] = false; 
+                this.columnVisibility[column] = false;
               } else {
                 this.columnVisibility[column] = true;
               }
@@ -283,7 +283,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
 
           this.updateVisibleColumns();
         }
-
+        
         const routeSet = new Set<string>();
         const segregatedSet = new Set<string>();
         this.storeData.forEach(row => {
@@ -295,7 +295,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         this.allRoutes = Array.from(routeSet).filter(r => !!r).sort();
         this.allRoutes.forEach(route => { this.selectedRoutes[route] = false; });
         Array.from(segregatedSet).forEach(route => { this.segregatedRoutes[route] = true; });
-
+        
         this.updatePagedData();
       }
     } catch (error) {
@@ -578,7 +578,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
   private standardizeColumnNames(data: any[]): any[] {
     return data.map(item => this.fixColumnNames(item));
   }
-
+  
   private fixColumnNames(row: any): any {
     const standardizedRow = { ...row };
 
@@ -646,7 +646,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
         }
       }
     });
-
+    
     return standardizedRow;
   }
   
@@ -867,7 +867,7 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
       'notes': 'Notes',           // Derived
       'additional_info': 'Additional Info', // Original field before mapping to notes
       'image_data': 'Image Data',       // Original field before mapping to image_url
-      'delivery_days': 'Delivery Days',
+      'delivery_days': 'Delivery Days', 
       'deliver_monday': 'Mon Delivery',
       'deliver_tuesday': 'Tue Delivery',
       'deliver_wednesday': 'Wed Delivery',
@@ -875,11 +875,11 @@ export class StoreMasterfileComponent implements OnInit, OnDestroy {
       'deliver_friday': 'Fri Delivery',
       'deliver_saturday': 'Sat Delivery'
     };
-
+    
     if (column in specialCases) {
       return specialCases[column];
     }
-
+    
     // Generic formatting for other columns
     const formattedName = column
       .replace(/_/g, ' ')

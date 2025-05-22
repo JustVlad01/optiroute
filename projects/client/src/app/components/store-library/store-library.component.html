@@ -1,34 +1,30 @@
-<nav class="navbar">
+<!-- Navbar with red background as shown in the screenshot -->
+<div class="navbar-custom">
   <div class="container-fluid">
     <div class="nav-left">
       <span class="nav-title">Store Library</span>
     </div>
-    
     <a class="home-button-flat" routerLink="/dashboard">
       <i class="bi bi-house-fill"></i>
     </a>
   </div>
-</nav>
+</div>
 
+<!-- Search box - simpler design to match screenshot -->
 <div class="search-box">
-  <div class="search-input-container">
-    <div class="input-with-icon">
-      <i class="bi bi-search search-icon"></i>
-      <input 
-        type="text" 
-        id="searchTerm" 
-        [(ngModel)]="searchTerm" 
-        class="form-control" 
-        placeholder="Search by store code, dispatch code or name..." 
-        (keyup.enter)="searchStore()"
-        (input)="onSearchInput()"
-      >
-    </div>
-    <button class="btn btn-primary search-btn" (click)="searchStore()">
-      Search
-    </button>
-  </div>
-  <small class="search-hint"></small>
+  <input 
+    type="text" 
+    id="searchTerm" 
+    [(ngModel)]="searchTerm" 
+    class="form-control search-input" 
+    placeholder="Search by store code or name..." 
+    (keyup.enter)="searchStore()"
+    (input)="onSearchInput()"
+  >
+  
+  <button class="search-btn" (click)="searchStore()">
+    Search
+  </button>
   
   <div *ngIf="filteredOptions.length > 0 && searchTerm.length > 0" class="search-results">
     <div *ngFor="let result of filteredOptions" class="search-result-item" (click)="selectSearchResult(result)">
@@ -36,11 +32,6 @@
       <div class="result-item-name">{{ result.name }}</div>
     </div>
   </div>
-</div>
-
-<!-- Store Code Header - Positioned directly under search box -->
-<div *ngIf="storeDetails" class="store-code-header">
-  <div class="code-value">{{ storeDetails.store_code }}</div>
 </div>
 
 <div *ngIf="loading" class="loading-container">
@@ -55,199 +46,107 @@
   {{ error }}
 </div>
 
+<!-- Store Details Container -->
 <div *ngIf="storeDetails" class="store-details-container">
-  <!-- Storefront Image Display - This will be shown at the very top -->
-  <div *ngIf="storefrontImage" class="storefront-image-container">
-    <img [src]="storefrontImage.url" alt="Store Storefront" class="storefront-image">
-    <div *ngIf="storefrontImage.instructions" class="storefront-instructions">
-      <i class="bi bi-info-circle"></i> {{ storefrontImage.instructions }}
+  <!-- STORE CODE Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-hash"></i> STORE CODE
+    </div>
+    <div class="card-content">
+      <div class="store-code">{{ storeDetails.store_code }}</div>
     </div>
   </div>
 
-  <!-- Store Name Section - Only showing store name and dispatch code -->
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-building"></i> Store Info</h2>
+  <!-- STORE FRONT Section - Ensure it appears at the top -->
+  <div class="info-card" *ngIf="storefrontImage">
+    <div class="card-header">
+      <i class="bi bi-camera-fill"></i> STORE FRONT
     </div>
-    <div class="section-content">
-      <table class="info-table">
-        <tbody>
-          <tr>
-            <th>Store Name</th>
-            <td>{{ storeDetails.store_name }}</td>
-          </tr>
-          <tr>
-            <th>Dispatch Code</th>
-            <td>{{ storeDetails.dispatch_code }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="card-content image-content">
+      <img [src]="storefrontImage.url || storefrontImage.file_path" alt="Store Storefront" class="storefront-image">
     </div>
   </div>
 
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-geo-alt"></i> Location</h2>
+  <!-- STORE ADDRESS Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-geo-alt-fill"></i> STORE ADDRESS
     </div>
-    <div class="section-content">
-      <table class="info-table">
-        <tbody>
-          <tr>
-            <th>Address</th>
-            <td>{{ storeDetails.address_line || 'Not available' }}</td>
-          </tr>
-          <tr>
-            <th>Eircode</th>
-            <td>{{ storeDetails.eircode || 'Not available' }}</td>
-          </tr>
-          <tr>
-            <th>Coordinates</th>
-            <td>
-              <span *ngIf="storeDetails.Latitude && storeDetails.Longitude">
-                {{ storeDetails.Latitude }}, {{ storeDetails.Longitude }}
-              </span>
-              <span *ngIf="storeDetails.latitude && storeDetails.longitude">
-                {{ storeDetails.latitude }}, {{ storeDetails.longitude }}
-              </span>
-              <span *ngIf="(!storeDetails.Latitude || !storeDetails.Longitude) && (!storeDetails.latitude || !storeDetails.longitude)">
-                Not available
-                <div class="mt-3">
-                  <button class="btn btn-location compact" (click)="saveCurrentLocation()" [disabled]="savingLocation">
-                    <i class="bi bi-geo-alt-fill me-2"></i>
-                    <span *ngIf="!savingLocation">Save Current Location</span>
-                    <span *ngIf="savingLocation">Saving...</span>
-                  </button>
-                </div>
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="card-content">
+      <p>{{ storeDetails.address_line || 'Not available' }}, {{ storeDetails.city || '' }}</p>
+      <p *ngIf="storeDetails.eircode">{{ storeDetails.eircode }}</p>
     </div>
   </div>
 
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-shield-lock"></i> Access Information</h2>
+  <!-- OPENING HOURS Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-clock-fill"></i> OPENING HOURS
     </div>
-    <div class="section-content">
-      <div class="access-code-container">
-        <div class="access-code-item" *ngIf="storeDetails.door_code">
-          <div class="code-icon">
-            <i class="bi bi-door-open-fill"></i>
-          </div>
-          <div class="code-text">{{ storeDetails.door_code }}</div>
-          <div class="code-label">Door</div>
+    <div class="card-content">
+      <div class="opening-hours">
+        <div class="time-row">
+          <span class="day">Monday - Friday:</span> 
+          <span class="time">{{ storeDetails.opening_time_weekdays || '7:00 AM' }}</span>
         </div>
-        
-        <div class="access-code-item" *ngIf="storeDetails.alarm_code">
-          <div class="code-icon">
-            <i class="bi bi-shield-fill-check"></i>
-          </div>
-          <div class="code-text">{{ storeDetails.alarm_code }}</div>
-          <div class="code-label">Alarm</div>
+        <div class="time-row">
+          <span class="day">Saturday:</span> 
+          <span class="time">{{ storeDetails.opening_time_sat || 'Closed' }}</span>
         </div>
-        
-        <div class="access-code-item" *ngIf="storeDetails.fridge_code">
-          <div class="code-icon">
-            <i class="bi bi-snow"></i>
-          </div>
-          <div class="code-text">{{ storeDetails.fridge_code }}</div>
-          <div class="code-label">Fridge</div>
+        <div class="time-row">
+          <span class="day">Sunday:</span> 
+          <span class="time">{{ storeDetails.opening_time_sun || 'Closed' }}</span>
         </div>
-        
-        <div class="access-code-item" *ngIf="storeDetails.key_code">
-          <div class="code-icon">
-            <i class="bi bi-key-fill"></i>
-          </div>
-          <div class="code-text">{{ storeDetails.key_code }}</div>
-          <div class="code-label">Key</div>
-        </div>
-        
-        <div class="access-code-item" *ngIf="storeDetails.keys_available === 'Yes'">
-          <div class="code-icon">
-            <i class="bi bi-key-fill"></i>
-          </div>
-          <div class="code-text yes-label">Available</div>
-          <div class="code-label">Keys</div>
-        </div>
-        
-        <div class="access-code-empty" *ngIf="!storeDetails.door_code && !storeDetails.alarm_code && !storeDetails.fridge_code && !storeDetails.key_code && storeDetails.keys_available !== 'Yes'">
-          <i class="bi bi-exclamation-circle"></i>
-          <p>No access codes available</p>
+        <div class="time-row">
+          <span class="day">Bank Holidays:</span> 
+          <span class="time">{{ storeDetails.opening_time_bankholiday || 'Closed' }}</span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-truck"></i> Delivery Information</h2>
+  <!-- DELIVERY DAYS Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-calendar-check-fill"></i> DELIVERY DAYS
     </div>
-    <div class="section-content">
-      <table class="info-table">
-        <tbody>
-          <tr>
-            <th>24 Hour Access</th>
-            <td>{{ storeDetails.hour_access_24 || 'No' }}</td>
-          </tr>
-          <tr>
-            <th>Earliest Delivery</th>
-            <td>{{ storeDetails.earliest_delivery_time || 'Not specified' }}</td>
-          </tr>
-          <tr>
-            <th>Saturday Opening</th>
-            <td>{{ storeDetails.opening_time_saturday || 'Not specified' }}</td>
-          </tr>
-          <tr>
-            <th>Bank Holiday Opening</th>
-            <td>{{ storeDetails.openining_time_bankholiday || 'Not specified' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Delivery Days Section -->
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-calendar-check"></i> Delivery Days</h2>
-    </div>
-    <div class="section-content">
+    <div class="card-content">
       <div class="delivery-days-grid">
-        <div class="day-chip" [class.selected]="storeDetails.delivery_monday === 'Yes'">
-          <i [class]="storeDetails.delivery_monday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_monday === 'Yes'">
+          <i [class]="storeDetails.deliver_monday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Monday
         </div>
-        <div class="day-chip" [class.selected]="storeDetails.delivery_tuesday === 'Yes'">
-          <i [class]="storeDetails.delivery_tuesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_tuesday === 'Yes'">
+          <i [class]="storeDetails.deliver_tuesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Tuesday
         </div>
-        <div class="day-chip" [class.selected]="storeDetails.delivery_wednesday === 'Yes'">
-          <i [class]="storeDetails.delivery_wednesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_wednesday === 'Yes'">
+          <i [class]="storeDetails.deliver_wednesday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Wednesday
         </div>
-        <div class="day-chip" [class.selected]="storeDetails.delivery_thursday === 'Yes'">
-          <i [class]="storeDetails.delivery_thursday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_thursday === 'Yes'">
+          <i [class]="storeDetails.deliver_thursday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Thursday
         </div>
-        <div class="day-chip" [class.selected]="storeDetails.delivery_friday === 'Yes'">
-          <i [class]="storeDetails.delivery_friday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_friday === 'Yes'">
+          <i [class]="storeDetails.deliver_friday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Friday
         </div>
-        <div class="day-chip" [class.selected]="storeDetails.delivery_saturday === 'Yes'">
-          <i [class]="storeDetails.delivery_saturday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+        <div class="day-chip" [class.selected]="storeDetails.deliver_saturday === 'Yes'">
+          <i [class]="storeDetails.deliver_saturday === 'Yes' ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
           Saturday
         </div>
       </div>
     </div>
   </div>
 
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="bi bi-images"></i> Store Images</h2>
+  <!-- STORE IMAGES Section - Show even if there are no regular images -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-images"></i> STORE IMAGES
     </div>
-    <div class="section-content">
+    <div class="card-content">
       <div *ngIf="imagesLoading" class="loading-spinner">
         <div class="spinner-border text-primary" role="status">
           <span class="sr-only">Loading...</span>
@@ -255,17 +154,14 @@
         <p>Loading images...</p>
       </div>
       
-      <div *ngIf="!imagesLoading && storeImages.length === 0" class="no-content">
-        <i class="bi bi-image"></i>
-        <p>No images available for this store</p>
+      <div *ngIf="!imagesLoading && getRegularImages().length === 0" class="no-images-message">
+        <p>No additional store images available</p>
       </div>
       
-      <div *ngIf="!imagesLoading && storeImages.length > 0" class="image-gallery">
+      <div *ngIf="!imagesLoading && getRegularImages().length > 0" class="image-gallery">
         <div class="image-grid">
           <div *ngFor="let image of getRegularImages()" class="image-item" (click)="selectImage(image)">
-            <!-- Image container without overlay -->
-            <img [src]="image.url" alt="Store image" class="gallery-image">
-            <!-- Display instructions below the image if available -->
+            <img [src]="image.url || image.file_path" alt="Store image" class="gallery-image">
             <div *ngIf="image.instructions" class="image-instructions-preview">
               <i class="bi bi-info-circle"></i> {{ image.instructions }}
             </div>
@@ -275,7 +171,7 @@
         <!-- Selected image with annotations -->
         <div *ngIf="selectedImage" class="selected-image-container">
           <div class="image-preview">
-            <img [src]="selectedImage.url" alt="Selected store image" class="full-image">
+            <img [src]="selectedImage.url || selectedImage.file_path" alt="Selected store image" class="full-image">
           </div>
           <div *ngIf="selectedImage.instructions" class="image-instructions">
             <h4>Notes:</h4>
@@ -286,12 +182,12 @@
     </div>
   </div>
 
-  <!-- Additional Info Section -->
-  <div class="section-card" *ngIf="additionalInfo">
-    <div class="section-header">
-      <h2><i class="bi bi-info-circle-fill"></i> Additional Information</h2>
+  <!-- ADDITIONAL INFORMATION Section -->
+  <div class="info-card" *ngIf="additionalInfo">
+    <div class="card-header">
+      <i class="bi bi-info-circle-fill"></i> ADDITIONAL INFORMATION
     </div>
-    <div class="section-content">
+    <div class="card-content">
       <div *ngIf="additionalInfoLoading" class="loading-spinner">
         <div class="spinner-border text-primary" role="status">
           <span class="sr-only">Loading...</span>
@@ -300,7 +196,7 @@
       </div>
       
       <div *ngIf="!additionalInfoLoading" class="additional-info">
-        <p class="info-text">{{ additionalInfo }}</p>
+        <p class="info-text">{{ additionalInfo || 'No additional information available.' }}</p>
       </div>
     </div>
   </div>

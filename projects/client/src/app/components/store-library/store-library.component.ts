@@ -77,12 +77,12 @@ export class StoreLibraryComponent implements OnInit {
     
     // Define the days to check
     const deliveryDays = [
-      'delivery_monday', 
-      'delivery_tuesday', 
-      'delivery_wednesday', 
-      'delivery_thursday', 
-      'delivery_friday', 
-      'delivery_saturday'
+      'deliver_monday', 
+      'deliver_tuesday', 
+      'deliver_wednesday', 
+      'deliver_thursday', 
+      'deliver_friday', 
+      'deliver_saturday'
     ];
     
     // Process each day
@@ -114,12 +114,12 @@ export class StoreLibraryComponent implements OnInit {
     });
     
     console.log('Normalized delivery days:', {
-      monday: storeData.delivery_monday,
-      tuesday: storeData.delivery_tuesday,
-      wednesday: storeData.delivery_wednesday,
-      thursday: storeData.delivery_thursday,
-      friday: storeData.delivery_friday,
-      saturday: storeData.delivery_saturday
+      monday: storeData.deliver_monday,
+      tuesday: storeData.deliver_tuesday,
+      wednesday: storeData.deliver_wednesday,
+      thursday: storeData.deliver_thursday,
+      friday: storeData.deliver_friday,
+      saturday: storeData.deliver_saturday
     });
   }
   
@@ -133,12 +133,12 @@ export class StoreLibraryComponent implements OnInit {
     
     // Log delivery day fields to verify they're being received
     console.log('Selected store delivery days:', {
-      monday: this.storeDetails.delivery_monday,
-      tuesday: this.storeDetails.delivery_tuesday,
-      wednesday: this.storeDetails.delivery_wednesday,
-      thursday: this.storeDetails.delivery_thursday,
-      friday: this.storeDetails.delivery_friday,
-      saturday: this.storeDetails.delivery_saturday
+      monday: this.storeDetails.deliver_monday,
+      tuesday: this.storeDetails.deliver_tuesday,
+      wednesday: this.storeDetails.deliver_wednesday,
+      thursday: this.storeDetails.deliver_thursday,
+      friday: this.storeDetails.deliver_friday,
+      saturday: this.storeDetails.deliver_saturday
     });
     
     // Load store images and additional info when a store is selected
@@ -170,12 +170,12 @@ export class StoreLibraryComponent implements OnInit {
       
       // Log delivery day fields to verify they're being received
       console.log('Selected store delivery days:', {
-        monday: this.storeDetails.delivery_monday,
-        tuesday: this.storeDetails.delivery_tuesday,
-        wednesday: this.storeDetails.delivery_wednesday,
-        thursday: this.storeDetails.delivery_thursday,
-        friday: this.storeDetails.delivery_friday,
-        saturday: this.storeDetails.delivery_saturday
+        monday: this.storeDetails.deliver_monday,
+        tuesday: this.storeDetails.deliver_tuesday,
+        wednesday: this.storeDetails.deliver_wednesday,
+        thursday: this.storeDetails.deliver_thursday,
+        friday: this.storeDetails.deliver_friday,
+        saturday: this.storeDetails.deliver_saturday
       });
       
       // Load store images and additional info
@@ -208,49 +208,128 @@ export class StoreLibraryComponent implements OnInit {
       });
   }
   
+  // Process images to ensure they have proper URL format
+  private normalizeImageData(images: any[]): any[] {
+    if (!images || !Array.isArray(images)) return [];
+    
+    return images.map(img => {
+      // Make a copy to avoid modifying the original
+      const normalizedImg = { ...img };
+      
+      // If no URL but has file_path, copy to url property for consistent access
+      if (!normalizedImg.url && normalizedImg.file_path) {
+        normalizedImg.url = normalizedImg.file_path;
+      }
+      
+      // If no file_path but has url, copy to file_path property 
+      if (!normalizedImg.file_path && normalizedImg.url) {
+        normalizedImg.file_path = normalizedImg.url;
+      }
+      
+      return normalizedImg;
+    });
+  }
+  
   // Load store images from Supabase
   loadStoreImages(): void {
-    if (!this.storeDetails?.store_id) return;
+    if (!this.storeDetails?.store_id) {
+      console.log('No store_id available for loading images');
+      return;
+    }
+    
+    console.log('Loading images for store_id:', this.storeDetails.store_id);
     
     this.imagesLoading = true;
     this.storeImages = [];
     this.storefrontImage = null;
     this.shopImage = null;
     
-    this.supabaseService.getSupabase()
-      .from('store_images')
-      .select('*')
-      .eq('store_id', this.storeDetails.store_id)
-      .then(({ data, error }) => {
-        this.imagesLoading = false;
-        
-        if (error) {
-          console.error('Error loading store images:', error);
-          return;
-        }
-        
-        // Log the retrieved image data to debug instructions field
-        console.log('Store images data:', data);
-        
-        this.storeImages = data || [];
-        
-        // Find and set the storefront image if available
-        this.storefrontImage = this.storeImages.find(img => img.is_storefront === true);
-        
-        // Find and set the shop image if available (prioritize this over regular storefront)
-        this.shopImage = this.storeImages.find(img => img.is_shop_image === true);
-        
-        // If we have a shop image, use it as the primary display image
-        if (this.shopImage) {
-          this.storefrontImage = this.shopImage;
-        }
-        
-        // Check if any images have instructions
-        if (this.storeImages.length > 0) {
-          const imagesWithInstructions = this.storeImages.filter(img => img.instructions);
-          console.log('Images with instructions:', imagesWithInstructions);
-        }
-      });
+    try {
+      // Use the new service method to get properly formatted image URLs
+      this.supabaseService.getStoreImages(this.storeDetails.store_id)
+        .then(images => {
+          this.imagesLoading = false;
+          
+          // Log the retrieved image data to debug instructions field
+          console.log('Store images data:', images);
+          
+          // Check if the image data has the expected url property
+          if (images && images.length > 0) {
+            console.log('First image URL structure:', {
+              url: images[0].url,
+              file_path: images[0].file_path,
+              hasURL: !!images[0].url,
+              hasFilePath: !!images[0].file_path
+            });
+          }
+          
+          // Normalize the image data to ensure proper URL properties
+          this.storeImages = this.normalizeImageData(images || []);
+          console.log(`Found ${this.storeImages.length} images for store`);
+          
+          // Find and set the storefront image if available
+          this.storefrontImage = this.storeImages.find(img => img.is_storefront === true);
+          console.log('Storefront image found:', this.storefrontImage);
+          
+          // Try different formats of is_storefront value
+          if (!this.storefrontImage) {
+            console.log('Trying alternative storefront detection');
+            this.storefrontImage = this.storeImages.find(img => 
+              img.is_storefront === 'true' || 
+              img.is_storefront === 'yes' || 
+              img.is_storefront === 1 ||
+              img.is_storefront === '1'
+            );
+            console.log('Alternative storefront image found:', this.storefrontImage);
+          }
+          
+          // Find and set the shop image if available (prioritize this over regular storefront)
+          this.shopImage = this.storeImages.find(img => img.is_shop_image === true);
+          
+          // If we have a shop image, use it as the primary display image
+          if (this.shopImage) {
+            console.log('Using shop image as primary display image');
+            this.storefrontImage = this.shopImage;
+          }
+          
+          // If still no storefront image but we have some images, use the first one
+          if (!this.storefrontImage && this.storeImages.length > 0) {
+            console.log('No storefront flag found, using first image as storefront');
+            this.storefrontImage = this.storeImages[0];
+          }
+
+          // Debug storefront image after all selection logic
+          if (this.storefrontImage) {
+            console.log('Final storefront image URL check:', {
+              imageObject: this.storefrontImage,
+              url: this.storefrontImage.url,
+              file_path: this.storefrontImage.file_path,
+              hasURL: !!this.storefrontImage.url,
+              hasFilePath: !!this.storefrontImage.file_path
+            });
+          } else {
+            console.log('No storefront image was found after all selection logic');
+          }
+          
+          // Check if any images have instructions
+          if (this.storeImages.length > 0) {
+            const imagesWithInstructions = this.storeImages.filter(img => img.instructions);
+            console.log('Images with instructions:', imagesWithInstructions);
+          }
+          
+          // Log regular images after filtering
+          const regularImages = this.getRegularImages();
+          console.log('Regular images after filtering:', regularImages);
+          console.log('Regular images count:', regularImages.length);
+        })
+        .catch(err => {
+          this.imagesLoading = false;
+          console.error('Error loading store images:', err);
+        });
+    } catch (err: unknown) {
+      this.imagesLoading = false;
+      console.error('Exception while loading store images:', err);
+    }
   }
   
   // Load additional store info from Supabase
@@ -285,7 +364,24 @@ export class StoreLibraryComponent implements OnInit {
   
   // Filter out storefront/shop images to only show regular images
   getRegularImages(): any[] {
-    return this.storeImages.filter(img => !img.is_storefront && !img.is_shop_image);
+    return this.storeImages.filter(img => {
+      // Check for all possible variations of storefront flag
+      const isStorefront = img.is_storefront === true || 
+                          img.is_storefront === 'true' || 
+                          img.is_storefront === 'yes' || 
+                          img.is_storefront === 1 ||
+                          img.is_storefront === '1';
+      
+      // Check for all possible variations of shop image flag
+      const isShopImage = img.is_shop_image === true || 
+                          img.is_shop_image === 'true' || 
+                          img.is_shop_image === 'yes' || 
+                          img.is_shop_image === 1 ||
+                          img.is_shop_image === '1';
+      
+      // Return true for images that are NOT storefront or shop images
+      return !isStorefront && !isShopImage;
+    });
   }
   
   saveCurrentLocation(): void {

@@ -334,16 +334,6 @@
               </div>
               
               <div class="info-row">
-                <div class="info-label">Sunday</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_sun')" *ngIf="!editMode">
-                  {{ selectedStore.opening_time_sun || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.opening_time_sun" placeholder="e.g. 12:00 - 16:00">
-                </div>
-              </div>
-              
-              <div class="info-row">
                 <div class="info-label">Bank Holidays</div>
                 <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('openining_time_bankholiday')" *ngIf="!editMode">
                   {{ selectedStore.openining_time_bankholiday || 'Not specified' }}

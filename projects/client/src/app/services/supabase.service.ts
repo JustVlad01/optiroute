@@ -24,7 +24,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('stores')
-        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday');
+        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday');
       
       if (error) {
         console.error('Error fetching all stores:', error);
@@ -47,7 +47,7 @@ export class SupabaseService {
       // First try exact matches on the most common fields
       const { data: exactMatches, error: exactError } = await this.supabase
         .from('stores')
-        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
         .or(`store_code.eq.${searchTerm},dispatch_code.eq.${searchTerm}`);
       
       if (exactError) {
@@ -63,7 +63,7 @@ export class SupabaseService {
       // If no exact matches, try partial matches on store name
       const { data: partialMatches, error: partialError } = await this.supabase
         .from('stores')
-        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
         .or(`dispatch_store_name.ilike.%${searchTerm}%,store_name.ilike.%${searchTerm}%`);
       
       if (partialError) {
@@ -86,7 +86,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('stores')
-        .select('*, delivery_monday, delivery_tuesday, delivery_wednesday, delivery_thursday, delivery_friday, delivery_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
         .eq(field, value);
       
       if (error) {
@@ -471,6 +471,50 @@ export class SupabaseService {
       return data;
     } catch (err) {
       console.error('Exception during store location update:', err);
+      throw err;
+    }
+  }
+
+  // Method to get store images with proper URL structure
+  async getStoreImages(storeId: string): Promise<any[]> {
+    console.log(`Fetching images for store ID ${storeId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('store_images')
+        .select('*')
+        .eq('store_id', storeId);
+      
+      if (error) {
+        console.error('Error fetching store images:', error);
+        throw error;
+      }
+      
+      // Process images to ensure valid URLs
+      const processedImages = (data || []).map(img => {
+        // Create a copy to avoid modifying the original
+        const processedImg = { ...img };
+        
+        // If we have a file_path but no url, generate the full Supabase storage URL
+        if (processedImg.file_path && !processedImg.url) {
+          // Extract bucket and path from file_path if it's a storage path
+          if (processedImg.file_path.startsWith('store-images/')) {
+            processedImg.url = this.supabase.storage
+              .from('store-images')
+              .getPublicUrl(processedImg.file_path.replace('store-images/', '')).data.publicUrl;
+          } else {
+            // If it's already a full URL, use it directly
+            processedImg.url = processedImg.file_path;
+          }
+        }
+        
+        return processedImg;
+      });
+      
+      console.log(`Processed ${processedImages.length} store images`);
+      return processedImages;
+    } catch (err) {
+      console.error('Exception during store images fetch:', err);
       throw err;
     }
   }
