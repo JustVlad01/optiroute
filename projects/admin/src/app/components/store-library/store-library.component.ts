@@ -1,5 +1,5 @@
 import { Component, OnInit, NgZone } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
@@ -7,7 +7,7 @@ import { SupabaseService } from '../../services/supabase.service';
 @Component({
   selector: 'app-store-library',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, DatePipe],
   templateUrl: './store-library.component.html',
   styleUrl: './store-library.component.scss'
 })
@@ -208,6 +208,9 @@ export class StoreLibraryComponent implements OnInit {
       
       // Load additional info
       await this.loadAdditionalInfo();
+      
+      // Load route details
+      await this.loadRouteDetails();
     } catch (error) {
       console.error('Error loading store details:', error);
       this.showStatusMessage('error', 'Failed to load store details. Please try again later.');
@@ -761,6 +764,26 @@ export class StoreLibraryComponent implements OnInit {
     } catch (error) {
       console.error('Error clearing existing storefront images:', error);
       throw error;
+    }
+  }
+
+  // Load route details from store_orders
+  async loadRouteDetails() {
+    if (!this.selectedStore || !this.selectedStore.store_code) {
+      return;
+    }
+    
+    try {
+      const routeDetails = await this.supabaseService.getStoreRouteDetails(
+        this.selectedStore.store_code,
+        this.selectedStore.store_name
+      );
+      
+      if (routeDetails) {
+        this.selectedStore.route_details = routeDetails;
+      }
+    } catch (error) {
+      console.error('Error loading route details:', error);
     }
   }
 

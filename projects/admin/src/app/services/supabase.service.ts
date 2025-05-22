@@ -1344,7 +1344,10 @@ export class SupabaseService {
       const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileExt}`;
       const filePath = `stores/${store_id}/${fileName}`;
       
-      console.log(`Uploading image to ${filePath}`);
+      // Generate a custom image code for database export/import matching
+      const imageCode = `IMG_${store_id.substring(0, 8)}_${Date.now().toString(36)}`;
+      
+      console.log(`Uploading image to ${filePath} with code ${imageCode}`);
       
       // Upload the file to Supabase Storage
       const { data: uploadData, error: uploadError } = await this.supabase.storage
@@ -1384,7 +1387,44 @@ export class SupabaseService {
         throw dbError;
       }
       
-      return { data: dbData };
+      // Get current store images data
+      const { data: storeData, error: storeError } = await this.supabase
+        .from('stores')
+        .select('images')
+        .eq('id', store_id)
+        .single();
+        
+      if (storeError) {
+        console.error('Error fetching store data:', storeError);
+        // Continue with the image upload even if we can't update the store
+      } else {
+        // Update the store's images column with the new image code
+        let updatedImages;
+        if (storeData && storeData.images) {
+          // If images field exists and has data, append the new code
+          try {
+            const currentImages = storeData.images ? JSON.parse(storeData.images) : [];
+            updatedImages = JSON.stringify([...currentImages, imageCode]);
+          } catch (e) {
+            // If parsing fails, treat as string and create new array
+            updatedImages = JSON.stringify([storeData.images, imageCode]);
+          }
+        } else {
+          // If no images yet, create a new array with just this image code
+          updatedImages = JSON.stringify([imageCode]);
+        }
+        
+        const { error: updateError } = await this.supabase
+          .from('stores')
+          .update({ images: updatedImages })
+          .eq('id', store_id);
+          
+        if (updateError) {
+          console.error('Error updating store images field:', updateError);
+        }
+      }
+      
+      return { data: dbData, imageCode };
     } catch (error) {
       console.error('Error uploading store image:', error);
       return { error };
@@ -1431,10 +1471,10 @@ export class SupabaseService {
     try {
       console.log(`Deleting image with ID: ${imageId}`);
       
-      // First, get the image record to get the file path
+      // First, get the image record to get the file path and store_id
       const { data: imageData, error: getError } = await this.supabase
         .from('store_images')
-        .select('file_path')
+        .select('file_path, store_id, uploaded_at')
         .eq('id', imageId)
         .single();
       
@@ -1456,6 +1496,52 @@ export class SupabaseService {
         // Continue with deleting the database record even if storage deletion fails
       }
       
+      // Before deleting the image record, update the store's images array
+      try {
+        const storeId = imageData.store_id;
+        
+        // Generate the image code using the same pattern as in the upload
+        const imageCode = `IMG_${storeId.substring(0, 8)}_${new Date(imageData.uploaded_at).getTime().toString(36)}`;
+        
+        // Get current store images data
+        const { data: storeData, error: storeError } = await this.supabase
+          .from('stores')
+          .select('images')
+          .eq('id', storeId)
+          .single();
+          
+        if (storeError) {
+          console.error('Error fetching store data:', storeError);
+        } else if (storeData && storeData.images) {
+          // Update the images array by removing the image code
+          try {
+            const currentImages = typeof storeData.images === 'string' 
+              ? JSON.parse(storeData.images) 
+              : storeData.images;
+              
+            if (Array.isArray(currentImages)) {
+              const updatedImages = currentImages.filter(code => code !== imageCode);
+              
+              const { error: updateError } = await this.supabase
+                .from('stores')
+                .update({ images: JSON.stringify(updatedImages) })
+                .eq('id', storeId);
+                
+              if (updateError) {
+                console.error('Error updating store images field:', updateError);
+              } else {
+                console.log(`Removed image code ${imageCode} from store ${storeId}`);
+              }
+            }
+          } catch (e) {
+            console.error('Error updating store images array:', e);
+          }
+        }
+      } catch (updateError) {
+        console.error('Failed to update store images array:', updateError);
+        // Continue with deletion even if update fails
+      }
+      
       // Delete the database record
       const { data, error } = await this.supabase
         .from('store_images')
@@ -1470,6 +1556,133 @@ export class SupabaseService {
     } catch (error) {
       console.error('Error deleting store image:', error);
       return { error };
+    }
+  }
+
+  // Method to get route details for a specific store
+  async getStoreRouteDetails(storeCode: string, storeName: string): Promise<any | null> {
+    if (!storeCode) {
+      console.warn('Cannot get route details without a store code');
+      return null;
+    }
+
+    try {
+      console.log(`Getting route details for store: ${storeCode}`);
+
+      // First try to match by store code (more reliable)
+      let { data: orderData, error } = await this.supabase
+        .from('store_orders')
+        .select(`
+          id,
+          store_code,
+          store_name,
+          route,
+          delivery_date,
+          import_id
+        `)
+        .eq('store_code', storeCode)
+        .order('delivery_date', { ascending: false })
+        .limit(1);
+
+      // If no results, try to match by store name
+      if ((!orderData || orderData.length === 0) && storeName) {
+        const { data: nameOrderData, error: nameError } = await this.supabase
+          .from('store_orders')
+          .select(`
+            id,
+            store_code,
+            store_name,
+            route,
+            delivery_date,
+            import_id
+          `)
+          .ilike('store_name', `%${storeName}%`)
+          .order('delivery_date', { ascending: false })
+          .limit(1);
+
+        if (nameError) {
+          console.error('Error fetching store orders by name:', nameError);
+        } else if (nameOrderData && nameOrderData.length > 0) {
+          orderData = nameOrderData;
+        }
+      }
+
+      if (error) {
+        console.error('Error fetching store orders:', error);
+        return null;
+      }
+
+      if (!orderData || orderData.length === 0) {
+        console.log(`No order data found for store: ${storeCode}`);
+        return null;
+      }
+
+      // Get import details to find route information
+      const importId = orderData[0].import_id;
+      const { data: importData, error: importError } = await this.supabase
+        .from('order_imports')
+        .select('*')
+        .eq('id', importId)
+        .single();
+
+      if (importError) {
+        console.error('Error fetching order import:', importError);
+        return null;
+      }
+
+      // Get all orders for this store to determine last and next delivery dates
+      const { data: allStoreOrders, error: allOrdersError } = await this.supabase
+        .from('store_orders')
+        .select('delivery_date, route')
+        .eq('store_code', storeCode)
+        .order('delivery_date', { ascending: false })
+        .limit(10);
+
+      if (allOrdersError) {
+        console.error('Error fetching all store orders:', allOrdersError);
+      }
+
+      // Process delivery dates
+      let lastDeliveryDate = null;
+      let nextDeliveryDate = null;
+      
+      if (allStoreOrders && allStoreOrders.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Find last delivery (most recent in the past)
+        const pastDeliveries = allStoreOrders
+          .filter(order => new Date(order.delivery_date) < today)
+          .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime());
+          
+        if (pastDeliveries.length > 0) {
+          lastDeliveryDate = pastDeliveries[0].delivery_date;
+        }
+        
+        // Find next delivery (soonest in the future)
+        const futureDeliveries = allStoreOrders
+          .filter(order => new Date(order.delivery_date) >= today)
+          .sort((a, b) => new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime());
+          
+        if (futureDeliveries.length > 0) {
+          nextDeliveryDate = futureDeliveries[0].delivery_date;
+        }
+      }
+
+      // Construct route details object
+      const routeDetails = {
+        route_name: orderData[0].route,
+        route_number: importData?.route || null,
+        route_status: 'active', // Default status
+        last_delivery_date: lastDeliveryDate,
+        next_delivery_date: nextDeliveryDate
+      };
+
+      console.log('Retrieved route details:', routeDetails);
+      return routeDetails;
+    } catch (err) {
+      console.error('Exception in getStoreRouteDetails:', err);
+      return null;
     }
   }
 }

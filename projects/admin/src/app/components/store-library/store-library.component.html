@@ -267,6 +267,52 @@
             </div>
             
             <div class="section-header">
+              <div class="header-title"><i class="bi bi-truck"></i>Route Information</div>
+            </div>
+            <div class="info-section-card">
+              <div class="info-row">
+                <div class="info-label">Route Name</div>
+                <div class="info-value" [class.view-mode]="!editMode">
+                  {{ selectedStore.route || 'Not specified' }}
+                </div>
+              </div>
+              
+              <div class="info-row" *ngIf="selectedStore.route_details">
+                <div class="info-label">Route Number</div>
+                <div class="info-value" [class.view-mode]="!editMode">
+                  {{ selectedStore.route_details.route_number || 'Not specified' }}
+                </div>
+              </div>
+              
+              <div class="info-row" *ngIf="selectedStore.route_details">
+                <div class="info-label">Route Status</div>
+                <div class="info-value" [class.view-mode]="!editMode">
+                  <span class="status-badge" [ngClass]="{
+                    'status-active': selectedStore.route_details.route_status === 'active',
+                    'status-inactive': selectedStore.route_details.route_status === 'inactive',
+                    'status-pending': selectedStore.route_details.route_status === 'pending'
+                  }">
+                    {{ selectedStore.route_details.route_status || 'Unknown' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="info-row" *ngIf="selectedStore.route_details">
+                <div class="info-label">Last Delivery</div>
+                <div class="info-value" [class.view-mode]="!editMode">
+                  {{ selectedStore.route_details.last_delivery_date ? (selectedStore.route_details.last_delivery_date | date:'medium') : 'No recent deliveries' }}
+                </div>
+              </div>
+              
+              <div class="info-row" *ngIf="selectedStore.route_details">
+                <div class="info-label">Next Delivery</div>
+                <div class="info-value" [class.view-mode]="!editMode">
+                  {{ selectedStore.route_details.next_delivery_date ? (selectedStore.route_details.next_delivery_date | date:'medium') : 'No scheduled deliveries' }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="section-header">
               <div class="header-title"><i class="bi bi-key"></i>Access Information</div>
             </div>
             <div class="info-section-card">
