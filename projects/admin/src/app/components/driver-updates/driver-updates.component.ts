@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../services/supabase.service';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
-import autoTable, { RowInput, CellInput, CellHook, CellHookData } from 'jspdf-autotable';
+import autoTable, { RowInput, CellHookData } from 'jspdf-autotable';
 
 // Custom interfaces for strongly typed table data
 interface StoreTableRow {
@@ -296,10 +296,10 @@ export class DriverUpdatesComponent implements OnInit {
       autoTable(doc, {
         startY: tableY,
         head: [['Shop', 'Delivery Time', 'Store Name', 'Store Code']],
-        body: tableData as unknown as RowInput[],
+        body: tableData as any[],
         theme: 'grid',
         headStyles: { fillColor: headerBlue },
-        didParseCell: function(data: CellHookData) {
+        didParseCell: function(data: any) {
           // Color rows based on route
           if (data.section === 'body') {
             const rowData = data.row.raw as any[];
