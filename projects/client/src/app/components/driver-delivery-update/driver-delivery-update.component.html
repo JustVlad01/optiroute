@@ -1,0 +1,202 @@
+<nav class="navbar">
+  <div class="container-fluid">
+    <div class="nav-left">
+      <div class="title-info">
+        <i class="bi bi-clock"></i>
+        <span>Driver Updates</span>
+      </div>
+    </div>
+    
+    <button class="home-btn" routerLink="/dashboard">
+      <i class="bi bi-house-fill"></i>
+    </button>
+  </div>
+</nav>
+
+<div class="delivery-container">
+  <div class="route-selection" *ngIf="!selectedRoute">
+    <h2>Select Route</h2>
+    <div class="route-dropdown-container">
+      <select class="route-dropdown" [(ngModel)]="tempSelectedRoute">
+        <option value="" disabled selected>Select a Dublin route</option>
+        <option *ngFor="let route of dublinRoutes" [value]="route">{{ route }}</option>
+      </select>
+      <button class="confirm-route-btn" (click)="confirmRouteSelection()" [disabled]="!tempSelectedRoute">
+        <i class="bi bi-check-circle"></i> Confirm Selection
+      </button>
+    </div>
+  </div>
+
+  <div class="delivery-content" *ngIf="selectedRoute">
+    <!-- Form day indicator -->
+    <div class="form-day-indicator">
+      <div class="form-day-main">
+        <i class="bi bi-calendar-check"></i>
+        <span>Form for: {{ formattedCurrentDay }}</span>
+      </div>
+      <div class="reset-info">
+        <i class="bi bi-info-circle"></i>
+        <span>Resets at 12:00 PM daily. All previous forms are saved.</span>
+      </div>
+    </div>
+
+    <div class="delivery-card notification-card">
+      <div class="card-body">
+        <div class="notification-row">
+          <i class="bi bi-exclamation-triangle-fill warning-icon"></i>
+          <span class="notification-text">Advanced Notification - Potential late delivery</span>
+        </div>
+
+        <div class="form-group">
+          <textarea 
+            id="driverComments"
+            class="form-control" 
+            [(ngModel)]="driverComments" 
+            placeholder="Enter your comments here"
+            rows="4"
+          ></textarea>
+        </div>
+        
+        <!-- Submit button for Advanced Notification section -->
+        <div class="submit-button-container">
+          <button class="submit-btn" (click)="saveAdvancedNotification()" [disabled]="isLoading">
+            <i class="bi" [ngClass]="isLoading ? 'bi-hourglass-split spin' : 'bi-check-circle'"></i>
+            {{ isLoading ? 'Submitting...' : 'Submit Notification' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="delivery-card outstanding-card">
+      <div class="card-body">
+        <div class="section-header">
+          <i class="bi bi-clock"></i> <strong>Delivery Update - Outstanding Deliveries</strong>
+        </div>
+
+        <div class="delivery-list">
+          <div class="store-item" *ngFor="let delivery of deliveries; let i = index">
+            <div class="shop-info-container">
+              <div class="shop-info">
+                <i class="bi bi-shop"></i> {{ delivery.name }} - {{ delivery.time }}
+              </div>
+              
+              <!-- Show add store button for all shops -->
+              <button 
+                class="add-store-btn" 
+                (click)="addStore(i)"
+              >
+                <i class="bi bi-plus-circle"></i> Add Store
+              </button>
+            </div>
+            
+            <!-- Display each store for this shop -->
+            <div class="shop-stores-list" *ngIf="delivery.stores.length > 0">
+              <div class="store-entry" *ngFor="let store of delivery.stores; let storeIndex = index">
+                <div class="store-code-badge">
+                  Code: {{ store.storeDetails.code || 'N/A' }}
+                </div>
+                <button class="remove-store-btn" (click)="removeStore(i, storeIndex)">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Submit button for Outstanding Deliveries section -->
+        <div class="submit-button-container">
+          <button class="submit-btn" (click)="saveOutstandingDeliveries()" [disabled]="isLoading">
+            <i class="bi" [ngClass]="isLoading ? 'bi-hourglass-split spin' : 'bi-check-circle'"></i>
+            {{ isLoading ? 'Submitting...' : 'Submit Deliveries' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="delivery-card last-delivery-card">
+      <div class="card-body">
+        <div class="section-header">
+          <i class="bi bi-clock-history"></i> <strong>Last Delivery</strong>
+        </div>
+
+        <div class="delivery-list">
+          <div class="delivery-item" *ngFor="let delivery of lastDeliveries; let i = index">
+            <div class="store-info">
+              <i class="bi bi-shop"></i> {{ delivery.name }}
+            </div>
+            <div class="time-selector">
+              <span class="time-label">Last Delivery Time:</span>
+              <div class="time-inputs">
+                <select [(ngModel)]="delivery.hour" (change)="updateTime(i)" class="hour-select">
+                  <option value="" disabled selected>Hr</option>
+                  <option *ngFor="let hour of hours" [value]="hour">{{hour}}</option>
+                </select>
+                <span class="time-separator">:</span>
+                <select [(ngModel)]="delivery.minute" (change)="updateTime(i)" class="minute-select" [ngClass]="{'invalid': delivery.hour && delivery.minute === 'Min'}">
+                  <option value="" disabled selected>Minutes *</option>
+                  <option *ngFor="let minute of minutes" [value]="minute">{{minute}}</option>
+                </select>
+              </div>
+              <i class="bi bi-clock time-icon"></i>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Submit button for Last Delivery section -->
+        <div class="submit-button-container">
+          <button class="submit-btn" (click)="saveLastDeliveryTimes()" [disabled]="isLoading">
+            <i class="bi" [ngClass]="isLoading ? 'bi-hourglass-split spin' : 'bi-check-circle'"></i>
+            {{ isLoading ? 'Submitting...' : 'Submit Last Deliveries' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Store Selector Modal -->
+<div class="store-selector-modal" *ngIf="showStoreSelector">
+  <div class="modal-backdrop" (click)="closeStoreSelector()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Select Store</h3>
+      <button class="close-btn" (click)="closeStoreSelector()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="search-container">
+        <input 
+          type="text" 
+          class="search-input" 
+          placeholder="Search for a store..." 
+          [(ngModel)]="storeSearchTerm"
+          (input)="searchStores()"
+        >
+        <i class="bi bi-search search-icon"></i>
+      </div>
+      
+      <div class="store-results">
+        <div *ngIf="filteredStores.length === 0 && storeSearchTerm.trim() !== ''" class="no-results">
+          No stores found matching your search
+        </div>
+        <div *ngIf="storeSearchTerm.trim() === ''" class="no-search">
+          Enter store name, code or location to search
+        </div>
+        <div class="store-list">
+          <div 
+            class="store-list-item" 
+            *ngFor="let store of filteredStores"
+            (click)="selectStore(store)"
+          >
+            <div class="store-name">{{ store.store_name || store.dispatch_store_name }}</div>
+            <div class="store-details">
+              <span class="store-code" *ngIf="store.store_code">Code: {{ store.store_code }}</span>
+              <span class="store-address" *ngIf="store.address_line">{{ store.address_line }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

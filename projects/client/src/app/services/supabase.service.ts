@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment.development';
+import { Store } from '../models/store.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,21 +19,45 @@ export class SupabaseService {
   }
 
   // Method to get all stores for the autocomplete
-  async getAllStores(): Promise<any[]> {
+  async getAllStores(): Promise<Store[]> {
     console.log('Fetching all stores for autocomplete');
     
     try {
-      const { data, error } = await this.supabase
-        .from('stores')
-        .select('store_id, store_code, dispatch_code, store_name, dispatch_store_name, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday');
+      let allStores: Store[] = [];
+      const pageSize = 1000;
+      let page = 0;
+      let hasMoreData = true;
       
-      if (error) {
-        console.error('Error fetching all stores:', error);
-        throw error;
+      while (hasMoreData) {
+        const from = page * pageSize;
+        console.log(`Fetching stores page ${page+1}, range ${from}-${from+pageSize-1}`);
+        
+        const { data, error } = await this.supabase
+          .from('stores')
+          .select('*')
+          .range(from, from + pageSize - 1);
+        
+        if (error) {
+          console.error(`Error fetching stores page ${page+1}:`, error);
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          allStores = [...allStores, ...data];
+          console.log(`Fetched ${data.length} stores in page ${page+1}`);
+          page++;
+          
+          // If we received fewer results than the page size, we've reached the end
+          if (data.length < pageSize) {
+            hasMoreData = false;
+          }
+        } else {
+          hasMoreData = false;
+        }
       }
       
-      console.log(`Fetched ${data?.length || 0} stores`);
-      return data || [];
+      console.log(`Fetched total of ${allStores.length} stores`);
+      return allStores;
     } catch (err) {
       console.error('Exception while fetching stores:', err);
       throw err;
@@ -434,7 +459,7 @@ export class SupabaseService {
       const { data: storeData, error: fetchError } = await this.supabase
         .from('stores')
         .select('*')
-        .eq('store_id', storeId)
+        .eq('id', storeId)
         .single();
       
       if (fetchError) {
@@ -459,7 +484,7 @@ export class SupabaseService {
       const { data, error } = await this.supabase
         .from('stores')
         .update(updateData)
-        .eq('store_id', storeId)
+        .eq('id', storeId)
         .select();
       
       if (error) {
@@ -516,6 +541,300 @@ export class SupabaseService {
     } catch (err) {
       console.error('Exception during store images fetch:', err);
       throw err;
+    }
+  }
+
+  // Method to save a new delivery update
+  async saveDeliveryUpdate(deliveryData: {
+    driver_id: string;
+    store_id?: string;
+    route_name?: string;
+    last_delivery_circlok?: string;
+    last_delivery_starbucks?: string;
+    infobox?: string;
+  }) {
+    console.log('Saving delivery update:', deliveryData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('delivery_updates')
+        .insert([deliveryData])
+        .select();
+
+      if (error) {
+        console.error('Error saving delivery update:', error);
+        return { data: null, error };
+      }
+
+      console.log('Delivery update saved successfully:', data);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception during delivery update save:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  // Method to get delivery updates for a driver
+  async getDriverDeliveryUpdates(driverId: string) {
+    console.log('Getting delivery updates for driver:', driverId);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('delivery_updates')
+        .select(`
+          id,
+          driver_id,
+          store_id,
+          route_name,
+          status,
+          notes,
+          last_delivery_circlok,
+          last_delivery_starbucks,
+          created_at,
+          updated_at,
+          stores:store_id (
+            id,
+            store_name,
+            store_code,
+            address_line,
+            city,
+            county
+          )
+        `)
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching delivery updates:', error);
+        return { data: null, error };
+      }
+
+      console.log(`Retrieved ${data?.length || 0} delivery updates`);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception fetching delivery updates:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  // Method to delete a delivery update
+  async deleteDeliveryUpdate(updateId: string) {
+    console.log('Deleting delivery update:', updateId);
+    
+    try {
+      const { error } = await this.supabase
+        .from('delivery_updates')
+        .delete()
+        .eq('id', updateId);
+
+      if (error) {
+        console.error('Error deleting delivery update:', error);
+        return { success: false, error };
+      }
+
+      return { success: true, error: null };
+    } catch (err) {
+      console.error('Exception deleting delivery update:', err);
+      return { success: false, error: err };
+    }
+  }
+
+  // Method to update a delivery update status
+  async updateDeliveryStatus(updateId: string, status: string, notes?: string) {
+    console.log(`Updating delivery update ${updateId} status to ${status}`);
+    
+    try {
+      const updateData: any = { status };
+      if (notes !== undefined) {
+        updateData.notes = notes;
+      }
+      
+      const { error } = await this.supabase
+        .from('delivery_updates')
+        .update(updateData)
+        .eq('id', updateId);
+
+      if (error) {
+        console.error('Error updating delivery status:', error);
+        return { success: false, error };
+      }
+
+      return { success: true, error: null };
+    } catch (err) {
+      console.error('Exception updating delivery status:', err);
+      return { success: false, error: err };
+    }
+  }
+
+  // Method to get last delivery times for a driver
+  async getLastDeliveryTimes(driverId: string) {
+    console.log('Getting last delivery times for driver:', driverId);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('delivery_updates')
+        .select(`
+          id,
+          driver_id,
+          last_delivery_time_circlok,
+          last_delivery_time_starbucks,
+          created_at
+        `)
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching last delivery times:', error);
+        return { data: null, error };
+      }
+
+      console.log('Retrieved last delivery times:', data);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception fetching last delivery times:', err);
+      return { data: null, error: err };
+    }
+  }
+  
+  // Method to save last delivery times
+  async saveLastDeliveryTimes(lastDeliveryData: {
+    driver_id: string;
+    last_delivery_time_circlok?: string;
+    last_delivery_time_starbucks?: string;
+  }) {
+    console.log('Saving last delivery times:', lastDeliveryData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('delivery_updates')
+        .insert([lastDeliveryData])
+        .select();
+
+      if (error) {
+        console.error('Error saving last delivery times:', error);
+        return { data: null, error };
+      }
+
+      console.log('Last delivery times saved successfully:', data);
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception during last delivery times save:', err);
+      return { data: null, error: err };
+    }
+  }
+
+  // Method to save driver delivery update with JSON structure
+  async saveDriverDeliveryUpdate(updateData: {
+    driver_id: string;
+    route_name?: string;
+    comments?: string;
+    delivery_data?: any[];
+    last_delivery_times?: Record<string, string>;
+  }): Promise<any> {
+    console.log('Saving driver delivery update:', updateData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('driver_delivery_updates')
+        .insert([updateData])
+        .select();
+
+      if (error) {
+        console.error('Error saving driver delivery update:', error);
+        return { success: false, error };
+      }
+
+      console.log('Driver delivery update saved successfully:', data);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Exception during driver delivery update save:', err);
+      return { success: false, error: err };
+    }
+  }
+  
+  // Method to update an existing driver delivery update
+  async updateDriverDeliveryUpdate(updateId: string, updateData: {
+    route_name?: string;
+    comments?: string;
+    delivery_data?: any[];
+    last_delivery_times?: Record<string, string>;
+  }): Promise<any> {
+    console.log(`Updating driver delivery update ${updateId}:`, updateData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('driver_delivery_updates')
+        .update(updateData)
+        .eq('id', updateId)
+        .select();
+
+      if (error) {
+        console.error('Error updating driver delivery update:', error);
+        return { success: false, error };
+      }
+
+      console.log('Driver delivery update updated successfully:', data);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Exception during driver delivery update:', err);
+      return { success: false, error: err };
+    }
+  }
+
+  // Method to get driver delivery updates history with pagination
+  async getDriverDeliveryUpdateHistory(
+    driverId: string, 
+    page: number = 0,
+    pageSize: number = 10
+  ): Promise<any> {
+    console.log(`Getting driver delivery update history for driver: ${driverId}, page: ${page}`);
+    
+    try {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error, count } = await this.supabase
+        .from('driver_delivery_updates')
+        .select('*', { count: 'exact' })
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error('Error fetching driver delivery update history:', error);
+        return { data: null, count: 0, error };
+      }
+
+      console.log(`Retrieved ${data?.length || 0} driver delivery updates (page ${page + 1})`);
+      return { data, count, error: null };
+    } catch (err) {
+      console.error('Exception fetching driver delivery update history:', err);
+      return { data: null, count: 0, error: err };
+    }
+  }
+
+  // Method to get a specific driver delivery update by ID
+  async getDriverDeliveryUpdateById(updateId: string): Promise<any> {
+    console.log(`Getting driver delivery update by ID: ${updateId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('driver_delivery_updates')
+        .select('*')
+        .eq('id', updateId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching driver delivery update:', error);
+        return { data: null, error };
+      }
+
+      console.log('Retrieved driver delivery update');
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception fetching driver delivery update:', err);
+      return { data: null, error: err };
     }
   }
 }

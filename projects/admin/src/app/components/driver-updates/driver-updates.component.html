@@ -1,0 +1,190 @@
+<div class="driver-updates-container">
+  <div class="section-header">
+    <i class="bi bi-truck"></i> <h2>Drivers Updates</h2>
+    <p class="subtitle">Today's driver delivery updates submitted from the mobile app</p>
+  </div>
+
+  <!-- List View Mode -->
+  <div *ngIf="viewMode === 'list'" class="update-list">
+    <div *ngIf="loading" class="loading-indicator">
+      <i class="bi bi-hourglass-split spin"></i> Loading updates...
+    </div>
+
+    <div *ngIf="!loading && driverUpdates.length === 0" class="no-data">
+      <i class="bi bi-info-circle"></i>
+      <p>No delivery updates found for today</p>
+    </div>
+
+    <div *ngIf="!loading && driverUpdates.length > 0" class="updates-table-container">
+      <div class="table-header">
+        <span>Today's Updates ({{totalCount}})</span>
+        <div *ngIf="hasSelectedUpdates()" class="bulk-actions">
+          <button class="deselect-btn" (click)="deselectAllUpdates()">
+            <i class="bi bi-x"></i> Deselect All
+          </button>
+          <button class="multi-export-btn" (click)="exportSelectedUpdates()">
+            <i class="bi bi-file-earmark-pdf"></i> Export Selected
+          </button>
+        </div>
+        <button *ngIf="!hasSelectedUpdates() && driverUpdates.length > 0" class="select-all-btn" (click)="selectAllUpdates()">
+          <i class="bi bi-check-all"></i> Select All
+        </button>
+      </div>
+      <table class="updates-table">
+        <thead>
+          <tr>
+            <th class="select-col">Select</th>
+            <th>Time</th>
+            <th>Driver</th>
+            <th>Route</th>
+            <th>Deliveries</th>
+            <th>Stores</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let update of driverUpdates">
+            <td class="select-col">
+              <input 
+                type="checkbox" 
+                [id]="'update-' + update.id" 
+                [checked]="isUpdateSelected(update.id)"
+                (change)="toggleUpdateSelection(update.id)"
+                class="update-checkbox"
+              >
+            </td>
+            <td>{{ formatDate(update.created_at) }}</td>
+            <td>{{ update.drivers?.name || 'Unknown' }}</td>
+            <td>{{ update.route_name || 'N/A' }}</td>
+            <td>{{ getDeliveryCount(update) }}</td>
+            <td>{{ getStoreCount(update) }}</td>
+            <td>
+              <button class="view-btn" (click)="viewUpdateDetails(update)">
+                <i class="bi bi-eye"></i> View
+              </button>
+              <button class="export-btn-list" (click)="exportFullUpdate(update)">
+                <i class="bi bi-file-earmark-pdf"></i> Export
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination controls -->
+      <div class="pagination-controls" *ngIf="totalCount > pageSize">
+        <button [disabled]="page === 0" (click)="prevPage()" class="page-btn">
+          <i class="bi bi-chevron-left"></i> Previous
+        </button>
+        <span class="page-info">
+          Page {{ page + 1 }} of {{ Math.ceil(totalCount / pageSize) }}
+        </span>
+        <button [disabled]="(page + 1) * pageSize >= totalCount" (click)="nextPage()" class="page-btn">
+          Next <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail View Mode -->
+  <div *ngIf="viewMode === 'detail' && selectedUpdate" class="update-detail">
+    <div class="detail-header">
+      <button class="back-btn" (click)="backToList()">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </button>
+      <h3>Update Details - {{ formatDate(selectedUpdate.created_at) }}</h3>
+      <button *ngIf="hasSelectedStores()" class="export-btn" (click)="exportSelectedStores()">
+        <i class="bi bi-file-earmark-pdf"></i> Export Selected
+      </button>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-section">
+        <div class="section-title">
+          <i class="bi bi-info-circle"></i>
+          <h4>General Information</h4>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Driver:</div>
+          <div class="detail-value">{{ selectedUpdate.drivers?.name || 'Unknown' }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Route:</div>
+          <div class="detail-value">{{ selectedUpdate.route_name || 'N/A' }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Submitted:</div>
+          <div class="detail-value">{{ formatDate(selectedUpdate.created_at) }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Last Updated:</div>
+          <div class="detail-value">{{ formatDate(selectedUpdate.updated_at) }}</div>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedUpdate.comments">
+        <div class="section-title">
+          <i class="bi bi-chat-left-text"></i>
+          <h4>Advanced Notification Comments</h4>
+        </div>
+        <div class="comments-box">
+          {{ selectedUpdate.comments || 'No comments provided' }}
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedUpdate.delivery_data?.length > 0">
+        <div class="section-title">
+          <i class="bi bi-box-seam"></i>
+          <h4>Delivery Update - Outstanding Deliveries</h4>
+        </div>
+        <div class="select-actions" *ngIf="getAllStoresFromDeliveries().length > 0">
+          <button class="select-btn" (click)="selectAllStores()">
+            <i class="bi bi-check-all"></i> Select All
+          </button>
+          <button class="select-btn" (click)="deselectAllStores()">
+            <i class="bi bi-x"></i> Deselect All
+          </button>
+        </div>
+        <div class="delivery-list">
+          <div class="delivery-item" *ngFor="let delivery of selectedUpdate.delivery_data; let deliveryIndex = index">
+            <div class="delivery-header">
+              <span class="delivery-name">{{ delivery.shop_name }}</span>
+              <span class="delivery-time">{{ delivery.delivery_time }}</span>
+            </div>
+            
+            <div class="store-list" *ngIf="delivery.stores?.length > 0">
+              <div class="store-item" *ngFor="let store of delivery.stores; let storeIndex = index">
+                <div class="store-selector">
+                  <input 
+                    type="checkbox" 
+                    [id]="'store-' + deliveryIndex + '-' + storeIndex" 
+                    [checked]="isStoreSelected(deliveryIndex, storeIndex)" 
+                    (change)="toggleStoreSelection(deliveryIndex, storeIndex)"
+                  >
+                  <label [for]="'store-' + deliveryIndex + '-' + storeIndex">{{ store.store_name }}</label>
+                </div>
+                <span class="store-code">{{ store.store_code || 'N/A' }}</span>
+              </div>
+            </div>
+            
+            <div class="no-stores" *ngIf="!delivery.stores || delivery.stores.length === 0">
+              No stores added for this shop
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedUpdate.last_delivery_times">
+        <div class="section-title">
+          <i class="bi bi-clock-history"></i>
+          <h4>Last Delivery Times</h4>
+        </div>
+        <div class="last-delivery-list">
+          <div class="last-delivery-item" *ngFor="let time of selectedUpdate.last_delivery_times | keyvalue">
+            <span class="shop-name">{{ time.key }}:</span>
+            <span class="delivery-time">{{ time.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

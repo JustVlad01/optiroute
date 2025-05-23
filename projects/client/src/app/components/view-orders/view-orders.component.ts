@@ -104,7 +104,7 @@ export class ViewOrdersComponent implements OnInit {
       
       // Add the store to the route
       route.stores.push({
-        id: item.store_id.toString(),
+        id: item.store_id?.toString(),
         customerName: item.customer_name,
         customerCode: item.customer_code,
         totalItems: item.total_items,

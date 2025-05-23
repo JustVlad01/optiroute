@@ -8,6 +8,7 @@ import { FormTemplatesComponent } from './components/admin/form-templates/form-t
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
+import { DriverDeliveryUpdateComponent } from './components/driver-delivery-update/driver-delivery-update.component';
 
 export const routes: Routes = [
     {
@@ -34,6 +35,10 @@ export const routes: Routes = [
     {
         path: 'store-library',
         component: StoreLibraryComponent
+    },
+    {
+        path: 'driver-delivery-update',
+        component: DriverDeliveryUpdateComponent
     },
     {
         path: 'form-details/:id',

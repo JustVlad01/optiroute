@@ -1685,4 +1685,60 @@ export class SupabaseService {
       return null;
     }
   }
+
+  // Method to get driver delivery updates history with pagination
+  async getDriverDeliveryUpdateHistory(
+    driverId: string, 
+    page: number = 0,
+    pageSize: number = 10
+  ): Promise<any> {
+    console.log(`Getting driver delivery update history for driver: ${driverId}, page: ${page}`);
+    
+    try {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error, count } = await this.supabase
+        .from('driver_delivery_updates')
+        .select('*', { count: 'exact' })
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error('Error fetching driver delivery update history:', error);
+        return { data: null, count: 0, error };
+      }
+
+      console.log(`Retrieved ${data?.length || 0} driver delivery updates (page ${page + 1})`);
+      return { data, count, error: null };
+    } catch (err) {
+      console.error('Exception fetching driver delivery update history:', err);
+      return { data: null, count: 0, error: err };
+    }
+  }
+
+  // Method to get a specific driver delivery update by ID
+  async getDriverDeliveryUpdateById(updateId: string): Promise<any> {
+    console.log(`Getting driver delivery update by ID: ${updateId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('driver_delivery_updates')
+        .select('*')
+        .eq('id', updateId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching driver delivery update:', error);
+        return { data: null, error };
+      }
+
+      console.log('Retrieved driver delivery update');
+      return { data, error: null };
+    } catch (err) {
+      console.error('Exception fetching driver delivery update:', err);
+      return { data: null, error: err };
+    }
+  }
 }

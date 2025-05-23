@@ -43,7 +43,7 @@ export class StoreLibraryComponent implements OnInit {
       .then(stores => {
         if (stores && stores.length > 0) {
           this.storesList = stores.map(store => ({
-            id: store.store_id,
+            id: store.id,
             code: store.store_code || store.dispatch_code,
             name: store.dispatch_store_name || store.store_name,
             data: store
@@ -232,12 +232,12 @@ export class StoreLibraryComponent implements OnInit {
   
   // Load store images from Supabase
   loadStoreImages(): void {
-    if (!this.storeDetails?.store_id) {
-      console.log('No store_id available for loading images');
+    if (!this.storeDetails?.id) {
+      console.log('No store id available for loading images');
       return;
     }
     
-    console.log('Loading images for store_id:', this.storeDetails.store_id);
+    console.log('Loading images for store_id:', this.storeDetails.id);
     
     this.imagesLoading = true;
     this.storeImages = [];
@@ -246,7 +246,7 @@ export class StoreLibraryComponent implements OnInit {
     
     try {
       // Use the new service method to get properly formatted image URLs
-      this.supabaseService.getStoreImages(this.storeDetails.store_id)
+      this.supabaseService.getStoreImages(this.storeDetails.id)
         .then(images => {
           this.imagesLoading = false;
           
@@ -334,7 +334,7 @@ export class StoreLibraryComponent implements OnInit {
   
   // Load additional store info from Supabase
   loadAdditionalInfo(): void {
-    if (!this.storeDetails?.store_id) return;
+    if (!this.storeDetails?.id) return;
     
     this.additionalInfoLoading = true;
     this.additionalInfo = '';
@@ -342,7 +342,7 @@ export class StoreLibraryComponent implements OnInit {
     this.supabaseService.getSupabase()
       .from('store_additional_info')
       .select('content')
-      .eq('store_id', this.storeDetails.store_id)
+      .eq('store_id', this.storeDetails.id)
       .maybeSingle()
       .then(({ data, error }) => {
         this.additionalInfoLoading = false;
@@ -385,7 +385,7 @@ export class StoreLibraryComponent implements OnInit {
   }
   
   saveCurrentLocation(): void {
-    if (!this.storeDetails || !this.storeDetails.store_id) {
+    if (!this.storeDetails || !this.storeDetails.id) {
       this.error = 'Store information is required to save location';
       return;
     }
@@ -405,7 +405,7 @@ export class StoreLibraryComponent implements OnInit {
         const longitude = position.coords.longitude;
         
         this.supabaseService.updateStoreLocation(
-          this.storeDetails.store_id, 
+          this.storeDetails.id, 
           latitude, 
           longitude
         )

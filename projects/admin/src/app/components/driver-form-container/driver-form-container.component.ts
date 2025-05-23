@@ -22,6 +22,8 @@ export class DriverFormContainerComponent {
       this.activeTab = 'assignments';
     } else if (currentUrl.includes('/performance')) {
       this.activeTab = 'performance';
+    } else if (currentUrl.includes('/updates')) {
+      this.activeTab = 'updates';
     } else if (currentUrl.includes('/forms') || currentUrl === '/driver-forms') {
       this.activeTab = 'forms';
     }

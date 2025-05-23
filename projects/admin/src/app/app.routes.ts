@@ -11,6 +11,7 @@ import { StoreMasterfileComponent } from './components/store-masterfile/store-ma
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
+import { DriverUpdatesComponent } from './components/driver-updates/driver-updates.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -67,6 +68,10 @@ export const routes: Routes = [
             {
                 path: 'performance',
                 component: DriverPerformanceComponent
+            },
+            {
+                path: 'updates',
+                component: DriverUpdatesComponent
             },
             {
                 path: 'view/:id',
