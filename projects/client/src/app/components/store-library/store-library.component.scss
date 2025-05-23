@@ -1,3 +1,9 @@
+@use "sass:color";
+
+// Basic variables for client component
+$primary-color: #007bff;
+$text-light: #ffffff;
+
 /* Global styles */
 *, *:before, *:after {
   box-sizing: border-box;
@@ -96,7 +102,7 @@ html, body {
     margin-bottom: 10px;
     
     &:hover {
-      background-color: darken(#FF5252, 5%);
+      background-color: color.adjust(#FF5252, $lightness: -5%);
     }
   }
   
@@ -232,7 +238,7 @@ html, body {
   transition: background-color 0.2s;
   
   &:hover {
-    background-color: darken(#FF5252, 5%);
+    background-color: color.adjust(#FF5252, $lightness: -5%);
     color: white;
   }
   
@@ -449,7 +455,7 @@ a {
   color: #FF5252;
   
   &:hover {
-    color: darken(#FF5252, 10%);
+    color: color.adjust(#FF5252, $lightness: -10%);
   }
 }
 

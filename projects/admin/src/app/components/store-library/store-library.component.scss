@@ -1,21 +1,24 @@
+@use "sass:color";
+
 // Variables - Updated with a more corporate color palette
 $primary-color: #1a5276; // Darker blue for corporate look
 $primary-dark: #0d3c5a;
 $primary-light: #d4e6f1;
+$secondary-color: #3498db;
 $accent-color: #1abc9c; // Teal as accent color
 $accent-dark: #16a085;
 $accent-light: #e8f8f5;
+$success-color: #2ecc71;
+$warning-color: #f39c12;
+$error-color: #e74c3c;
+$text-dark: #2c3e50;
+$text-light: #ffffff;
+$text-muted: #95a5a6;
 $grey-light: #f8f9fa;
 $grey-medium: #e9ecef;
 $grey-dark: #6c757d;
 $neutral-bg: #f5f7fa;
 $border-color: #dee2e6;
-$error-color: #e74c3c;
-$success-color: #2ecc71;
-$warning-color: #f39c12;
-$text-dark: #2c3e50;
-$text-light: #ffffff;
-$text-muted: #95a5a6;
 $border-radius: 3px;
 $shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.05);
 $shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -106,7 +109,7 @@ $font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   justify-content: center;
   
   &:hover {
-    background-color: darken($success-color, 10%);
+    background-color: color.adjust($success-color, $lightness: -10%);
   }
   
   &:active {
@@ -134,7 +137,7 @@ $font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   justify-content: center;
   
   &:hover {
-    background-color: darken($error-color, 10%);
+    background-color: color.adjust($error-color, $lightness: -10%);
   }
   
   &:active {
@@ -791,11 +794,11 @@ a {
           font-size: 0.8rem;
           
           &.success-text {
-            color: darken($success-color, 10%);
+            color: color.adjust($success-color, $lightness: -10%);
           }
           
           &.error-text {
-            color: darken($error-color, 10%);
+            color: color.adjust($error-color, $lightness: -10%);
           }
         }
       }
@@ -836,7 +839,7 @@ a {
             font-weight: 600;
         
         &:hover {
-              background-color: darken($primary-color, 5%);
+              background-color: color.adjust($primary-color, $lightness: -5%);
             }
           }
         }
@@ -1228,25 +1231,25 @@ a {
   
   &.success {
     background-color: rgba($success-color, 0.1);
-    color: darken($success-color, 10%);
+    color: color.adjust($success-color, $lightness: -10%);
     border-left: 2px solid $success-color;
   }
   
   &.error {
     background-color: rgba($error-color, 0.1);
-    color: darken($error-color, 10%);
+    color: color.adjust($error-color, $lightness: -10%);
     border-left: 2px solid $error-color;
   }
   
   &.warning {
     background-color: rgba($warning-color, 0.1);
-    color: darken($warning-color, 10%);
+    color: color.adjust($warning-color, $lightness: -10%);
     border-left: 2px solid $warning-color;
   }
   
   &.info {
     background-color: rgba($primary-color, 0.1);
-    color: darken($primary-color, 10%);
+    color: color.adjust($primary-color, $lightness: -10%);
     border-left: 2px solid $primary-color;
   }
 }

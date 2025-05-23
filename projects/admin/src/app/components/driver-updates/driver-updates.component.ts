@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../services/supabase.service';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
-import autoTable, { RowInput, CellInput } from 'jspdf-autotable';
+import autoTable, { RowInput, CellInput, CellHook, CellHookData } from 'jspdf-autotable';
 
 // Custom interfaces for strongly typed table data
 interface StoreTableRow {
@@ -299,7 +299,7 @@ export class DriverUpdatesComponent implements OnInit {
         body: tableData as unknown as RowInput[],
         theme: 'grid',
         headStyles: { fillColor: headerBlue },
-        didParseCell: function(data) {
+        didParseCell: function(data: CellHookData) {
           // Color rows based on route
           if (data.section === 'body') {
             const rowData = data.row.raw as any[];
@@ -312,7 +312,7 @@ export class DriverUpdatesComponent implements OnInit {
             }
           }
         },
-        didDrawPage: function(data) {
+        didDrawPage: function(data: any) {
           finalY = data.cursor?.y ?? finalY;
         }
       });
@@ -346,13 +346,13 @@ export class DriverUpdatesComponent implements OnInit {
             body: lastDeliveryEntries as unknown as RowInput[],
             theme: 'grid',
             headStyles: { fillColor: headerBlue },
-            didParseCell: function(data) {
-              // Color rows for even-indexed shops
+            didParseCell: function(data: CellHookData) {
+              // Color rows based on shop (which is equivalent to route in this context)
               if (data.section === 'body') {
                 const rowData = data.row.raw as any[];
                 const shop = rowData[0]; // Shop is first column
                 
-                // Use every second shop for coloring
+                // Use a consistent method for determining color
                 const shopIndex = lastDeliveryEntries.findIndex(
                   (s: any[]) => s[0] === shop
                 );
@@ -447,7 +447,7 @@ export class DriverUpdatesComponent implements OnInit {
             body: allStoresData as unknown as RowInput[],
             theme: 'grid',
             headStyles: { fillColor: headerBlue },
-            didParseCell: function(data) {
+            didParseCell: function(data: CellHookData) {
               // Color rows based on route
               if (data.section === 'body') {
                 const rowData = data.row.raw as any[];
@@ -460,7 +460,7 @@ export class DriverUpdatesComponent implements OnInit {
                 }
               }
             },
-            didDrawPage: function(data) {
+            didDrawPage: function(data: any) {
               storesTableFinalY = data.cursor?.y ?? storesTableFinalY;
             }
           });
@@ -499,7 +499,7 @@ export class DriverUpdatesComponent implements OnInit {
             body: lastDeliveryEntries as unknown as RowInput[],
             theme: 'grid',
             headStyles: { fillColor: headerBlue },
-            didParseCell: function(data) {
+            didParseCell: function(data: CellHookData) {
               // Color rows based on shop (which is equivalent to route in this context)
               if (data.section === 'body') {
                 const rowData = data.row.raw as any[];
@@ -663,7 +663,7 @@ export class DriverUpdatesComponent implements OnInit {
               3: { cellWidth: 20 }
             },
             margin: { left: 10, right: 10 },
-            didParseCell: function(data) {
+            didParseCell: function(data: CellHookData) {
               // Color rows based on route
               if (data.section === 'body') {
                 const rowData = data.row.raw as any[];
@@ -676,7 +676,7 @@ export class DriverUpdatesComponent implements OnInit {
                 }
               }
             },
-            didDrawPage: (data) => {
+            didDrawPage: (data: any) => {
               yPosition = data.cursor?.y ?? yPosition;
             }
           });
@@ -744,7 +744,7 @@ export class DriverUpdatesComponent implements OnInit {
               cellPadding: 1
             },
             margin: { left: 10, right: 10 },
-            didParseCell: function(data) {
+            didParseCell: function(data: CellHookData) {
               // Color rows based on route
               if (data.section === 'body') {
                 const rowData = data.row.raw as any[];
@@ -757,7 +757,7 @@ export class DriverUpdatesComponent implements OnInit {
                 }
               }
             },
-            didDrawPage: (data) => {
+            didDrawPage: (data: any) => {
               yPosition = data.cursor?.y ?? yPosition;
             }
           });
@@ -817,7 +817,7 @@ export class DriverUpdatesComponent implements OnInit {
             1: { cellWidth: 'auto' }
           },
           margin: { left: 10, right: 10 },
-          didParseCell: function(data) {
+          didParseCell: function(data: CellHookData) {
             // Color rows based on route
             if (data.section === 'body') {
               const rowData = data.row.raw as any[];
