@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
-import { FormAssignment } from '../../models/form-assignment.model';
+import { FormAssignment } from '../../services/models/form-assignment.model';
 
 @Component({
   selector: 'app-driver-forms',

@@ -367,7 +367,12 @@ export class DriverUpdatesComponent implements OnInit {
       }
       
       // Save the PDF
-      const fileName = `driver_update_${driverName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const todayDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const fileName = `Delivery Update (${todayDate}).pdf`;
       doc.save(fileName);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -520,7 +525,12 @@ export class DriverUpdatesComponent implements OnInit {
       }
       
       // Save the PDF
-      const fileName = `driver_update_${driverName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const todayDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const fileName = `Delivery Update (${todayDate}).pdf`;
       doc.save(fileName);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -834,7 +844,12 @@ export class DriverUpdatesComponent implements OnInit {
       }
       
       // Save the PDF
-      const fileName = `combined_driver_updates_${new Date().toISOString().split('T')[0]}.pdf`;
+      const todayDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const fileName = `Delivery Update (${todayDate}).pdf`;
       doc.save(fileName);
     } catch (error) {
       console.error('Error generating combined PDF:', error);

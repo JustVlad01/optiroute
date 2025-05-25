@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Driver } from '../../models';
+import { Driver } from '../../services/models';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,13 +12,23 @@ import { Driver } from '../../models';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
-  driverName: string = 'Vlad'; // Default name if not provided
+export class DashboardComponent implements OnInit, OnDestroy {
+  driverName: string = 'User'; // Default name if not provided
   driverData: Driver | null = null;
   
-  constructor(private router: Router) { }
+  // Notification properties
+  hasNewPerformanceData: boolean = false;
+  newPerformanceCount: number = 0;
+  
+  // Interval for periodic checks
+  private notificationCheckInterval: any;
+  
+  constructor(
+    private router: Router,
+    private supabaseService: SupabaseService
+  ) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     // Check if we have driver data from login
     const savedDriverData = localStorage.getItem('loggedInDriver');
     if (savedDriverData) {
@@ -26,6 +37,14 @@ export class DashboardComponent implements OnInit {
         if (this.driverData && this.driverData.name) {
           this.driverName = this.driverData.name;
         }
+        
+        // Check for new performance data
+        await this.checkForNewPerformanceData();
+        
+        // Set up periodic check every 2 minutes
+        this.notificationCheckInterval = setInterval(() => {
+          this.checkForNewPerformanceData();
+        }, 120000); // 2 minutes
       } catch (e) {
         console.error('Error parsing saved driver data', e);
       }
@@ -35,6 +54,87 @@ export class DashboardComponent implements OnInit {
     if (!this.driverData) {
       this.router.navigate(['/login']);
     }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up the interval when component is destroyed
+    if (this.notificationCheckInterval) {
+      clearInterval(this.notificationCheckInterval);
+    }
+  }
+
+  async checkForNewPerformanceData(): Promise<void> {
+    if (!this.driverData) return;
+    
+    try {
+      // Get the last time the user viewed performance data
+      const lastViewedKey = `performance_last_viewed_${this.driverData.id}`;
+      const lastViewed = localStorage.getItem(lastViewedKey);
+      const lastViewedDate = lastViewed ? new Date(lastViewed) : new Date(0);
+      
+      // Check for new performance images
+      const { data: imageFiles, error: imageError } = await this.supabaseService.getSupabase()
+        .storage
+        .from('driver-performance')
+        .list(`${this.driverData.id}`);
+      
+      if (imageError) {
+        console.error('Error checking for new images:', imageError);
+        return;
+      }
+      
+      // Check for new comments
+      const { data: commentsData, error: commentsError } = await this.supabaseService.getSupabase()
+        .from('driver_performance_comments')
+        .select('created_at')
+        .eq('driver_id', this.driverData.id)
+        .gte('created_at', lastViewedDate.toISOString());
+      
+      if (commentsError) {
+        console.error('Error checking for new comments:', commentsError);
+        return;
+      }
+      
+      // Count new items
+      let newCount = 0;
+      
+      // Count new images
+      if (imageFiles) {
+        const newImages = imageFiles.filter(file => {
+          if (file.name === '.keep') return false;
+          const fileDate = new Date(file.created_at || file.updated_at);
+          return fileDate > lastViewedDate;
+        });
+        newCount += newImages.length;
+      }
+      
+      // Count new comments
+      if (commentsData) {
+        newCount += commentsData.length;
+      }
+      
+      this.hasNewPerformanceData = newCount > 0;
+      this.newPerformanceCount = newCount;
+      
+    } catch (error) {
+      console.error('Error checking for new performance data:', error);
+    }
+  }
+
+  markPerformanceAsViewed(): void {
+    if (!this.driverData) return;
+    
+    const lastViewedKey = `performance_last_viewed_${this.driverData.id}`;
+    localStorage.setItem(lastViewedKey, new Date().toISOString());
+    
+    // Reset notification state
+    this.hasNewPerformanceData = false;
+    this.newPerformanceCount = 0;
+  }
+
+  navigateToPerformance(): void {
+    this.markPerformanceAsViewed();
+    this.router.navigate(['/driver-performance']);
   }
 
   logout(): void {

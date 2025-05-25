@@ -1,25 +1,25 @@
 <div class="login-container">
   <div class="login-header">
-    <h1 class="logo">OPTIROUTE</h1>
+    <h1 class="logo">Around Noon</h1>
     <div class="badge">
-      <span class="badge">DRIVER PORTAL</span>
+      <span class="badge">DRIVER'S PORTAL</span>
     </div>
   </div>
 
   <div class="login-form-container">
     <h2 class="login-title">Driver Login</h2>
-    <p class="login-subtitle">Enter your custom ID to access your dashboard</p>
+    <p class="login-subtitle">Enter your Driver ID to access your dashboard</p>
 
     <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
       <div class="form-group mb-4">
-        <label for="customId" class="form-label">Custom ID</label>
+
         <input 
           type="text" 
           id="customId" 
           name="customId" 
           class="form-control" 
           [(ngModel)]="customId" 
-          placeholder="Enter your custom ID"
+          placeholder="Enter your Driver ID"
           required>
       </div>
 
@@ -35,6 +35,6 @@
   </div>
 
   <div class="login-footer">
-    <p>&copy; 2025 OptiRoute Fleet Management</p>
+    <p>&copy; 2025 Around Noon Fleet Management</p>
   </div>
 </div>

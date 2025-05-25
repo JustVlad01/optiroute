@@ -229,6 +229,86 @@
       object-fit: contain;
     }
   }
+  
+  .comments-section {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    
+    .comment-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      
+      i {
+        color: #007bff;
+        margin-right: 0.5rem;
+      }
+      
+      small {
+        font-weight: 400;
+        font-size: 0.75rem;
+      }
+    }
+    
+    .comment-text {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin: 0;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+  }
+}
+
+/* Standalone Comments Section */
+.comments-section {
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+  
+  .performance-comments {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .comment-item {
+    background-color: #f8f9fa;
+    padding: 1.25rem;
+    border-radius: 8px;
+    border-left: 3px solid #007BFF;
+    
+    .comment-content {
+      .comment-text {
+        font-size: 1rem;
+        color: #495057;
+        line-height: 1.6;
+        margin: 0 0 0.75rem 0;
+        font-weight: 400;
+      }
+      
+      .comment-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+        color: #6c757d;
+        
+        .comment-date {
+          font-weight: 500;
+        }
+        
+        .comment-author {
+          font-style: italic;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
 }
 
 // Enhanced Modal styles with fullscreen capabilities

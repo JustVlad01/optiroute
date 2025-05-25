@@ -72,6 +72,30 @@
                     >
                     <div class="form-text">Upload PNG, JPG or GIF files (max 10MB).</div>
                   </div>
+                  
+                  <div class="form-group mb-3">
+                    <label for="performanceComments" class="form-label">Performance Comments</label>
+                    <div class="comment-input-group">
+                      <textarea 
+                        id="performanceComments" 
+                        class="form-control" 
+                        rows="3"
+                        [(ngModel)]="performanceComments"
+                        name="performanceComments"
+                        placeholder="Add comments about this driver's performance (optional)..."
+                      ></textarea>
+                      <button 
+                        type="button" 
+                        class="btn btn-primary btn-sm mt-2" 
+                        (click)="saveStandaloneComment()"
+                        [disabled]="!performanceComments.trim() || !selectedDriver"
+                        title="Save comment without uploading image"
+                      >
+                        <i class="bi bi-chat-square-text me-1"></i> Save Comment
+                      </button>
+                    </div>
+                    <div class="form-text">These comments will be visible to the driver. You can save comments without uploading an image.</div>
+                  </div>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                   <button 
@@ -113,6 +137,30 @@
                         <i class="bi bi-x-lg"></i>
                       </button>
                     </div>
+                  </div>
+                  
+                  <div class="form-group mt-3">
+                    <label for="pastePerformanceComments" class="form-label">Performance Comments</label>
+                    <div class="comment-input-group">
+                      <textarea 
+                        id="pastePerformanceComments" 
+                        class="form-control" 
+                        rows="3"
+                        [(ngModel)]="performanceComments"
+                        name="pastePerformanceComments"
+                        placeholder="Add comments about this driver's performance (optional)..."
+                      ></textarea>
+                      <button 
+                        type="button" 
+                        class="btn btn-primary btn-sm mt-2" 
+                        (click)="saveStandaloneComment()"
+                        [disabled]="!performanceComments.trim() || !selectedDriver"
+                        title="Save comment without uploading image"
+                      >
+                        <i class="bi bi-chat-square-text me-1"></i> Save Comment
+                      </button>
+                    </div>
+                    <div class="form-text">These comments will be visible to the driver. You can save comments without uploading an image.</div>
                   </div>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
@@ -161,11 +209,98 @@
                     Uploaded: {{ image.created_at | date:'medium' }}
                   </small>
                 </p>
+                
+                <!-- Comments Section -->
+                <div class="image-comments-section mt-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">
+                      <i class="bi bi-chat-text me-1"></i> Comments
+                    </label>
+                    <div class="comment-actions">
+                      <button 
+                        *ngIf="!editingImageComment[image.name] && image.comment"
+                        type="button" 
+                        class="btn btn-sm btn-outline-primary me-1" 
+                        (click)="startEditingImageComment(image.name)"
+                        title="Edit comment"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button 
+                        *ngIf="!editingImageComment[image.name] && !image.comment"
+                        type="button" 
+                        class="btn btn-sm btn-outline-success" 
+                        (click)="startEditingImageComment(image.name)"
+                        title="Add comment"
+                      >
+                        <i class="bi bi-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Display Mode -->
+                  <div *ngIf="!editingImageComment[image.name]" class="comment-display">
+                    <div *ngIf="image.comment" class="comment-content">
+                      <p class="comment-text">{{ image.comment }}</p>
+                      <small class="text-muted">
+                        <i class="bi bi-person-check me-1"></i>
+                        {{ image.comment_created_by }} • {{ image.comment_created_at | date:'short' }}
+                      </small>
+                    </div>
+                    <div *ngIf="!image.comment" class="no-comment">
+                      <small class="text-muted">No comments added yet</small>
+                    </div>
+                  </div>
+                  
+                  <!-- Edit Mode -->
+                  <div *ngIf="editingImageComment[image.name]" class="comment-edit">
+                    <textarea 
+                      class="form-control mb-2" 
+                      rows="3"
+                      [(ngModel)]="imageComments[image.name]"
+                      [name]="'imageComment_' + image.name"
+                      placeholder="Add comments about this performance image..."
+                    ></textarea>
+                    <div class="comment-edit-actions">
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-success me-2" 
+                        (click)="saveImageComment(image.name)"
+                        [disabled]="savingImageComment[image.name]"
+                      >
+                        <i class="bi bi-check-lg me-1"></i>
+                        <span *ngIf="!savingImageComment[image.name]">Save</span>
+                        <span *ngIf="savingImageComment[image.name]">Saving...</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-sm btn-outline-secondary me-2" 
+                        (click)="cancelEditingImageComment(image.name)"
+                        [disabled]="savingImageComment[image.name]"
+                      >
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                      </button>
+                      <button 
+                        *ngIf="image.comment"
+                        type="button" 
+                        class="btn btn-sm btn-outline-danger" 
+                        (click)="deleteImageComment(image.name)"
+                        [disabled]="savingImageComment[image.name]"
+                        title="Delete comment"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <hr class="my-3">
+                
                 <button 
                   class="btn btn-sm btn-danger" 
                   (click)="deletePerformanceImage(image.name)"
                 >
-                  <i class="bi bi-trash"></i> Delete
+                  <i class="bi bi-trash"></i> Delete Image
                 </button>
               </div>
             </div>

@@ -20,11 +20,6 @@ export class FormAssignmentsComponent implements OnInit {
   isLoading = true;
   showAssignmentForm = false;
   minDate: string;
-  resetPeriodOptions = [
-    { value: 4, label: '4 Hours' },
-    { value: 8, label: '8 Hours' },
-    { value: 10, label: '10 Hours' }
-  ];
   
   // Date filter options
   availableYears: number[] = [];
@@ -80,7 +75,6 @@ export class FormAssignmentsComponent implements OnInit {
   initForm(): void {
     this.assignmentForm = this.fb.group({
       driverId: ['', Validators.required],
-      resetPeriod: ['', Validators.required],
       notes: ['']
     });
   }
@@ -498,9 +492,9 @@ export class FormAssignmentsComponent implements OnInit {
 
   assignForm(): void {
     if (this.assignmentForm.valid) {
-      const { driverId, resetPeriod, notes } = this.assignmentForm.value;
+      const { driverId, notes } = this.assignmentForm.value;
       
-      this.supabaseService.assignFormToDriver(driverId, null, notes, resetPeriod)
+      this.supabaseService.assignFormToDriver(driverId, null, notes, 24)
         .then(result => {
           if (result) {
             this.loadFormAssignments();
@@ -518,8 +512,7 @@ export class FormAssignmentsComponent implements OnInit {
   }
 
   getResetPeriodText(hours: number): string {
-    if (!hours) return 'N/A';
-    return `${hours} Hours`;
+    return 'Daily Reset (Midnight)';
   }
 
   deleteAssignment(assignmentId: string): void {

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
-import { Driver } from '../../models';
+import { Driver } from '../../services/models';
 
 @Component({
   selector: 'app-login',

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
-import { Store, StoreDetails } from '../../models/store.model';
+import { Store, StoreDetails } from '../../services/models/store.model';
 import { interval, Subscription } from 'rxjs';
 
 interface StoreItem {

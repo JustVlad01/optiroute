@@ -21,10 +21,25 @@
   </div>
 
   <!-- No Images Message -->
-  <div class="no-data-container" *ngIf="!isLoading && performanceImages.length === 0">
+  <div class="no-data-container" *ngIf="!isLoading && performanceImages.length === 0 && standaloneComments.length === 0">
     <i class="bi bi-exclamation-circle"></i>
     <h2>No Performance Data Available</h2>
     <p>Your supervisor has not uploaded any performance reports yet.</p>
+  </div>
+
+  <!-- Standalone Comments Section -->
+  <div class="comments-section" *ngIf="!isLoading && standaloneComments.length > 0">
+    <div class="performance-comments">
+      <div class="comment-item" *ngFor="let comment of standaloneComments">
+        <div class="comment-content">
+          <p class="comment-text">{{ comment.comments }}</p>
+          <div class="comment-meta">
+            <span class="comment-date">{{ comment.created_at | date:'medium' }}</span>
+            <span class="comment-author" *ngIf="comment.created_by">{{ comment.created_by }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Performance Images List -->
@@ -37,6 +52,13 @@
         </div>
         <div class="image-container">
           <img [src]="image.url" [alt]="image.name" (click)="openImage(image)">
+        </div>
+        <div *ngIf="image.comments" class="comments-section">
+          <h6 class="comment-header">
+            <i class="bi bi-chat-text me-1"></i> Supervisor Comments
+            <small *ngIf="image.comment_created_by" class="text-muted">(by {{ image.comment_created_by }})</small>
+          </h6>
+          <p class="comment-text">{{ image.comments }}</p>
         </div>
       </div>
     </div>

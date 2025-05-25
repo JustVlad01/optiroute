@@ -14,6 +14,7 @@ export class DriverPerformanceComponent implements OnInit {
   driverId: string = '';
   driverName: string = '';
   performanceImages: any[] = [];
+  standaloneComments: any[] = [];
   isLoading = true;
   selectedImage: any = null;
   isFullscreen = false;
@@ -58,6 +59,9 @@ export class DriverPerformanceComponent implements OnInit {
           console.log('Driver ID:', this.driverId);
           console.log('Driver Name:', this.driverName);
           
+          // Mark performance as viewed (clear notifications)
+          this.markPerformanceAsViewed();
+          
           await this.loadPerformanceImages();
         } catch (e) {
           console.error('Error parsing logged in driver data', e);
@@ -72,6 +76,14 @@ export class DriverPerformanceComponent implements OnInit {
       console.error('Error initializing driver performance component:', error);
       this.isLoading = false;
     }
+  }
+
+  markPerformanceAsViewed(): void {
+    if (!this.driverId) return;
+    
+    const lastViewedKey = `performance_last_viewed_${this.driverId}`;
+    localStorage.setItem(lastViewedKey, new Date().toISOString());
+    console.log('Performance marked as viewed for driver:', this.driverId);
   }
 
   async loadPerformanceImages(): Promise<void> {
@@ -159,11 +171,22 @@ export class DriverPerformanceComponent implements OnInit {
           return null;
         }
         
+        // Load comments for this image
+        const { data: commentsData } = await supabase
+          .from('driver_performance_comments')
+          .select('*')
+          .eq('driver_id', this.driverId)
+          .eq('image_name', file.name)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
         console.log('Created signed URL for:', file.name);
         return {
           name: file.name,
           url: urlData.signedUrl,
-          created_at: file.created_at || new Date().toISOString()
+          created_at: file.created_at || new Date().toISOString(),
+          comments: commentsData && commentsData.length > 0 ? commentsData[0].comments : null,
+          comment_created_by: commentsData && commentsData.length > 0 ? commentsData[0].created_by : null
         };
       }));
 
@@ -175,7 +198,11 @@ export class DriverPerformanceComponent implements OnInit {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
       
+      // Load standalone comments (comments without corresponding image files)
+      await this.loadStandaloneComments(supabase);
+      
       console.log('Loaded performance images:', this.performanceImages.length);
+      console.log('Loaded standalone comments:', this.standaloneComments.length);
     } catch (error) {
       console.error('Exception loading performance images:', error);
       this.performanceImages = [];
@@ -266,6 +293,32 @@ export class DriverPerformanceComponent implements OnInit {
     }
     
     this.isFullscreen = false;
+  }
+
+  async loadStandaloneComments(supabase: any): Promise<void> {
+    try {
+      // Load only the most recent comment that doesn't correspond to actual image files
+      // These are general comments saved from the admin panel
+      const { data: commentsData, error } = await supabase
+        .from('driver_performance_comments')
+        .select('*')
+        .eq('driver_id', this.driverId)
+        .like('image_path', 'general_comment_%')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('Error loading standalone comments:', error);
+        this.standaloneComments = [];
+        return;
+      }
+      
+      this.standaloneComments = commentsData || [];
+      console.log('Loaded newest standalone comment:', this.standaloneComments);
+    } catch (error) {
+      console.error('Exception loading standalone comments:', error);
+      this.standaloneComments = [];
+    }
   }
 
   goBack(): void {

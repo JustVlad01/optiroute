@@ -19,12 +19,18 @@
     <div class="cards-grid">
   
       <!-- My Driving Performance Card -->
-      <div class="card feature-card" routerLink="/driver-performance">
+      <div class="card feature-card" (click)="navigateToPerformance()">
         <div class="card-body">
           <div class="card-icon">
             <i class="bi bi-graph-up"></i>
+            <div *ngIf="hasNewPerformanceData" class="notification-badge">
+              {{ newPerformanceCount }}
+            </div>
+            <span *ngIf="hasNewPerformanceData" class="new-indicator">New</span>
           </div>
-          <h5 class="card-title">My Driving Performance</h5>
+          <h5 class="card-title">
+            My Driving Performance
+          </h5>
           <p class="card-text">View performance metrics uploaded by your supervisor</p>
         </div>
       </div>

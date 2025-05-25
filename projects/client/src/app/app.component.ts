@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
-  title = 'OptiRoute';
+  title = 'Around Noon';
   updateAvailable = false;
 
   constructor(private swUpdate: SwUpdate) {}

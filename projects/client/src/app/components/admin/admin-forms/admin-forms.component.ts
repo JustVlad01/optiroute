@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AdminNavComponent } from '../admin-nav/admin-nav.component';
-import { FormAssignment } from '../../../models/form-assignment.model';
-import { Driver } from '../../../models/driver.model';
+import { FormAssignment } from '../../../services/models/form-assignment.model';
+import { Driver } from '../../../services/models/driver.model';
 
 @Component({
   selector: 'app-admin-forms',
