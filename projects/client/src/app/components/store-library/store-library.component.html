@@ -1,4 +1,4 @@
-<!-- Navbar with red background as shown in the screenshot -->
+<!-- Navbar with red background -->
 <div class="navbar-custom">
   <div class="container-fluid">
     <div class="nav-left">
@@ -10,28 +10,37 @@
   </div>
 </div>
 
-<!-- Search box - simpler design to match screenshot -->
-<div class="search-box">
-  <input 
-    type="text" 
-    id="searchTerm" 
-    [(ngModel)]="searchTerm" 
-    class="form-control search-input" 
-    placeholder="Search by store code or name..." 
-    (keyup.enter)="searchStore()"
-    (input)="onSearchInput()"
-  >
-  
-  <button class="search-btn" (click)="searchStore()">
-    Search
-  </button>
-  
-  <div *ngIf="filteredOptions.length > 0 && searchTerm.length > 0" class="search-results">
-    <div *ngFor="let result of filteredOptions" class="search-result-item" (click)="selectSearchResult(result)">
-      <div class="result-item-code">{{ result.code }}</div>
-      <div class="result-item-name">{{ result.name }}</div>
+<!-- Search box - only show when no store is selected -->
+<div *ngIf="!storeDetails" class="search-container">
+  <div class="search-box">
+    <input 
+      type="text" 
+      id="searchTerm" 
+      [(ngModel)]="searchTerm" 
+      class="search-input" 
+      placeholder="Enter store code..." 
+      (keyup.enter)="searchStore()"
+      (input)="onSearchInput()"
+    >
+    
+    <button class="search-btn" (click)="searchStore()">
+      Search
+    </button>
+    
+    <div *ngIf="filteredOptions.length > 0 && searchTerm.length > 0" class="search-results">
+      <div *ngFor="let result of filteredOptions" class="search-result-item" (click)="selectSearchResult(result)">
+        <div class="result-item-code">{{ result.code }}</div>
+        <div class="result-item-name">{{ result.name }}</div>
+      </div>
     </div>
   </div>
+</div>
+
+<!-- Navigation buttons - Search Again only - show when store is selected -->
+<div *ngIf="storeDetails" class="navigation-buttons">
+  <button class="nav-btn search-btn-nav" (click)="clearSearch()">
+    <i class="bi bi-search"></i> Search Again
+  </button>
 </div>
 
 <div *ngIf="loading" class="loading-container">
@@ -48,6 +57,16 @@
 
 <!-- Store Details Container -->
 <div *ngIf="storeDetails" class="store-details-container">
+  <!-- STORE FRONT Section -->
+  <div class="info-card" *ngIf="storefrontImage">
+    <div class="card-header">
+      <i class="bi bi-camera-fill"></i> STORE FRONT
+    </div>
+    <div class="card-content image-content">
+      <img [src]="storefrontImage.url || storefrontImage.file_path" alt="Store Storefront" class="storefront-image">
+    </div>
+  </div>
+
   <!-- STORE CODE Section -->
   <div class="info-card">
     <div class="card-header">
@@ -55,16 +74,6 @@
     </div>
     <div class="card-content">
       <div class="store-code">{{ storeDetails.store_code }}</div>
-    </div>
-  </div>
-
-  <!-- STORE FRONT Section - Ensure it appears at the top -->
-  <div class="info-card" *ngIf="storefrontImage">
-    <div class="card-header">
-      <i class="bi bi-camera-fill"></i> STORE FRONT
-    </div>
-    <div class="card-content image-content">
-      <img [src]="storefrontImage.url || storefrontImage.file_path" alt="Store Storefront" class="storefront-image">
     </div>
   </div>
 
@@ -93,10 +102,6 @@
         <div class="time-row">
           <span class="day">Saturday:</span> 
           <span class="time">{{ storeDetails.opening_time_sat || 'Closed' }}</span>
-        </div>
-        <div class="time-row">
-          <span class="day">Sunday:</span> 
-          <span class="time">{{ storeDetails.opening_time_sun || 'Closed' }}</span>
         </div>
         <div class="time-row">
           <span class="day">Bank Holidays:</span> 

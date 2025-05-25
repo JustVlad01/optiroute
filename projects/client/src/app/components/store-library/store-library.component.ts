@@ -358,8 +358,19 @@ export class StoreLibraryComponent implements OnInit {
   
   // Select an image to view details
   selectImage(image: any): void {
-    this.selectedImage = this.selectedImage?.id === image.id ? null : image;
-    console.log('Selected image:', this.selectedImage);
+    this.selectedImage = image;
+  }
+  
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.storeDetails = null;
+    this.error = '';
+    this.filteredOptions = [];
+    this.storeImages = [];
+    this.storefrontImage = null;
+    this.shopImage = null;
+    this.additionalInfo = '';
+    this.selectedImage = null;
   }
   
   // Filter out storefront/shop images to only show regular images
