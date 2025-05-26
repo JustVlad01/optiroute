@@ -97,15 +97,15 @@
       <div class="opening-hours">
         <div class="time-row">
           <span class="day">Monday - Friday:</span> 
-          <span class="time">{{ storeDetails.opening_time_weekdays || '7:00 AM' }}</span>
+          <span class="time">{{ storeDetails.opening_time_weekdays || 'Not specified' }}</span>
         </div>
         <div class="time-row">
           <span class="day">Saturday:</span> 
-          <span class="time">{{ storeDetails.opening_time_sat || 'Closed' }}</span>
+          <span class="time">{{ storeDetails.opening_time_sat || 'Not specified' }}</span>
         </div>
         <div class="time-row">
           <span class="day">Bank Holidays:</span> 
-          <span class="time">{{ storeDetails.opening_time_bankholiday || 'Closed' }}</span>
+          <span class="time">{{ storeDetails.openining_time_bankholiday || 'Not specified' }}</span>
         </div>
       </div>
     </div>
@@ -182,6 +182,36 @@
             <h4>Notes:</h4>
             <p>{{ selectedImage.instructions }}</p>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT INFORMATION Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <i class="bi bi-telephone-fill"></i> CONTACT INFORMATION
+    </div>
+    <div class="card-content">
+      <div class="contact-info">
+        <div class="contact-row" *ngIf="storeDetails.phone">
+          <span class="contact-label">
+            <i class="bi bi-telephone"></i> Phone:
+          </span>
+          <span class="contact-value">
+            <a href="tel:{{ storeDetails.phone }}" class="phone-link">{{ storeDetails.phone }}</a>
+          </span>
+        </div>
+        <div class="contact-row" *ngIf="storeDetails.email">
+          <span class="contact-label">
+            <i class="bi bi-envelope"></i> Email:
+          </span>
+          <span class="contact-value">
+            <a href="mailto:{{ storeDetails.email }}" class="email-link">{{ storeDetails.email }}</a>
+          </span>
+        </div>
+        <div *ngIf="!storeDetails.phone && !storeDetails.email" class="no-contact-message">
+          <p>No contact information available</p>
         </div>
       </div>
     </div>

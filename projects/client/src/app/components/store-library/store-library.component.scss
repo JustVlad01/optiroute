@@ -223,8 +223,9 @@ html, body {
   width: 100%;
   height: auto;
   display: block;
-  max-height: 250px;
-  object-fit: cover;
+  max-height: 80vh;
+  object-fit: contain;
+  min-height: 300px;
 }
 
 /* Google Maps button */
@@ -315,6 +316,60 @@ html, body {
   }
 }
 
+/* Contact information styling */
+.contact-info {
+  .contact-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .contact-label {
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      
+      i {
+        margin-right: 8px;
+        color: $coral-red;
+        font-size: 14px;
+      }
+    }
+    
+    .contact-value {
+      color: #666;
+      
+      .phone-link, .email-link {
+        color: $coral-red;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+        
+        &:hover {
+          color: color.adjust($coral-red, $lightness: -10%);
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+  
+  .no-contact-message {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    
+    p {
+      margin: 0;
+    }
+  }
+}
+
 /* Image gallery - More compact */
 .image-gallery {
   .image-grid {
@@ -352,6 +407,11 @@ html, body {
   
   .selected-image-container {
     margin-top: 12px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    max-width: none;
     
     .image-preview {
       display: flex;
@@ -361,8 +421,11 @@ html, body {
       .full-image {
         max-width: 100%;
         border-radius: 6px;
-        max-height: 300px;
+        max-height: 170vh;
         object-fit: contain;
+        width: auto;
+        height: auto;
+        min-height: 400px;
       }
     }
     
@@ -492,7 +555,7 @@ html, body {
   }
   
   .info-card .card-content {
-    padding: 10px 12px;
+    padding: 10px 10px;
   }
   
   .store-code {

@@ -638,23 +638,27 @@
                 </div>
                 
                 <div class="image-grid" *ngIf="storeImages && storeImages.length > 0">
-                  <div class="image-card" *ngFor="let image of storeImages">
+                  <div class="image-card" 
+                       *ngFor="let image of storeImages; let i = index"
+                       [attr.data-image-id]="image.id">
                     <div class="image-wrapper">
                       <img [src]="image.url" alt="Store image">
                       <span class="storefront-badge" *ngIf="image.is_storefront === 'true'">Storefront</span>
                     </div>
                     <div class="image-details">
                       <div class="image-annotation" *ngIf="image.instructions">{{ image.instructions }}</div>
-                      <div class="image-actions">
-                        <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
-                          <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
-                          <i class="bi bi-shop"></i>
-                        </button>
-                        <button class="action-btn delete-btn" (click)="deleteImage(image)">
-                          <i class="bi bi-trash"></i>
-                        </button>
+                      <div class="image-controls">
+                        <div class="image-actions">
+                          <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
+                            <i class="bi bi-shop"></i>
+                          </button>
+                          <button class="action-btn delete-btn" (click)="deleteImage(image)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

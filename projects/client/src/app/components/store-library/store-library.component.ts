@@ -99,6 +99,14 @@ export class StoreLibraryComponent implements OnInit {
       else if (storeData[day] === false) {
         storeData[day] = 'No';
       }
+      // Convert string 'yes' (lowercase) to 'Yes'
+      else if (typeof storeData[day] === 'string' && storeData[day].toLowerCase() === 'yes') {
+        storeData[day] = 'Yes';
+      }
+      // Convert string 'no' (lowercase) to 'No'
+      else if (typeof storeData[day] === 'string' && storeData[day].toLowerCase() === 'no') {
+        storeData[day] = 'No';
+      }
       // Convert string 'true' to 'Yes'
       else if (typeof storeData[day] === 'string' && storeData[day].toLowerCase() === 'true') {
         storeData[day] = 'Yes';

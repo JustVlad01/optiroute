@@ -1127,7 +1127,7 @@ a {
             @include card-style;
           position: relative;
             background-color: $text-light;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
             
             &:hover {
               transform: translateY(-2px);
@@ -1158,6 +1158,7 @@ a {
                 border-radius: $border-radius;
                 font-size: 0.65rem;
                 font-weight: 600;
+                z-index: 2;
               }
             }
             
@@ -1170,6 +1171,12 @@ a {
                 color: $text-dark;
                 max-height: 40px;
                 overflow: hidden;
+              }
+              
+              .image-controls {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
               }
               
               .image-actions {

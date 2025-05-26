@@ -39,13 +39,13 @@ export class DriverDeliveryUpdateComponent implements OnInit, OnDestroy {
   deliveries: Delivery[] = [
     { name: 'Starbucks', time: '09:00', added: false, stores: [] },
     { name: 'Circle K', time: '10:00', added: false, stores: [] },
-    { name: 'Henderson', time: '10:30', added: false, stores: [] }
+    { name: 'Other', time: '10:30', added: false, stores: [] }
   ];
   
   lastDeliveries = [
     { name: 'Circle K', time: '--:--', hour: '', minute: '' },
     { name: 'Starbucks', time: '--:--', hour: '', minute: '' },
-    { name: 'Henderson', time: '--:--', hour: '', minute: '' }
+    { name: 'Other', time: '--:--', hour: '', minute: '' }
   ];
 
   hours = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16'];
@@ -189,12 +189,12 @@ export class DriverDeliveryUpdateComponent implements OnInit, OnDestroy {
     this.deliveries = [
       { name: 'Starbucks', time: '09:00', added: false, stores: [] },
       { name: 'Circle K', time: '10:00', added: false, stores: [] },
-      { name: 'Henderson', time: '10:30', added: false, stores: [] }
+      { name: 'Other', time: '10:30', added: false, stores: [] }
     ];
     this.lastDeliveries = [
       { name: 'Circle K', time: '--:--', hour: '', minute: '' },
       { name: 'Starbucks', time: '--:--', hour: '', minute: '' },
-      { name: 'Henderson', time: '--:--', hour: '', minute: '' }
+      { name: 'Other', time: '--:--', hour: '', minute: '' }
     ];
     
     // If user has already selected a route, initialize a new form

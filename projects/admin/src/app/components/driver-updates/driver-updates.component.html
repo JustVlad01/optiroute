@@ -36,7 +36,7 @@
               </span>
               <span class="stat-box notifications">
                 <i class="bi bi-bell"></i>
-                {{ getAdvancedNotificationsForDay(dayGroup) }} Notifications
+                {{ getAdvancedNotificationsForDay(dayGroup) }} Advanced Notifications
               </span>
             </div>
           </div>
@@ -77,14 +77,7 @@
                   <div class="update-route">{{ update.route_name || 'N/A' }}</div>
                 </div>
                 <div class="update-stats">
-                  <span class="stat-item">
-                    <i class="bi bi-box-seam"></i>
-                    {{ getDeliveryCount(update) }} deliveries
-                  </span>
-                  <span class="stat-item">
-                    <i class="bi bi-shop"></i>
-                    {{ getStoreCount(update) }} stores
-                  </span>
+                 
                 </div>
                 <div class="update-actions">
                   <button class="view-btn" (click)="viewUpdateDetails(update)">
@@ -140,96 +133,13 @@
           <div class="chart-header">
             <h3>
               <i class="bi bi-clock-history"></i>
-              Average Delivery Times by Route
+              Weekly Average Delivery Times by Route
             </h3>
-            <p class="chart-description">Comparison of Circle K vs Starbucks delivery times across routes</p>
+            <p class="chart-description">Weekly comparison of Circle K vs Starbucks delivery times across routes</p>
           </div>
           <div class="chart-container">
             <canvas id="deliveryTimeChart"></canvas>
           </div>
-        </div>
-
-        <!-- Problem Routes Chart -->
-        <div class="chart-section">
-          <div class="chart-header">
-            <h3>
-              <i class="bi bi-exclamation-triangle-fill"></i>
-              Routes with Most Delivery Problems
-            </h3>
-            <p class="chart-description">Weekly average problem rates and outstanding delivery counts by route</p>
-          </div>
-          <div class="chart-container">
-            <canvas id="problemRouteChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Weekly Trend Chart -->
-      <div class="weekly-trend-section">
-        <div class="chart-section">
-          <div class="chart-header">
-            <h3>
-              <i class="bi bi-graph-up"></i>
-              Weekly Delivery Time Trends
-            </h3>
-            <p class="chart-description">Daily average delivery times for Circle K and Starbucks stores over the past week</p>
-          </div>
-          <div class="chart-container">
-            <canvas id="weeklyTrendChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Detailed Analytics Table -->
-      <div class="analytics-table-section">
-        <div class="table-header">
-          <h3>
-            <i class="bi bi-table"></i>
-            Weekly Route Analytics
-          </h3>
-          <p class="table-description">Weekly average breakdown of route performance metrics</p>
-        </div>
-        
-        <div class="analytics-table-container">
-          <table class="analytics-table">
-            <thead>
-              <tr>
-                <th>Route</th>
-                <th>Outstanding</th>
-                <th>Problem Rate</th>
-                <th>Circle K Avg Time</th>
-                <th>Starbucks Avg Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let route of routeAnalytics" 
-                  [class.high-problem]="route.problemRate > 50"
-                  [class.medium-problem]="route.problemRate > 25 && route.problemRate <= 50"
-                  [class.low-problem]="route.problemRate <= 25">
-                <td class="route-name">{{ route.route }}</td>
-                <td class="text-center">
-                  <span class="outstanding-badge" [class.high]="route.outstandingDeliveries > 10" 
-                        [class.medium]="route.outstandingDeliveries > 5 && route.outstandingDeliveries <= 10"
-                        [class.low]="route.outstandingDeliveries <= 5">
-                    {{ route.outstandingDeliveries }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <span class="problem-rate" [class.high]="route.problemRate > 50"
-                        [class.medium]="route.problemRate > 25 && route.problemRate <= 50"
-                        [class.low]="route.problemRate <= 25">
-                    {{ route.problemRate }}%
-                  </span>
-                </td>
-                <td class="text-center">
-                  <span class="delivery-time">{{ route.circleKAvgTime }}</span>
-                </td>
-                <td class="text-center">
-                  <span class="delivery-time">{{ route.starbucksAvgTime }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

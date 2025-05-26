@@ -34,33 +34,32 @@ export class SupabaseService {
         
         const { data, error } = await this.supabase
           .from('stores')
-          .select('*')
+          .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday, email, phone, opening_time_weekdays, opening_time_sat, openining_time_bankholiday')
           .range(from, from + pageSize - 1);
         
         if (error) {
-          console.error(`Error fetching stores page ${page+1}:`, error);
+          console.error('Error fetching stores:', error);
           throw error;
         }
         
-        if (data && data.length > 0) {
-          allStores = [...allStores, ...data];
-          console.log(`Fetched ${data.length} stores in page ${page+1}`);
-          page++;
+        if (!data || data.length === 0) {
+          hasMoreData = false;
+        } else {
+          allStores = allStores.concat(data);
           
-          // If we received fewer results than the page size, we've reached the end
           if (data.length < pageSize) {
             hasMoreData = false;
+          } else {
+            page++;
           }
-        } else {
-          hasMoreData = false;
         }
       }
       
-      console.log(`Fetched total of ${allStores.length} stores`);
+      console.log(`Total stores fetched: ${allStores.length}`);
       return allStores;
-    } catch (err) {
-      console.error('Exception while fetching stores:', err);
-      throw err;
+    } catch (error) {
+      console.error('Error in getAllStores:', error);
+      throw error;
     }
   }
 
@@ -72,7 +71,7 @@ export class SupabaseService {
       // First try exact matches on the most common fields
       const { data: exactMatches, error: exactError } = await this.supabase
         .from('stores')
-        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday, email, phone, opening_time_weekdays, opening_time_sat, openining_time_bankholiday')
         .or(`store_code.eq.${searchTerm},dispatch_code.eq.${searchTerm}`);
       
       if (exactError) {
@@ -88,7 +87,7 @@ export class SupabaseService {
       // If no exact matches, try partial matches on store name
       const { data: partialMatches, error: partialError } = await this.supabase
         .from('stores')
-        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday, email, phone, opening_time_weekdays, opening_time_sat, openining_time_bankholiday')
         .or(`dispatch_store_name.ilike.%${searchTerm}%,store_name.ilike.%${searchTerm}%`);
       
       if (partialError) {
@@ -111,7 +110,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('stores')
-        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday')
+        .select('*, deliver_monday, deliver_tuesday, deliver_wednesday, deliver_thursday, deliver_friday, deliver_saturday, email, phone, opening_time_weekdays, opening_time_sat, openining_time_bankholiday')
         .eq(field, value);
       
       if (error) {
@@ -615,7 +614,8 @@ export class SupabaseService {
       const { data, error } = await this.supabase
         .from('store_images')
         .select('*')
-        .eq('store_id', storeId);
+        .eq('store_id', storeId)
+        .order('uploaded_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching store images:', error);

@@ -515,6 +515,7 @@ export class StoreLibraryComponent implements OnInit {
     }
   }
 
+  // --- Image Ordering Methods ---
   // Focus on paste area when clicked
   focusPasteArea(event: Event) {
     (event.target as HTMLElement).focus();
