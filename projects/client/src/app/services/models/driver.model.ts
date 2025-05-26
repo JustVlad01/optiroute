@@ -5,6 +5,7 @@ export interface Driver {
   role: string;
   location:string;
   phone_number?: string;
+  password?: string;
   created_at: string;
   selected?: boolean; // For UI selection state
 } 

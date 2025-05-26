@@ -4,6 +4,10 @@ import { SupabaseService } from '../../services/supabase.service';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput, CellHookData } from 'jspdf-autotable';
+import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js';
+
+// Register Chart.js components
+Chart.register(...registerables);
 
 // Custom interfaces for strongly typed table data
 interface StoreTableRow {
@@ -30,6 +34,35 @@ interface SelectedStore {
   storeData: any;
 }
 
+interface DayGroup {
+  date: string;
+  displayDate: string;
+  updates: any[];
+  isExpanded: boolean;
+  selectedUpdates: Set<number>;
+}
+
+interface RouteAnalytics {
+  route: string;
+  averageDeliveryTime: string;
+  totalDeliveries: number;
+  outstandingDeliveries: number;
+  problemRate: number;
+  circleKDeliveries: number;
+  starbucksDeliveries: number;
+  circleKAvgTime: string;
+  starbucksAvgTime: string;
+}
+
+interface DailyDeliveryData {
+  date: string;
+  displayDate: string;
+  circleKAvgTime: number | null;
+  starbucksAvgTime: number | null;
+  circleKCount: number;
+  starbucksCount: number;
+}
+
 @Component({
   selector: 'app-driver-updates',
   standalone: true,
@@ -50,22 +83,837 @@ export class DriverUpdatesComponent implements OnInit {
   Math = Math;
   selectedStores: SelectedStore[] = [];
   selectedUpdates: Set<number> = new Set(); // Track selected updates by ID
+  
+  // New properties for day grouping
+  dayGroups: DayGroup[] = [];
+  dateRange: number = 7; // Show last 7 days by default
+  startDate: string;
+  endDate: string;
+
+  // Analytics properties
+  routeAnalytics: RouteAnalytics[] = [];
+  dailyDeliveryData: DailyDeliveryData[] = [];
+  deliveryTimeChart: Chart | null = null;
+  problemRouteChart: Chart | null = null;
+  weeklyTrendChart: Chart | null = null;
+  showAnalytics: boolean = true;
 
   constructor(private supabaseService: SupabaseService) {
-    // Set start and end of today in ISO format for the query
+    // Set date range for the last 7 days
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    this.startOfToday = today.toISOString();
+    today.setHours(23, 59, 59, 999);
+    this.endDate = today.toISOString();
     
-    const tomorrow = new Date(today);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - this.dateRange);
+    weekAgo.setHours(0, 0, 0, 0);
+    this.startDate = weekAgo.toISOString();
+    
+    // Keep the original today range for backward compatibility
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    this.startOfToday = todayStart.toISOString();
+    
+    const tomorrow = new Date(todayStart);
     tomorrow.setDate(tomorrow.getDate() + 1);
     this.endOfToday = tomorrow.toISOString();
   }
 
   ngOnInit(): void {
-    this.loadTodaysUpdates();
+    this.loadUpdatesGroupedByDay();
   }
 
+  async loadUpdatesGroupedByDay(): Promise<void> {
+    this.loading = true;
+    try {
+      const { data, error } = await this.supabaseService.getSupabase()
+        .from('driver_delivery_updates')
+        .select('*, drivers(name, custom_id)')
+        .gte('created_at', this.startDate)
+        .lt('created_at', this.endDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      this.driverUpdates = data || [];
+      this.groupUpdatesByDay();
+      console.log('Loaded driver updates grouped by day:', this.dayGroups);
+    } catch (error) {
+      console.error('Error loading driver updates:', error);
+      this.driverUpdates = [];
+      this.dayGroups = [];
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private groupUpdatesByDay(): void {
+    const groups: { [key: string]: any[] } = {};
+    
+    // Group updates by date
+    this.driverUpdates.forEach(update => {
+      const date = new Date(update.created_at);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(update);
+    });
+
+    // Convert to DayGroup array and sort by date (newest first)
+    this.dayGroups = Object.keys(groups)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .map(dateKey => {
+        const date = new Date(dateKey);
+        const isToday = dateKey === new Date().toISOString().split('T')[0];
+        const isYesterday = dateKey === new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
+        let displayDate: string;
+        if (isToday) {
+          displayDate = 'Today';
+        } else if (isYesterday) {
+          displayDate = 'Yesterday';
+        } else {
+          displayDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+        }
+
+        return {
+          date: dateKey,
+          displayDate,
+          updates: groups[dateKey],
+          isExpanded: isToday, // Expand today's updates by default
+          selectedUpdates: new Set<number>()
+        };
+      });
+
+    // Calculate analytics after grouping
+    this.calculateRouteAnalytics();
+  }
+
+  private calculateRouteAnalytics(): void {
+    const routeData: { [route: string]: any } = {};
+    const dailyData: { [date: string]: any } = {};
+
+    // Process all updates to gather route statistics and daily data
+    this.driverUpdates.forEach(update => {
+      const route = update.route_name || 'Unknown Route';
+      const updateDate = new Date(update.created_at).toISOString().split('T')[0];
+      
+      if (!routeData[route]) {
+        routeData[route] = {
+          route,
+          deliveryTimes: [],
+          dailyStats: {}, // Track daily statistics for weekly averaging
+          circleKDeliveries: 0,
+          starbucksDeliveries: 0,
+          circleKTimes: [],
+          starbucksTimes: []
+        };
+      }
+
+      // Initialize daily stats for this route and date if not exists
+      if (!routeData[route].dailyStats[updateDate]) {
+        routeData[route].dailyStats[updateDate] = {
+          totalDeliveries: 0,
+          outstandingDeliveries: 0
+        };
+      }
+
+      if (!dailyData[updateDate]) {
+        dailyData[updateDate] = {
+          date: updateDate,
+          circleKTimes: [],
+          starbucksTimes: []
+        };
+      }
+
+      // Process last delivery times
+      if (update.last_delivery_times) {
+        Object.entries(update.last_delivery_times).forEach(([shop, time]) => {
+          const timeStr = time as string;
+          routeData[route].deliveryTimes.push(timeStr);
+          
+          // Check if it's Circle K or Starbucks
+          const shopLower = shop.toLowerCase();
+          if (shopLower.includes('circle k') || shopLower.includes('circlek')) {
+            routeData[route].circleKDeliveries++;
+            routeData[route].circleKTimes.push(timeStr);
+            dailyData[updateDate].circleKTimes.push(timeStr);
+          } else if (shopLower.includes('starbucks')) {
+            routeData[route].starbucksDeliveries++;
+            routeData[route].starbucksTimes.push(timeStr);
+            dailyData[updateDate].starbucksTimes.push(timeStr);
+          }
+        });
+      }
+
+      // Process delivery data for outstanding deliveries (daily basis)
+      if (update.delivery_data && Array.isArray(update.delivery_data)) {
+        update.delivery_data.forEach((delivery: any) => {
+          routeData[route].dailyStats[updateDate].totalDeliveries++;
+          if (delivery.stores && delivery.stores.length > 0) {
+            routeData[route].dailyStats[updateDate].outstandingDeliveries += delivery.stores.length;
+          }
+        });
+      }
+    });
+
+    // Convert to RouteAnalytics array with weekly averaging
+    this.routeAnalytics = Object.values(routeData).map((data: any) => {
+      const avgTime = this.calculateAverageTime(data.deliveryTimes);
+      const circleKAvgTime = this.calculateAverageTime(data.circleKTimes);
+      const starbucksAvgTime = this.calculateAverageTime(data.starbucksTimes);
+      
+      // Calculate weekly averages for problem rate
+      const dailyStatsArray = Object.values(data.dailyStats) as any[];
+      const daysWithData = dailyStatsArray.length;
+      
+      let weeklyAvgTotalDeliveries = 0;
+      let weeklyAvgOutstandingDeliveries = 0;
+      let weeklyProblemRate = 0;
+      
+      if (daysWithData > 0) {
+        // Calculate daily problem rates and then average them
+        const dailyProblemRates = dailyStatsArray.map((dayStats: any) => {
+          if (dayStats.totalDeliveries > 0) {
+            return (dayStats.outstandingDeliveries / dayStats.totalDeliveries) * 100;
+          }
+          return 0;
+        });
+        
+        // Weekly average problem rate
+        weeklyProblemRate = dailyProblemRates.reduce((sum, rate) => sum + rate, 0) / daysWithData;
+        
+        // Weekly average deliveries
+        weeklyAvgTotalDeliveries = dailyStatsArray.reduce((sum, dayStats) => sum + dayStats.totalDeliveries, 0) / daysWithData;
+        weeklyAvgOutstandingDeliveries = dailyStatsArray.reduce((sum, dayStats) => sum + dayStats.outstandingDeliveries, 0) / daysWithData;
+      }
+
+      return {
+        route: data.route,
+        averageDeliveryTime: avgTime,
+        totalDeliveries: Math.round(weeklyAvgTotalDeliveries * 10) / 10, // Round to 1 decimal
+        outstandingDeliveries: Math.round(weeklyAvgOutstandingDeliveries * 10) / 10, // Round to 1 decimal
+        problemRate: Math.round(weeklyProblemRate * 100) / 100, // Round to 2 decimals
+        circleKDeliveries: data.circleKDeliveries,
+        starbucksDeliveries: data.starbucksDeliveries,
+        circleKAvgTime: circleKAvgTime,
+        starbucksAvgTime: starbucksAvgTime
+      };
+    }).sort((a, b) => this.extractRouteNumber(a.route) - this.extractRouteNumber(b.route));
+
+    // Convert to DailyDeliveryData array
+    this.dailyDeliveryData = Object.keys(dailyData)
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .map(dateKey => {
+        const data = dailyData[dateKey];
+        const date = new Date(dateKey);
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
+        let displayDate: string;
+        if (dateKey === today) {
+          displayDate = 'Today';
+        } else if (dateKey === yesterday) {
+          displayDate = 'Yesterday';
+        } else {
+          displayDate = date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          });
+        }
+
+        return {
+          date: dateKey,
+          displayDate,
+          circleKAvgTime: this.calculateAverageTimeInHours(data.circleKTimes),
+          starbucksAvgTime: this.calculateAverageTimeInHours(data.starbucksTimes),
+          circleKCount: data.circleKTimes.length,
+          starbucksCount: data.starbucksTimes.length
+        };
+      });
+
+    // Generate charts after calculation
+    setTimeout(() => {
+      this.generateDeliveryTimeChart();
+      this.generateProblemRouteChart();
+      this.generateWeeklyTrendChart();
+    }, 100);
+  }
+
+  private calculateAverageTime(times: string[]): string {
+    if (times.length === 0) return 'N/A';
+
+    const totalMinutes = times.reduce((sum, timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return sum + (hours * 60) + minutes;
+    }, 0);
+
+    const avgMinutes = Math.round(totalMinutes / times.length);
+    const hours = Math.floor(avgMinutes / 60);
+    const mins = avgMinutes % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  private calculateAverageTimeInHours(times: string[]): number | null {
+    if (times.length === 0) return null;
+
+    const totalMinutes = times.reduce((sum, timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return sum + (hours * 60) + minutes;
+    }, 0);
+
+    const avgMinutes = totalMinutes / times.length;
+    return avgMinutes / 60; // Convert to hours
+  }
+
+  private generateDeliveryTimeChart(): void {
+    const canvas = document.getElementById('deliveryTimeChart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // Destroy existing chart
+    if (this.deliveryTimeChart) {
+      this.deliveryTimeChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Show all routes, not just those with Circle K or Starbucks data
+    const allRoutes = this.routeAnalytics;
+
+    const labels = allRoutes.map(r => r.route);
+    const circleKData = allRoutes.map(r => {
+      if (r.circleKAvgTime === 'N/A') return null;
+      const [hours, minutes] = r.circleKAvgTime.split(':').map(Number);
+      return hours + (minutes / 60);
+    });
+    const starbucksData = allRoutes.map(r => {
+      if (r.starbucksAvgTime === 'N/A') return null;
+      const [hours, minutes] = r.starbucksAvgTime.split(':').map(Number);
+      return hours + (minutes / 60);
+    });
+
+    this.deliveryTimeChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Circle K Avg Delivery Time',
+            data: circleKData,
+            backgroundColor: 'rgba(45, 140, 255, 0.7)',
+            borderColor: 'rgba(45, 140, 255, 1)',
+            borderWidth: 1,
+            barThickness: 20,
+            maxBarThickness: 25
+          },
+          {
+            label: 'Starbucks Avg Delivery Time',
+            data: starbucksData,
+            backgroundColor: 'rgba(40, 167, 69, 0.7)',
+            borderColor: 'rgba(40, 167, 69, 1)',
+            borderWidth: 1,
+            barThickness: 20,
+            maxBarThickness: 25
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Average Delivery Times by Route (Circle K vs Starbucks)',
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Hours'
+            },
+            ticks: {
+              callback: function(value) {
+                const hours = Math.floor(Number(value));
+                const minutes = Math.round((Number(value) - hours) * 60);
+                return `${hours}:${minutes.toString().padStart(2, '0')}`;
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Routes'
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 0
+            }
+          }
+        },
+        layout: {
+          padding: {
+            left: 10,
+            right: 10
+          }
+        }
+      }
+    });
+  }
+
+  private generateProblemRouteChart(): void {
+    const canvas = document.getElementById('problemRouteChart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // Destroy existing chart
+    if (this.problemRouteChart) {
+      this.problemRouteChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Show all routes, not just top 10 with problems
+    const allRoutes = this.routeAnalytics
+      .sort((a, b) => this.extractRouteNumber(a.route) - this.extractRouteNumber(b.route));
+
+    const labels = allRoutes.map(r => r.route);
+    const problemRates = allRoutes.map(r => r.problemRate);
+    const outstandingCounts = allRoutes.map(r => r.outstandingDeliveries);
+
+    // Generate colors based on problem severity
+    const backgroundColors = problemRates.map(rate => {
+      if (rate > 75) return 'rgba(220, 53, 69, 0.7)'; // Red for high problems
+      if (rate > 50) return 'rgba(255, 193, 7, 0.7)'; // Yellow for medium problems
+      if (rate > 25) return 'rgba(255, 152, 0, 0.7)'; // Orange for low-medium problems
+      return 'rgba(40, 167, 69, 0.7)'; // Green for low problems
+    });
+
+    const borderColors = backgroundColors.map(color => color.replace('0.7', '1'));
+
+    this.problemRouteChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Weekly Avg Problem Rate (%)',
+            data: problemRates,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            yAxisID: 'y',
+            barThickness: 20,
+            maxBarThickness: 25
+          },
+          {
+            label: 'Weekly Avg Outstanding Deliveries',
+            data: outstandingCounts,
+            type: 'line',
+            borderColor: 'rgba(45, 140, 255, 1)',
+            backgroundColor: 'rgba(45, 140, 255, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Routes with Most Delivery Problems (Weekly Averages)',
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Weekly Avg Problem Rate (%)'
+            },
+            beginAtZero: true,
+            max: 100
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Weekly Avg Outstanding Deliveries'
+            },
+            beginAtZero: true,
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Routes'
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 0
+            }
+          }
+        },
+        layout: {
+          padding: {
+            left: 10,
+            right: 10
+          }
+        }
+      }
+    });
+  }
+
+  private generateWeeklyTrendChart(): void {
+    const canvas = document.getElementById('weeklyTrendChart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // Destroy existing chart
+    if (this.weeklyTrendChart) {
+      this.weeklyTrendChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Prepare data for the line chart
+    const labels = this.dailyDeliveryData.map(d => d.displayDate);
+    const circleKData = this.dailyDeliveryData.map(d => d.circleKAvgTime);
+    const starbucksData = this.dailyDeliveryData.map(d => d.starbucksAvgTime);
+
+    this.weeklyTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Circle K Average Delivery Time',
+            data: circleKData,
+            borderColor: 'rgba(45, 140, 255, 1)',
+            backgroundColor: 'rgba(45, 140, 255, 0.1)',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(45, 140, 255, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          },
+          {
+            label: 'Starbucks Average Delivery Time',
+            data: starbucksData,
+            borderColor: 'rgba(40, 167, 69, 1)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(40, 167, 69, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Weekly Delivery Time Trends (Circle K vs Starbucks)',
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                if (value === null) return `${context.dataset.label}: No data`;
+                const hours = Math.floor(value);
+                const minutes = Math.round((value - hours) * 60);
+                return `${context.dataset.label}: ${hours}:${minutes.toString().padStart(2, '0')}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Hours'
+            },
+            ticks: {
+              callback: function(value) {
+                const hours = Math.floor(Number(value));
+                const minutes = Math.round((Number(value) - hours) * 60);
+                return `${hours}:${minutes.toString().padStart(2, '0')}`;
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Days'
+            }
+          }
+        },
+        elements: {
+          line: {
+            borderJoinStyle: 'round'
+          }
+        }
+      }
+    });
+  }
+
+  toggleAnalytics(): void {
+    this.showAnalytics = !this.showAnalytics;
+    if (this.showAnalytics) {
+      setTimeout(() => {
+        this.generateDeliveryTimeChart();
+        this.generateProblemRouteChart();
+      }, 100);
+    }
+  }
+
+  // Helper methods for template calculations
+  getTotalOutstandingDeliveries(): number {
+    // Sum of weekly average outstanding deliveries across all routes
+    return Math.round(this.routeAnalytics.reduce((sum, route) => sum + route.outstandingDeliveries, 0) * 10) / 10;
+  }
+
+  getRoutesWithCircleKOrStarbucks(): number {
+    const circleKRoutes = this.routeAnalytics.filter(r => r.circleKDeliveries > 0).length;
+    const starbucksRoutes = this.routeAnalytics.filter(r => r.starbucksDeliveries > 0).length;
+    return circleKRoutes + starbucksRoutes;
+  }
+
+  getAverageProblemRate(): number {
+    // Average of weekly problem rates across all routes
+    if (this.routeAnalytics.length === 0) return 0;
+    const totalProblemRate = this.routeAnalytics.reduce((sum, route) => sum + route.problemRate, 0);
+    return Math.round(totalProblemRate / this.routeAnalytics.length);
+  }
+
+  toggleDayExpansion(dayGroup: DayGroup): void {
+    dayGroup.isExpanded = !dayGroup.isExpanded;
+  }
+
+  toggleDaySelection(dayGroup: DayGroup): void {
+    if (dayGroup.selectedUpdates.size === dayGroup.updates.length) {
+      // All selected, deselect all
+      dayGroup.selectedUpdates.clear();
+    } else {
+      // Not all selected, select all
+      dayGroup.updates.forEach(update => {
+        if (update.id) {
+          dayGroup.selectedUpdates.add(update.id);
+        }
+      });
+    }
+  }
+
+  toggleUpdateInDay(dayGroup: DayGroup, updateId: number): void {
+    if (dayGroup.selectedUpdates.has(updateId)) {
+      dayGroup.selectedUpdates.delete(updateId);
+    } else {
+      dayGroup.selectedUpdates.add(updateId);
+    }
+  }
+
+  isUpdateSelectedInDay(dayGroup: DayGroup, updateId: number): boolean {
+    return dayGroup.selectedUpdates.has(updateId);
+  }
+
+  isDayFullySelected(dayGroup: DayGroup): boolean {
+    return dayGroup.selectedUpdates.size === dayGroup.updates.length && dayGroup.updates.length > 0;
+  }
+
+  isDayPartiallySelected(dayGroup: DayGroup): boolean {
+    return dayGroup.selectedUpdates.size > 0 && dayGroup.selectedUpdates.size < dayGroup.updates.length;
+  }
+
+  getSelectedUpdatesFromAllDays(): any[] {
+    const selectedUpdates: any[] = [];
+    this.dayGroups.forEach(dayGroup => {
+      dayGroup.updates.forEach(update => {
+        if (dayGroup.selectedUpdates.has(update.id)) {
+          selectedUpdates.push(update);
+        }
+      });
+    });
+    return selectedUpdates;
+  }
+
+  exportSelectedDays(): void {
+    const selectedUpdates = this.getSelectedUpdatesFromAllDays();
+    if (selectedUpdates.length === 0) {
+      alert('Please select at least one update to export.');
+      return;
+    }
+    
+    this.exportMultipleUpdates(selectedUpdates);
+  }
+
+  exportMultipleUpdates(updates: any[]): void {
+    if (updates.length === 0) {
+      alert('No updates to export.');
+      return;
+    }
+    
+    try {
+      const doc = new jsPDF();
+      const today = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      // Add title
+      doc.setFontSize(14);
+      doc.text('Combined Driver Delivery Updates Report', 14, 15);
+      doc.setFontSize(8);
+      doc.text(`Date: ${today} | Total Updates: ${updates.length}`, 14, 20);
+      
+      let yPosition = 25;
+      
+      // Define colors for all tables
+      const lightBlue: [number, number, number] = [200, 220, 240];
+      const headerBlue: [number, number, number] = [45, 140, 255];
+      
+      // 1. Outstanding deliveries section
+      const storesWithDeliveries = updates.filter(update => 
+        update.delivery_data && 
+        Array.isArray(update.delivery_data) && 
+        update.delivery_data.some((delivery: any) => delivery.stores && delivery.stores.length > 0)
+      );
+      
+      if (storesWithDeliveries.length > 0) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", 'bold');
+        doc.text('Delivery Update - Outstanding Deliveries', 14, yPosition);
+        doc.setFont("helvetica", 'normal');
+        yPosition += 5;
+        
+        const allStoresData: any[] = [];
+        
+        storesWithDeliveries.forEach(update => {
+          const routeName = update.route_name || 'N/A';
+          if (update.delivery_data && Array.isArray(update.delivery_data)) {
+            update.delivery_data.forEach((delivery: any) => {
+              if (delivery.stores && Array.isArray(delivery.stores)) {
+                delivery.stores.forEach((store: any) => {
+                  allStoresData.push([
+                    delivery.shop_name || 'N/A',
+                    routeName,
+                    store.store_name || 'N/A',
+                    store.store_code || 'N/A'
+                  ]);
+                });
+              }
+            });
+          }
+        });
+        
+        if (allStoresData.length > 0) {
+          // Sort by route number
+          allStoresData.sort((a: any[], b: any[]) => {
+            const routeA = a[1] as string;
+            const routeB = b[1] as string;
+            
+            const numA = this.extractRouteNumber(routeA);
+            const numB = this.extractRouteNumber(routeB);
+            
+            return numA - numB;
+          });
+          
+          const uniqueRoutes = Array.from(new Set(allStoresData.map((row: any[]) => row[1])));
+          
+          autoTable(doc, {
+            startY: yPosition,
+            head: [['Shop', 'Route', 'Store Name', 'Store Code']],
+            body: allStoresData as unknown as RowInput[],
+            theme: 'grid',
+            headStyles: { 
+              fillColor: headerBlue,
+              fontSize: 8,
+              cellPadding: 2
+            },
+            bodyStyles: {
+              fontSize: 7,
+              cellPadding: 1
+            },
+            columnStyles: {
+              0: { cellWidth: 25 },
+              1: { cellWidth: 25 },
+              2: { cellWidth: 'auto' },
+              3: { cellWidth: 20 }
+            },
+            margin: { left: 10, right: 10 },
+            didParseCell: function(data: CellHookData) {
+              if (data.section === 'body') {
+                const rowData = data.row.raw as any[];
+                const route = rowData[1];
+                
+                const routeIndex = uniqueRoutes.indexOf(route);
+                if (routeIndex % 2 === 0) {
+                  data.cell.styles.fillColor = lightBlue;
+                }
+              }
+            },
+            didDrawPage: (data: any) => {
+              yPosition = data.cursor?.y ?? yPosition;
+            }
+          });
+        }
+        
+        yPosition += 5;
+      }
+      
+      // Save the PDF
+      const fileName = `driver-updates-${today.replace(/\s/g, '-')}.pdf`;
+      doc.save(fileName);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  }
+
+  // Keep the original methods for backward compatibility
   async loadTodaysUpdates(): Promise<void> {
     this.loading = true;
     try {
@@ -581,279 +1429,10 @@ export class DriverUpdatesComponent implements OnInit {
         return;
       }
       
-      const doc = new jsPDF();
-      const today = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-      
-      // Add title
-      doc.setFontSize(14);
-      doc.text('Combined Driver Delivery Updates Report', 14, 15);
-      doc.setFontSize(8);
-      doc.text(`Date: ${today} | Total Updates: ${updates.length}`, 14, 20);
-      
-      let yPosition = 25;
-      
-      // Define colors for all tables
-      const lightBlue: [number, number, number] = [200, 220, 240]; // Light blue color for alternating rows
-      const headerBlue: [number, number, number] = [45, 140, 255]; // Blue color for headers
-      
-      // Create a highly condensed report format
-      
-      // 1. Outstanding deliveries section - all stores from all forms in one table
-      const storesWithDeliveries = updates.filter(update => 
-        update.delivery_data && 
-        Array.isArray(update.delivery_data) && 
-        update.delivery_data.some((delivery: any) => delivery.stores && delivery.stores.length > 0)
-      );
-      
-      if (storesWithDeliveries.length > 0) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", 'bold');
-        doc.text('Delivery Update - Outstanding Deliveries', 14, yPosition);
-        doc.setFont("helvetica", 'normal');
-        yPosition += 5;
-        
-        // Use any[] type for flexibility
-        const allStoresData: any[] = [];
-        
-        storesWithDeliveries.forEach(update => {
-          const routeName = update.route_name || 'N/A';
-          if (update.delivery_data && Array.isArray(update.delivery_data)) {
-            update.delivery_data.forEach((delivery: any) => {
-              if (delivery.stores && Array.isArray(delivery.stores)) {
-                delivery.stores.forEach((store: any) => {
-                  allStoresData.push([
-                    delivery.shop_name || 'N/A',
-                    routeName,
-                    store.store_name || 'N/A',
-                    store.store_code || 'N/A'
-                  ]);
-                });
-              }
-            });
-          }
-        });
-        
-        if (allStoresData.length > 0) {
-          // Sort by route number
-          allStoresData.sort((a: any[], b: any[]) => {
-            const routeA = a[1] as string;
-            const routeB = b[1] as string;
-            
-            const numA = this.extractRouteNumber(routeA);
-            const numB = this.extractRouteNumber(routeB);
-            
-            return numA - numB;
-          });
-          
-          // Get unique routes for alternating colors
-          const uniqueRoutes = Array.from(new Set(allStoresData.map((row: any[]) => row[1])));
-          
-          autoTable(doc, {
-            startY: yPosition,
-            head: [['Shop', 'Route', 'Store Name', 'Store Code']],
-            body: allStoresData as unknown as RowInput[],
-            theme: 'grid',
-            headStyles: { 
-              fillColor: headerBlue,
-              fontSize: 8,
-              cellPadding: 2
-            },
-            bodyStyles: {
-              fontSize: 7,
-              cellPadding: 1
-            },
-            columnStyles: {
-              0: { cellWidth: 25 },
-              1: { cellWidth: 25 },
-              2: { cellWidth: 'auto' },
-              3: { cellWidth: 20 }
-            },
-            margin: { left: 10, right: 10 },
-            didParseCell: function(data: CellHookData) {
-              // Color rows based on route
-              if (data.section === 'body') {
-                const rowData = data.row.raw as any[];
-                const route = rowData[1]; // Route is in second column
-                
-                // Get the route's index in the unique routes array
-                const routeIndex = uniqueRoutes.indexOf(route);
-                if (routeIndex % 2 === 0) {
-                  data.cell.styles.fillColor = lightBlue;
-                }
-              }
-            },
-            didDrawPage: (data: any) => {
-              yPosition = data.cursor?.y ?? yPosition;
-            }
-          });
-        }
-        
-        yPosition += 5;
-      }
-      
-      // 2. Last delivery times table
-      const updatesWithDeliveryTimes = updates.filter(update => 
-        update.last_delivery_times && 
-        Object.keys(update.last_delivery_times).length > 0
-      );
-      
-      if (updatesWithDeliveryTimes.length > 0) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", 'bold');
-        doc.text('Last Delivery Times', 14, yPosition);
-        doc.setFont("helvetica", 'normal');
-        yPosition += 5;
-        
-        // Use any[] type for flexibility
-        const allDeliveryTimes: any[] = [];
-        
-        updatesWithDeliveryTimes.forEach(update => {
-          const routeName = update.route_name || 'N/A';
-          if (update.last_delivery_times) {
-            Object.entries(update.last_delivery_times).forEach(([shop, time]) => {
-              allDeliveryTimes.push([
-                shop,
-                time as string,
-                routeName
-              ]);
-            });
-          }
-        });
-        
-        if (allDeliveryTimes.length > 0) {
-          // Sort by route number
-          allDeliveryTimes.sort((a: any[], b: any[]) => {
-            const routeA = a[2] as string;
-            const routeB = b[2] as string;
-            
-            const numA = this.extractRouteNumber(routeA);
-            const numB = this.extractRouteNumber(routeB);
-            
-            return numA - numB;
-          });
-          
-          // Get unique routes for alternating colors
-          const uniqueRoutes = Array.from(new Set(allDeliveryTimes.map((row: any[]) => row[2])));
-          
-          autoTable(doc, {
-            startY: yPosition,
-            head: [['Shop', 'Last Delivery Time', 'Route']],
-            body: allDeliveryTimes as unknown as RowInput[],
-            theme: 'grid',
-            headStyles: { 
-              fillColor: headerBlue,
-              fontSize: 8,
-              cellPadding: 2
-            },
-            bodyStyles: {
-              fontSize: 7,
-              cellPadding: 1
-            },
-            margin: { left: 10, right: 10 },
-            didParseCell: function(data: CellHookData) {
-              // Color rows based on route
-              if (data.section === 'body') {
-                const rowData = data.row.raw as any[];
-                const route = rowData[2]; // Route is in third column
-                
-                // Get the route's index in the unique routes array
-                const routeIndex = uniqueRoutes.indexOf(route);
-                if (routeIndex % 2 === 0) {
-                  data.cell.styles.fillColor = lightBlue;
-                }
-              }
-            },
-            didDrawPage: (data: any) => {
-              yPosition = data.cursor?.y ?? yPosition;
-            }
-          });
-        }
-        
-        yPosition += 5;
-      }
-      
-      // 3. Add comments section only if there are comments
-      const driversWithComments = updates.filter(update => update.comments && update.comments.trim() !== '');
-      
-      if (driversWithComments.length > 0) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", 'bold');
-        doc.text('Driver Comments', 14, yPosition);
-        doc.setFont("helvetica", 'normal');
-        yPosition += 5;
-        
-        // Use any[] type for flexibility
-        const commentsData: any[] = driversWithComments.map(update => {
-          return [
-            update.route_name || 'N/A',
-            update.comments || ''
-          ];
-        });
-        
-        // Sort comments by route number
-        commentsData.sort((a: any[], b: any[]) => {
-          const routeA = a[0] as string;
-          const routeB = b[0] as string;
-          
-          const numA = this.extractRouteNumber(routeA);
-          const numB = this.extractRouteNumber(routeB);
-          
-          return numA - numB;
-        });
-        
-        // Get unique routes for alternating colors
-        const uniqueRoutes = Array.from(new Set(commentsData.map((row: any[]) => row[0])));
-        
-        autoTable(doc, {
-          startY: yPosition,
-          head: [['Route', 'Comments']],
-          body: commentsData as unknown as RowInput[],
-          theme: 'grid',
-          headStyles: { 
-            fillColor: headerBlue,
-            fontSize: 8,
-            cellPadding: 2
-          },
-          bodyStyles: {
-            fontSize: 7,
-            cellPadding: 2
-          },
-          columnStyles: {
-            0: { cellWidth: 30 },
-            1: { cellWidth: 'auto' }
-          },
-          margin: { left: 10, right: 10 },
-          didParseCell: function(data: CellHookData) {
-            // Color rows based on route
-            if (data.section === 'body') {
-              const rowData = data.row.raw as any[];
-              const route = rowData[0]; // Route is in first column
-              
-              // Get the route's index in the unique routes array
-              const routeIndex = uniqueRoutes.indexOf(route);
-              if (routeIndex % 2 === 0) {
-                data.cell.styles.fillColor = lightBlue;
-              }
-            }
-          }
-        });
-      }
-      
-      // Save the PDF
-      const todayDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-      const fileName = `Delivery Update (${todayDate}).pdf`;
-      doc.save(fileName);
+      this.exportMultipleUpdates(updates);
     } catch (error) {
-      console.error('Error generating combined PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error('Error exporting selected updates:', error);
+      alert('Error exporting updates. Please try again.');
     }
   }
 
@@ -867,6 +1446,24 @@ export class DriverUpdatesComponent implements OnInit {
       return parseInt(match[0], 10);
     }
     return Infinity; // If no number found, put at the end
+  }
+
+  getOutstandingDeliveriesForDay(dayGroup: DayGroup): number {
+    let totalOutstanding = 0;
+    dayGroup.updates.forEach(update => {
+      if (update.delivery_data && Array.isArray(update.delivery_data)) {
+        update.delivery_data.forEach((delivery: any) => {
+          if (delivery.stores && delivery.stores.length > 0) {
+            totalOutstanding += delivery.stores.length;
+          }
+        });
+      }
+    });
+    return totalOutstanding;
+  }
+
+  getAdvancedNotificationsForDay(dayGroup: DayGroup): number {
+    return dayGroup.updates.filter(update => update.comments && update.comments.trim().length > 0).length;
   }
 }
 

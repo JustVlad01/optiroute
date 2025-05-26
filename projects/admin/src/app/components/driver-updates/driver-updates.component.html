@@ -1,86 +1,236 @@
 <div class="driver-updates-container">
   <div class="section-header">
     <i class="bi bi-truck"></i> <h2>Drivers Updates</h2>
-    <p class="subtitle">Today's driver delivery updates submitted from the mobile app</p>
+    <p class="subtitle">Driver delivery updates grouped by day (Last {{ dateRange }} days)</p>
   </div>
 
-  <!-- List View Mode -->
-  <div *ngIf="viewMode === 'list'" class="update-list">
+  <!-- Day-Grouped View Mode -->
+  <div *ngIf="viewMode === 'list'" class="day-grouped-view">
     <div *ngIf="loading" class="loading-indicator">
       <i class="bi bi-hourglass-split spin"></i> Loading updates...
     </div>
 
-    <div *ngIf="!loading && driverUpdates.length === 0" class="no-data">
+    <div *ngIf="!loading && dayGroups.length === 0" class="no-data">
       <i class="bi bi-info-circle"></i>
-      <p>No delivery updates found for today</p>
+      <p>No delivery updates found for the last {{ dateRange }} days</p>
     </div>
 
-    <div *ngIf="!loading && driverUpdates.length > 0" class="updates-table-container">
-      <div class="table-header">
-        <span>Today's Updates ({{totalCount}})</span>
-        <div *ngIf="hasSelectedUpdates()" class="bulk-actions">
-          <button class="deselect-btn" (click)="deselectAllUpdates()">
-            <i class="bi bi-x"></i> Deselect All
-          </button>
-          <button class="multi-export-btn" (click)="exportSelectedUpdates()">
-            <i class="bi bi-file-earmark-pdf"></i> Export Selected
-          </button>
-        </div>
-        <button *ngIf="!hasSelectedUpdates() && driverUpdates.length > 0" class="select-all-btn" (click)="selectAllUpdates()">
-          <i class="bi bi-check-all"></i> Select All
+    <div *ngIf="!loading && dayGroups.length > 0" class="day-groups-container">
+      <!-- Global Actions -->
+      <div class="global-actions">
+        <button *ngIf="getSelectedUpdatesFromAllDays().length > 0" class="export-selected-btn" (click)="exportSelectedDays()">
+          <i class="bi bi-file-earmark-pdf"></i> Export Selected ({{ getSelectedUpdatesFromAllDays().length }})
         </button>
       </div>
-      <table class="updates-table">
-        <thead>
-          <tr>
-            <th class="select-col">Select</th>
-            <th>Time</th>
-            <th>Driver</th>
-            <th>Route</th>
-            <th>Deliveries</th>
-            <th>Stores</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let update of driverUpdates">
-            <td class="select-col">
+
+      <!-- Day Groups -->
+      <div class="day-group" *ngFor="let dayGroup of dayGroups">
+        <div class="day-header" (click)="toggleDayExpansion(dayGroup)">
+          <div class="day-info">
+            <i class="bi" [class.bi-chevron-down]="dayGroup.isExpanded" [class.bi-chevron-right]="!dayGroup.isExpanded"></i>
+            <h3>{{ dayGroup.displayDate }}</h3>
+            <div class="day-stats">
+              <span class="stat-box outstanding">
+                <i class="bi bi-box-seam"></i>
+                {{ getOutstandingDeliveriesForDay(dayGroup) }} Outstanding
+              </span>
+              <span class="stat-box notifications">
+                <i class="bi bi-bell"></i>
+                {{ getAdvancedNotificationsForDay(dayGroup) }} Notifications
+              </span>
+            </div>
+          </div>
+          <div class="day-actions" (click)="$event.stopPropagation()">
+            <div class="day-selection">
               <input 
                 type="checkbox" 
-                [id]="'update-' + update.id" 
-                [checked]="isUpdateSelected(update.id)"
-                (change)="toggleUpdateSelection(update.id)"
-                class="update-checkbox"
+                [id]="'day-' + dayGroup.date" 
+                [checked]="isDayFullySelected(dayGroup)"
+                [indeterminate]="isDayPartiallySelected(dayGroup)"
+                (change)="toggleDaySelection(dayGroup)"
+                class="day-checkbox"
               >
-            </td>
-            <td>{{ formatDate(update.created_at) }}</td>
-            <td>{{ update.drivers?.name || 'Unknown' }}</td>
-            <td>{{ update.route_name || 'N/A' }}</td>
-            <td>{{ getDeliveryCount(update) }}</td>
-            <td>{{ getStoreCount(update) }}</td>
-            <td>
-              <button class="view-btn" (click)="viewUpdateDetails(update)">
-                <i class="bi bi-eye"></i> View
-              </button>
-              <button class="export-btn-list" (click)="exportFullUpdate(update)">
-                <i class="bi bi-file-earmark-pdf"></i> Export
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <label [for]="'day-' + dayGroup.date" class="day-select-label">
+                {{ isDayFullySelected(dayGroup) ? 'Deselect All' : 'Select All' }}
+              </label>
+            </div>
+          </div>
+        </div>
 
-      <!-- Pagination controls -->
-      <div class="pagination-controls" *ngIf="totalCount > pageSize">
-        <button [disabled]="page === 0" (click)="prevPage()" class="page-btn">
-          <i class="bi bi-chevron-left"></i> Previous
-        </button>
-        <span class="page-info">
-          Page {{ page + 1 }} of {{ Math.ceil(totalCount / pageSize) }}
-        </span>
-        <button [disabled]="(page + 1) * pageSize >= totalCount" (click)="nextPage()" class="page-btn">
-          Next <i class="bi bi-chevron-right"></i>
-        </button>
+        <!-- Expanded Day Content -->
+        <div class="day-content" *ngIf="dayGroup.isExpanded">
+          <div class="updates-grid">
+            <div class="update-card" *ngFor="let update of dayGroup.updates">
+              <div class="update-header">
+                <div class="update-selection">
+                  <input 
+                    type="checkbox" 
+                    [id]="'update-' + dayGroup.date + '-' + update.id" 
+                    [checked]="isUpdateSelectedInDay(dayGroup, update.id)"
+                    (change)="toggleUpdateInDay(dayGroup, update.id)"
+                    class="update-checkbox"
+                  >
+                </div>
+                <div class="update-info">
+                  <div class="update-time">{{ formatDate(update.created_at) }}</div>
+                  <div class="update-driver">{{ update.drivers?.name || 'Unknown' }}</div>
+                  <div class="update-route">{{ update.route_name || 'N/A' }}</div>
+                </div>
+                <div class="update-stats">
+                  <span class="stat-item">
+                    <i class="bi bi-box-seam"></i>
+                    {{ getDeliveryCount(update) }} deliveries
+                  </span>
+                  <span class="stat-item">
+                    <i class="bi bi-shop"></i>
+                    {{ getStoreCount(update) }} stores
+                  </span>
+                </div>
+                <div class="update-actions">
+                  <button class="view-btn" (click)="viewUpdateDetails(update)">
+                    <i class="bi bi-eye"></i> View
+                  </button>
+                  <button class="export-btn-card" (click)="exportFullUpdate(update)">
+                    <i class="bi bi-file-earmark-pdf"></i> Export
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Quick Preview of Stores -->
+              <div class="update-preview" *ngIf="update.delivery_data?.length > 0">
+                <div class="preview-section">
+                  <strong>Outstanding Deliveries:</strong>
+                  <div class="delivery-preview" *ngFor="let delivery of update.delivery_data.slice(0, 3)">
+                    <span class="shop-name">{{ delivery.shop_name }}</span>
+                    <span class="store-count" *ngIf="delivery.stores?.length > 0">
+                      ({{ delivery.stores.length }} stores)
+                    </span>
+                  </div>
+                  <div class="more-deliveries" *ngIf="update.delivery_data.length > 3">
+                    +{{ update.delivery_data.length - 3 }} more deliveries...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Section -->
+  <div *ngIf="viewMode === 'list' && !loading && dayGroups.length > 0" class="analytics-section">
+    <div class="analytics-header">
+      <div class="analytics-title">
+        <i class="bi bi-graph-up-arrow"></i>
+        <h2>Route Performance Analytics</h2>
+        <span class="analytics-subtitle">Weekly insights and delivery metrics</span>
+      </div>
+      <button class="toggle-analytics-btn" (click)="toggleAnalytics()">
+        <i class="bi" [class.bi-chevron-up]="showAnalytics" [class.bi-chevron-down]="!showAnalytics"></i>
+        {{ showAnalytics ? 'Hide Analytics' : 'Show Analytics' }}
+      </button>
+    </div>
+
+    <div *ngIf="showAnalytics" class="analytics-content">
+      <!-- Charts Section -->
+      <div class="charts-container">
+        <!-- Delivery Times Chart -->
+        <div class="chart-section">
+          <div class="chart-header">
+            <h3>
+              <i class="bi bi-clock-history"></i>
+              Average Delivery Times by Route
+            </h3>
+            <p class="chart-description">Comparison of Circle K vs Starbucks delivery times across routes</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="deliveryTimeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Problem Routes Chart -->
+        <div class="chart-section">
+          <div class="chart-header">
+            <h3>
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Routes with Most Delivery Problems
+            </h3>
+            <p class="chart-description">Weekly average problem rates and outstanding delivery counts by route</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="problemRouteChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Trend Chart -->
+      <div class="weekly-trend-section">
+        <div class="chart-section">
+          <div class="chart-header">
+            <h3>
+              <i class="bi bi-graph-up"></i>
+              Weekly Delivery Time Trends
+            </h3>
+            <p class="chart-description">Daily average delivery times for Circle K and Starbucks stores over the past week</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="weeklyTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Analytics Table -->
+      <div class="analytics-table-section">
+        <div class="table-header">
+          <h3>
+            <i class="bi bi-table"></i>
+            Weekly Route Analytics
+          </h3>
+          <p class="table-description">Weekly average breakdown of route performance metrics</p>
+        </div>
+        
+        <div class="analytics-table-container">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Outstanding</th>
+                <th>Problem Rate</th>
+                <th>Circle K Avg Time</th>
+                <th>Starbucks Avg Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let route of routeAnalytics" 
+                  [class.high-problem]="route.problemRate > 50"
+                  [class.medium-problem]="route.problemRate > 25 && route.problemRate <= 50"
+                  [class.low-problem]="route.problemRate <= 25">
+                <td class="route-name">{{ route.route }}</td>
+                <td class="text-center">
+                  <span class="outstanding-badge" [class.high]="route.outstandingDeliveries > 10" 
+                        [class.medium]="route.outstandingDeliveries > 5 && route.outstandingDeliveries <= 10"
+                        [class.low]="route.outstandingDeliveries <= 5">
+                    {{ route.outstandingDeliveries }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="problem-rate" [class.high]="route.problemRate > 50"
+                        [class.medium]="route.problemRate > 25 && route.problemRate <= 50"
+                        [class.low]="route.problemRate <= 25">
+                    {{ route.problemRate }}%
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="delivery-time">{{ route.circleKAvgTime }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="delivery-time">{{ route.starbucksAvgTime }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

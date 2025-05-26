@@ -410,6 +410,99 @@ export class SupabaseService {
     }
   }
 
+  // Login with custom ID and password
+  async loginWithCustomIdAndPassword(customId: string, password: string) {
+    console.log('Logging in with custom ID and password:', customId);
+    
+    try {
+      // Find the driver by custom ID and password
+      const { data, error } = await this.supabase
+        .from('drivers')
+        .select('id, name, custom_id, role, phone_number, location, created_at, password')
+        .eq('custom_id', customId)
+        .eq('password', password)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error finding driver:', error);
+        return null;
+      }
+
+      if (data) {
+        // Store driver info in localStorage (without password)
+        const driverInfo = { ...data };
+        delete driverInfo.password;
+        localStorage.setItem('loggedInDriver', JSON.stringify(driverInfo));
+        return driverInfo;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error during login:', error);
+      return null;
+    }
+  }
+
+  // Check if driver exists and has password set
+  async checkDriverPasswordStatus(customId: string) {
+    console.log('Checking password status for driver:', customId);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('drivers')
+        .select('id, name, custom_id, password')
+        .eq('custom_id', customId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error finding driver:', error);
+        return { exists: false, hasPassword: false };
+      }
+
+      if (data) {
+        return {
+          exists: true,
+          hasPassword: !!(data.password && data.password.trim() !== ''),
+          driver: data
+        };
+      }
+      
+      return { exists: false, hasPassword: false };
+    } catch (error) {
+      console.error('Error checking driver password status:', error);
+      return { exists: false, hasPassword: false };
+    }
+  }
+
+  // Set password for first-time login
+  async setDriverPassword(customId: string, password: string) {
+    console.log('Setting password for driver:', customId);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('drivers')
+        .update({ password: password })
+        .eq('custom_id', customId)
+        .select('id, name, custom_id, role, phone_number, location, created_at');
+
+      if (error) {
+        console.error('Error setting driver password:', error);
+        return null;
+      }
+
+      if (data && data.length > 0) {
+        // Store driver info in localStorage
+        localStorage.setItem('loggedInDriver', JSON.stringify(data[0]));
+        return data[0];
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error setting driver password:', error);
+      return null;
+    }
+  }
+
   // Save geolocation data
   async saveGeolocation(geolocationData: {
     driver_id?: string | null;

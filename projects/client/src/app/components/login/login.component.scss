@@ -27,12 +27,71 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.logo {
-  margin: 0 0 1rem;
-  font-weight: 700;
-  font-size: 2.5rem;
-  letter-spacing: 1px;
+.delivery-van-image {
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  opacity: 0.9;
+  display: block;
+  margin: 1.5rem auto 0.5rem auto;
+  cursor: pointer;
+  animation: float 3s ease-in-out infinite;
 }
+
+.delivery-van-image:hover {
+  opacity: 1;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.logo {
+  margin: 0 auto 1rem auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+}
+
+.logo-line {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 0.85;
+  color: white;
+  display: block;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  margin-left:100px;
+  
+}.logo-line-1 {
+  font-weight: 700;
+  font-size: 2.4rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 0.85;
+  color: white;
+  display: block;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  margin-left:55px;
+  
+}
+
+
 
 .badge span {
   padding: 0.35rem 1.25rem;
@@ -54,9 +113,11 @@
 }
 
 .login-title {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--primary-color);
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  margin-top: 0.1rem;
+  margin-left: 0rem; 
   text-align: center;
   font-size: 1.75rem;
 }
@@ -118,6 +179,33 @@
   cursor: not-allowed;
 }
 
+.reset-btn {
+  width: 100%;
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6c757d, #495057);
+  border: none;
+  box-shadow: 0 4px 10px rgba(108, 117, 125, 0.2);
+  transition: all 0.3s ease;
+  color: white;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6268, #343a40);
+  box-shadow: 0 6px 15px rgba(108, 117, 125, 0.3);
+  transform: translateY(-2px);
+}
+
+.reset-btn:disabled {
+  background: linear-gradient(135deg, #adb5bd, #868e96);
+  cursor: not-allowed;
+}
+
 .login-footer {
   padding: 1.5rem;
   background-color: var(--light-bg);
@@ -131,4 +219,17 @@
   border-radius: 8px;
   font-size: 0.95rem;
   padding: 1rem;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+  .delivery-van-image {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .logo-line {
+    font-size: 2.4rem;
+    letter-spacing: 2px;
+  }
 }
