@@ -6,9 +6,9 @@
     "start": "node server.js",
     "start:prod": "npm run build:all && node server.js",
     "build": "ng build",
-    "build:all": "ng build admin --configuration production --optimization --build-optimizer --vendor-chunk=false --named-chunks=false && ng build client --configuration production --optimization --build-optimizer --vendor-chunk=false --named-chunks=false",
-    "build:client": "ng build client --configuration production --optimization --build-optimizer --vendor-chunk=false --named-chunks=false",
-    "build:admin": "ng build admin --configuration production --optimization --build-optimizer --vendor-chunk=false --named-chunks=false",
+    "build:all": "ng build admin --configuration production && ng build client --configuration production",
+    "build:client": "ng build client --configuration production",
+    "build:admin": "ng build admin --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"

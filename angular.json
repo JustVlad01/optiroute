@@ -91,12 +91,7 @@
                 "scripts": true,
                 "styles": true,
                 "fonts": true
-              },
-              "buildOptimizer": true,
-              "aot": true,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "namedChunks": false
+              }
             },
             "development": {
               "optimization": false,
@@ -236,12 +231,7 @@
                 "scripts": true,
                 "styles": true,
                 "fonts": true
-              },
-              "buildOptimizer": true,
-              "aot": true,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "namedChunks": false
+              }
             },
             "development": {
               "optimization": false,
