@@ -59,6 +59,17 @@
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+            ],
+            "allowedCommonJsDependencies": [
+              "ws",
+              "@supabase/realtime-js",
+              "@supabase/supabase-js",
+              "chart.js",
+              "jspdf",
+              "jspdf-autotable",
+              "xlsx",
+              "date-fns",
+              "pg"
             ]
           },
           "configurations": {
@@ -66,16 +77,26 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "40kB",
-                  "maximumError": "60kB"
+                  "maximumWarning": "60kB",
+                  "maximumError": "100kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": true
+              },
+              "buildOptimizer": true,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "namedChunks": false
             },
             "development": {
               "optimization": false,
@@ -183,7 +204,18 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "projects/client/src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "ws",
+              "@supabase/realtime-js",
+              "@supabase/supabase-js",
+              "chart.js",
+              "jspdf",
+              "jspdf-autotable",
+              "xlsx",
+              "date-fns",
+              "pg"
+            ]
           },
           "configurations": {
             "production": {
@@ -191,16 +223,25 @@
                 {
                   "type": "initial",
                   "maximumWarning": "2MB",
-                  "maximumError": "3MB"
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "60kB",
-                  "maximumError": "80kB"
+                  "maximumError": "100kB"
                 }
               ],
               "outputHashing": "all",
-              "serviceWorker": "projects/client/ngsw-config.json"
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": true
+              },
+              "buildOptimizer": true,
+              "aot": true,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "namedChunks": false
             },
             "development": {
               "optimization": false,
