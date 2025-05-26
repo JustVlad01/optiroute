@@ -30,6 +30,35 @@ export class LoginComponent {
     private router: Router
   ) {}
 
+  // Helper method to check if passwords match
+  passwordsMatch(): boolean {
+    return this.password === this.confirmPassword;
+  }
+
+  // Helper method to check if password setup form is valid
+  isPasswordSetupFormValid(): boolean {
+    // Check if password meets minimum requirements
+    const passwordValid = !!(this.password && this.password.length >= 6);
+    
+    // Check if confirm password is entered and matches
+    const confirmPasswordValid = !!(this.confirmPassword && this.passwordsMatch());
+    
+    const isValid = passwordValid && confirmPasswordValid;
+    
+    // Debug logging
+    console.log('Password validation:', {
+      password: this.password,
+      passwordLength: this.password?.length || 0,
+      passwordValid,
+      confirmPassword: this.confirmPassword,
+      confirmPasswordValid,
+      passwordsMatch: this.passwordsMatch(),
+      isValid
+    });
+    
+    return isValid;
+  }
+
   async onSubmit() {
     this.message = '';
     this.isError = false;
@@ -71,14 +100,19 @@ export class LoginComponent {
         return;
       }
 
-      // Attempt login with password
-      const driver = await this.supabaseService.loginWithCustomIdAndPassword(this.customId, this.password);
+      // Attempt login with password (trim to avoid whitespace issues)
+      const trimmedPassword = this.password.trim();
+      console.log('Attempting login for driver:', this.customId);
+      
+      const driver = await this.supabaseService.loginWithCustomIdAndPassword(this.customId, trimmedPassword);
 
       if (driver) {
+        console.log('Login successful for driver:', driver.name);
         // Navigate to dashboard
         this.router.navigate(['/dashboard']);
       } else {
-        this.message = 'Invalid Driver ID or password.';
+        console.log('Login failed for driver:', this.customId);
+        this.message = 'Invalid Driver ID or password. Please check your credentials and try again.';
         this.isError = true;
       }
     } catch (error) {
@@ -117,14 +151,22 @@ export class LoginComponent {
     }
 
     try {
-      const driver = await this.supabaseService.setDriverPassword(this.customId, this.password);
+      // Trim the password to avoid whitespace issues
+      const trimmedPassword = this.password.trim();
+      console.log('Setting password for driver:', this.customId);
+      
+      const driver = await this.supabaseService.setDriverPassword(this.customId, trimmedPassword);
 
       if (driver) {
-        this.message = 'Password set successfully! Redirecting to dashboard...';
+        this.message = 'Password set successfully! You can now log in with your credentials.';
         this.isError = false;
+        
+        // Reset the form to login state after a short delay
         setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 1500);
+          this.resetForm();
+          this.message = 'Password created successfully! Please log in with your Driver ID and new password.';
+          this.isError = false;
+        }, 2000);
       } else {
         this.message = 'Failed to set password. Please try again.';
         this.isError = true;

@@ -152,6 +152,24 @@
   background-color: white;
 }
 
+.form-control.is-valid {
+  border-color: var(--success-color);
+  background-color: white;
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger-color);
+  background-color: white;
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--danger-color);
+}
+
 .login-btn {
   width: 100%;
   padding: 1rem;

@@ -415,12 +415,15 @@ export class SupabaseService {
     console.log('Logging in with custom ID and password:', customId);
     
     try {
+      // Trim password to avoid whitespace issues
+      const trimmedPassword = password.trim();
+      
       // Find the driver by custom ID and password
       const { data, error } = await this.supabase
         .from('drivers')
         .select('id, name, custom_id, role, phone_number, location, created_at, password')
         .eq('custom_id', customId)
-        .eq('password', password)
+        .eq('password', trimmedPassword)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -429,6 +432,7 @@ export class SupabaseService {
       }
 
       if (data) {
+        console.log('Driver found and password matches:', data.name);
         // Store driver info in localStorage (without password)
         const driverInfo = { ...data };
         delete driverInfo.password;
@@ -436,6 +440,7 @@ export class SupabaseService {
         return driverInfo;
       }
       
+      console.log('No driver found with matching credentials for:', customId);
       return null;
     } catch (error) {
       console.error('Error during login:', error);
@@ -460,13 +465,17 @@ export class SupabaseService {
       }
 
       if (data) {
+        const hasPassword = !!(data.password && data.password.trim() !== '');
+        console.log(`Driver ${data.name} exists. Has password: ${hasPassword}. Password length: ${data.password ? data.password.length : 0}`);
+        
         return {
           exists: true,
-          hasPassword: !!(data.password && data.password.trim() !== ''),
+          hasPassword: hasPassword,
           driver: data
         };
       }
       
+      console.log('Driver not found:', customId);
       return { exists: false, hasPassword: false };
     } catch (error) {
       console.error('Error checking driver password status:', error);
@@ -479,9 +488,12 @@ export class SupabaseService {
     console.log('Setting password for driver:', customId);
     
     try {
+      // Trim password to avoid whitespace issues
+      const trimmedPassword = password.trim();
+      
       const { data, error } = await this.supabase
         .from('drivers')
-        .update({ password: password })
+        .update({ password: trimmedPassword })
         .eq('custom_id', customId)
         .select('id, name, custom_id, role, phone_number, location, created_at');
 
@@ -491,11 +503,13 @@ export class SupabaseService {
       }
 
       if (data && data.length > 0) {
+        console.log('Password set successfully for driver:', data[0].name);
         // Store driver info in localStorage
         localStorage.setItem('loggedInDriver', JSON.stringify(data[0]));
         return data[0];
       }
       
+      console.log('No data returned when setting password for driver:', customId);
       return null;
     } catch (error) {
       console.error('Error setting driver password:', error);

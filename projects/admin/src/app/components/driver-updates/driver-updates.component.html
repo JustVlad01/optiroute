@@ -97,17 +97,17 @@
               </div>
               
               <!-- Quick Preview of Stores -->
-              <div class="update-preview" *ngIf="update.delivery_data?.length > 0">
+              <div class="update-preview" *ngIf="getStoreCount(update) > 0 || (update.comments && update.comments.trim().length > 0)">
                 <div class="preview-section">
-                  <strong>Outstanding Deliveries:</strong>
-                  <div class="delivery-preview" *ngFor="let delivery of update.delivery_data.slice(0, 3)">
-                    <span class="shop-name">{{ delivery.shop_name }}</span>
-                    <span class="store-count" *ngIf="delivery.stores?.length > 0">
-                      ({{ delivery.stores.length }} stores)
+                  <div class="summary-info">
+                    <span class="total-outstanding" *ngIf="getStoreCount(update) > 0">
+                      <i class="bi bi-box-seam"></i>
+                      {{ getStoreCount(update) }} Outstanding Stores
                     </span>
-                  </div>
-                  <div class="more-deliveries" *ngIf="update.delivery_data.length > 3">
-                    +{{ update.delivery_data.length - 3 }} more deliveries...
+                    <span class="has-notification" *ngIf="update.comments && update.comments.trim().length > 0">
+                      <i class="bi bi-bell-fill"></i>
+                      Has Advanced Notification
+                    </span>
                   </div>
                 </div>
               </div>

@@ -76,10 +76,15 @@
             class="form-control" 
             [(ngModel)]="confirmPassword" 
             placeholder="Confirm your password"
+            [class.is-invalid]="confirmPassword && !passwordsMatch()"
+            [class.is-valid]="confirmPassword && passwordsMatch()"
             required>
+          <div *ngIf="confirmPassword && !passwordsMatch()" class="invalid-feedback">
+            Passwords do not match
+          </div>
         </div>
 
-        <button type="submit" class="login-btn" [disabled]="!passwordForm.form.valid || isLoading">
+        <button type="submit" class="login-btn" [disabled]="!isPasswordSetupFormValid() || isLoading">
           <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
           Create Password
         </button>
