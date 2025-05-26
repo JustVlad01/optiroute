@@ -1,0 +1,147 @@
+<nav class="navbar">
+  <div class="container-fluid">
+    <div class="nav-left">
+      <span class="nav-title">Report Van Issues</span>
+    </div>
+    
+    <a class="home-button-flat" (click)="goBackToHome()">
+      <i class="bi bi-house-fill"></i>
+    </a>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Thank You Message -->
+  <div class="thank-you-container" *ngIf="showThankYou">
+    <div class="thank-you-content">
+      <div class="thank-you-icon">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h2>Thank You for Your Feedback!</h2>
+      
+      <div class="thank-you-actions">
+        <button class="back-to-home-btn" (click)="goBackToHome()">
+          <i class="bi bi-house-fill"></i>
+          Back to Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Form -->
+  <div class="report-form-container" *ngIf="!showThankYou">
+    <div class="form-header">
+      <div class="header-icon">
+        <img src="https://doftypeumwgvirppcuim.supabase.co/storage/v1/object/public/store-images/stores/storefinder.png" alt="Van Issues" />
+      </div>
+      <h2>Report Van Issue</h2>
+      <p>Describe any issues you're experiencing with your van and optionally attach photos.</p>
+    </div>
+
+    <form (ngSubmit)="submitIssue()" #issueForm="ngForm">
+      <!-- Van Registration Number Section -->
+      <div class="form-group">
+        <label for="vanRegNumber">
+          <i class="bi bi-truck"></i>
+          Van Registration Number
+        </label>
+        <input
+          type="text"
+          id="vanRegNumber"
+          name="vanRegNumber"
+          [(ngModel)]="vanRegNumber"
+          placeholder="Enter van registration number (e.g., ABC123)"
+          class="form-control"
+          required
+          #vanRegInput="ngModel"
+        >
+        <div class="validation-error" *ngIf="vanRegInput.invalid && vanRegInput.touched">
+          Van registration number is required
+        </div>
+      </div>
+
+      <!-- Comment Section -->
+      <div class="form-group">
+        <label for="issueComment">
+          <i class="bi bi-chat-text"></i>
+          Describe the Issue
+        </label>
+        <textarea
+          id="issueComment"
+          name="issueComment"
+          [(ngModel)]="issueComment"
+          placeholder="Please describe the van issue in detail..."
+          rows="5"
+          class="form-control"
+          required
+          #commentInput="ngModel"
+        ></textarea>
+        <div class="validation-error" *ngIf="commentInput.invalid && commentInput.touched">
+          Issue description is required
+        </div>
+      </div>
+
+      <!-- Image Upload Section -->
+      <div class="form-group">
+        <label for="imageUpload">
+          <i class="bi bi-camera"></i>
+          Add Photos (Optional)
+        </label>
+        <div class="upload-area">
+          <input
+            type="file"
+            id="imageUpload"
+            (change)="onImageSelect($event)"
+            accept="image/*"
+            multiple
+            class="file-input"
+          >
+          <div class="upload-prompt">
+            <i class="bi bi-cloud-upload"></i>
+            <span>Click to select images or drag and drop</span>
+            <small>Maximum 5 images, up to 10MB each</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Images Preview -->
+      <div class="selected-images" *ngIf="selectedImages.length > 0">
+        <h4>Selected Images ({{selectedImages.length}}/5)</h4>
+        <div class="images-grid">
+          <div class="image-preview" *ngFor="let imagePreview of selectedImages; let i = index">
+            <img [src]="imagePreview.url" alt="Preview">
+            <button type="button" class="remove-btn" (click)="removeImage(i)">
+              <i class="bi bi-x"></i>
+            </button>
+            <span class="image-name">{{imagePreview.file.name}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Message -->
+      <div class="alert alert-success" *ngIf="submitSuccess">
+        <i class="bi bi-check-circle"></i>
+        Issue reported successfully! Your report has been submitted to management.
+      </div>
+
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="submitError">
+        <i class="bi bi-exclamation-circle"></i>
+        {{submitError}}
+      </div>
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="isSubmitting || issueForm.invalid"
+        >
+          <i class="bi bi-send" *ngIf="!isSubmitting"></i>
+          <i class="bi bi-arrow-clockwise spin" *ngIf="isSubmitting"></i>
+          {{isSubmitting ? 'Submitting...' : 'Submit Report'}}
+        </button>
+      </div>
+    </form>
+  </div>
+</div> 

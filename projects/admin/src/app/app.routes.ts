@@ -12,6 +12,7 @@ import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracki
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
 import { DriverUpdatesComponent } from './components/driver-updates/driver-updates.component';
+import { DriverVanIssuesComponent } from './components/driver-van-issues/driver-van-issues.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -72,6 +73,10 @@ export const routes: Routes = [
             {
                 path: 'updates',
                 component: DriverUpdatesComponent
+            },
+            {
+                path: 'van-issues',
+                component: DriverVanIssuesComponent
             },
             {
                 path: 'view/:id',

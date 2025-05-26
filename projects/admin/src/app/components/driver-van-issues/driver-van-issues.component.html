@@ -1,0 +1,255 @@
+<div class="van-issues-container">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading van issues...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="no-issues-container" *ngIf="!isLoading && vanIssues.length === 0">
+    <i class="bi bi-shield-check"></i>
+    <h3>No Issues Reported</h3>
+    <p>All vehicles are currently operating without reported issues.</p>
+  </div>
+
+  <!-- Issues Table -->
+  <div class="issues-table-container" *ngIf="!isLoading && vanIssues.length > 0">
+    <table class="issues-table">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Driver</th>
+          <th>Issue Report</th>
+          <th>Images</th>
+          <th>Date</th>
+          <th>Fixed Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let issue of vanIssues; trackBy: trackByIssueId" class="issue-row" [class.verified]="issue.verified">
+          <td class="vehicle-cell">
+            <div class="vehicle-info">
+              <span class="van-reg">{{ issue.van_registration }}</span>
+            </div>
+          </td>
+          
+          <td class="driver-cell">
+            <div class="driver-info">
+              <span class="driver-name">{{ issue.driver_name }}</span>
+              <span class="driver-id">ID: {{ issue.driver_custom_id }}</span>
+            </div>
+          </td>
+          
+          <td class="issue-cell">
+            <div class="issue-content">
+              <p class="issue-text">{{ issue.driver_comments }}</p>
+            </div>
+          </td>
+          
+          <td class="images-cell">
+            <div class="images-info" *ngIf="issue.image_urls && issue.image_urls.length > 0">
+              <span class="image-count">{{ issue.image_urls.length }} image(s)</span>
+              <div class="image-thumbnails">
+                <img 
+                  *ngFor="let imagePath of issue.image_urls.slice(0, 3); trackBy: trackByImagePath"
+                  [src]="getImageUrl(imagePath)" 
+                  [alt]="'Issue documentation'"
+                  (click)="openImageModal(getImageUrl(imagePath), issue)"
+                  (error)="onImageError($event)"
+                  class="thumbnail-img"
+                  loading="lazy"
+                >
+                <span *ngIf="issue.image_urls.length > 3" class="more-images">
+                  +{{ issue.image_urls.length - 3 }}
+                </span>
+              </div>
+            </div>
+            <span *ngIf="!issue.image_urls || issue.image_urls.length === 0" class="no-images-text">
+              No images
+            </span>
+          </td>
+          
+          <td class="date-cell">
+            <span class="issue-date">{{ formatDate(issue.created_at) }}</span>
+          </td>
+          
+          <td class="fixed-date-cell">
+            <div class="fixed-date-info">
+              <span *ngIf="issue.date_fixed" class="fixed-date">{{ formatDate(issue.date_fixed) }}</span>
+              <span *ngIf="!issue.date_fixed" class="no-fixed-date">Not fixed yet</span>
+            </div>
+          </td>
+          
+          <td class="status-cell">
+            <div class="status-info">
+              <span class="status-badge" [class.verified]="issue.verified" [class.pending]="!issue.verified">
+                <i class="bi" [class.bi-check-circle-fill]="issue.verified" [class.bi-clock]="!issue.verified"></i>
+                {{ issue.verified ? 'Verified' : 'Pending' }}
+              </span>
+              <div *ngIf="issue.verified && issue.verified_at" class="verification-details">
+                <small class="verified-date">Verified: {{ formatDate(issue.verified_at) }}</small>
+                <small *ngIf="issue.verified_by" class="verified-by">by {{ issue.verified_by }}</small>
+              </div>
+            </div>
+          </td>
+          
+          <td class="actions-cell">
+            <div class="action-buttons">
+              <!-- View Images Button -->
+              <button 
+                *ngIf="issue.image_urls && issue.image_urls.length > 0"
+                class="view-btn"
+                (click)="openImageModal(getImageUrl(issue.image_urls[0]), issue)"
+                title="View Images"
+              >
+                <i class="bi bi-eye"></i>
+                View
+              </button>
+              
+              <!-- Simple Verification Button -->
+              <button 
+                *ngIf="!issue.verified"
+                class="verify-btn"
+                (click)="verifyIssue(issue.id)"
+                [disabled]="isVerifying[issue.id]"
+                title="Mark as Seen"
+              >
+                <i class="bi bi-check-circle" *ngIf="!isVerifying[issue.id]"></i>
+                <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[issue.id]"></i>
+                {{ isVerifying[issue.id] ? 'Processing...' : 'Mark as Seen' }}
+              </button>
+              
+              <!-- Verified Status -->
+              <span *ngIf="issue.verified" class="verified-label">
+                <i class="bi bi-check-circle-fill"></i>
+                Seen
+              </span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Image Viewer Modal -->
+  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()" role="dialog" aria-modal="true">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4>Issue Documentation</h4>
+        <button class="close-btn" (click)="closeImageModal()" aria-label="Close image viewer">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <img [src]="selectedImage" alt="Van issue documentation" class="modal-image">
+      </div>
+      
+      <!-- Modal Footer with Issue Details -->
+      <div class="modal-footer" *ngIf="selectedIssue">
+        <div class="issue-details">
+          <div class="detail-item">
+            <strong>Vehicle</strong>
+            <span>{{ selectedIssue.van_registration }}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Driver</strong>
+            <span>{{ selectedIssue.driver_name }}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Driver ID</strong>
+            <span>{{ selectedIssue.driver_custom_id }}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Contact</strong>
+            <span>{{ selectedIssue.driver_phone || 'Not provided' }}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Location</strong>
+            <span>{{ selectedIssue.driver_location || 'Not specified' }}</span>
+          </div>
+          <div class="detail-item">
+            <strong>Date</strong>
+            <span>{{ formatDate(selectedIssue.created_at) }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIssue.date_fixed">
+            <strong>Fixed Date</strong>
+            <span class="fixed-date-status">{{ formatDate(selectedIssue.date_fixed) }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIssue.verified">
+            <strong>Verification Status</strong>
+            <span class="verified-status">
+              <i class="bi bi-check-circle-fill"></i>
+              Verified {{ selectedIssue.verified_at ? 'on ' + formatDate(selectedIssue.verified_at) : '' }}
+              {{ selectedIssue.verified_by ? 'by ' + selectedIssue.verified_by : '' }}
+            </span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIssue.verification_notes">
+            <strong>Verification Notes</strong>
+            <span>{{ selectedIssue.verification_notes }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date Picker Modal -->
+  <div class="modal-overlay" *ngIf="showDateModal" (click)="closeDateModal()" role="dialog" aria-modal="true">
+    <div class="modal-content date-modal" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4>Select Fix Date</h4>
+        <button class="close-btn" (click)="closeDateModal()" aria-label="Close date picker">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <div class="date-picker-section">
+          <label for="fixedDate" class="date-label">When was this issue fixed?</label>
+          <input 
+            type="date" 
+            id="fixedDate"
+            [(ngModel)]="fixedDate"
+            class="date-input"
+            [max]="getTodayDate()"
+          >
+        </div>
+        
+        <div *ngIf="selectedIssueForVerification" class="issue-summary">
+          <h5>Issue Summary:</h5>
+          <div class="summary-details">
+            <p><strong>Vehicle:</strong> {{ selectedIssueForVerification.van_registration }}</p>
+            <p><strong>Driver:</strong> {{ selectedIssueForVerification.driver_name }}</p>
+            <p><strong>Issue:</strong> {{ selectedIssueForVerification.driver_comments }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeDateModal()">
+          Cancel
+        </button>
+        <button 
+          class="confirm-btn"
+          (click)="confirmVerification()"
+          [disabled]="!fixedDate || isVerifying[selectedIssueForVerification?.id || '']"
+        >
+          <i class="bi bi-check-circle" *ngIf="!isVerifying[selectedIssueForVerification?.id || '']"></i>
+          <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[selectedIssueForVerification?.id || '']"></i>
+          {{ isVerifying[selectedIssueForVerification?.id || ''] ? 'Processing...' : 'Mark as Fixed' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 

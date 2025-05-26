@@ -9,6 +9,7 @@ import { ViewOrdersComponent } from './components/view-orders/view-orders.compon
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
 import { DriverDeliveryUpdateComponent } from './components/driver-delivery-update/driver-delivery-update.component';
+import { ReportVanIssuesComponent } from './components/report-van-issues/report-van-issues.component';
 
 export const routes: Routes = [
     {
@@ -39,6 +40,10 @@ export const routes: Routes = [
     {
         path: 'driver-delivery-update',
         component: DriverDeliveryUpdateComponent
+    },
+    {
+        path: 'report-van-issues',
+        component: ReportVanIssuesComponent
     },
     {
         path: 'form-details/:id',
