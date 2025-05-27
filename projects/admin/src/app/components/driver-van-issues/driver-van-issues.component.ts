@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { NotificationService } from '../../services/notification.service';
+import { PdfReportService } from '../../services/pdf-report.service';
 
 interface VanIssue {
   id: string;
@@ -42,9 +43,23 @@ export class DriverVanIssuesComponent implements OnInit {
   selectedIssueForVerification: VanIssue | null = null;
   fixedDate: string = '';
 
+  // PDF Report properties
+  showReportModal = false;
+  reportFilters = {
+    status: 'all' as 'all' | 'verified' | 'pending',
+    dateRange: {
+      start: '',
+      end: ''
+    },
+    vehicles: [] as string[]
+  };
+  availableVehicles: string[] = [];
+  isGeneratingReport = false;
+
   constructor(
     private supabaseService: SupabaseService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private pdfReportService: PdfReportService
   ) {}
 
   ngOnInit(): void {
@@ -229,5 +244,138 @@ export class DriverVanIssuesComponent implements OnInit {
 
   getTodayDate(): string {
     return new Date().toISOString().split('T')[0];
+  }
+
+  // PDF Report Methods
+  openReportModal(): void {
+    this.showReportModal = true;
+    this.initializeReportFilters();
+  }
+
+  closeReportModal(): void {
+    this.showReportModal = false;
+    this.resetReportFilters();
+  }
+
+  private initializeReportFilters(): void {
+    // Set default date range to last 30 days
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    
+    this.reportFilters.dateRange.start = startDate.toISOString().split('T')[0];
+    this.reportFilters.dateRange.end = endDate.toISOString().split('T')[0];
+    
+    // Get unique vehicles from current issues
+    this.availableVehicles = [...new Set(this.vanIssues.map(issue => issue.van_registration))].sort();
+  }
+
+  private resetReportFilters(): void {
+    this.reportFilters = {
+      status: 'all',
+      dateRange: { start: '', end: '' },
+      vehicles: []
+    };
+  }
+
+  onVehicleSelectionChange(vehicle: string, event: any): void {
+    if (event.target.checked) {
+      if (!this.reportFilters.vehicles.includes(vehicle)) {
+        this.reportFilters.vehicles.push(vehicle);
+      }
+    } else {
+      this.reportFilters.vehicles = this.reportFilters.vehicles.filter(v => v !== vehicle);
+    }
+  }
+
+  generatePdfReport(): void {
+    this.isGeneratingReport = true;
+    
+    try {
+      // Prepare filters for the PDF service
+      const filters: any = {
+        status: this.reportFilters.status
+      };
+
+      // Add date range if specified
+      if (this.reportFilters.dateRange.start && this.reportFilters.dateRange.end) {
+        filters.dateRange = {
+          start: this.reportFilters.dateRange.start,
+          end: this.reportFilters.dateRange.end
+        };
+      }
+
+      // Add vehicle filter if any vehicles are selected
+      if (this.reportFilters.vehicles.length > 0) {
+        filters.vehicles = this.reportFilters.vehicles;
+      }
+
+      // Generate the report
+      this.pdfReportService.generateFilteredReport(this.vanIssues, filters);
+      
+      // Close modal after successful generation
+      this.closeReportModal();
+      
+    } catch (error) {
+      console.error('Error generating PDF report:', error);
+    } finally {
+      this.isGeneratingReport = false;
+    }
+  }
+
+  generateDetailedPdfReport(): void {
+    this.isGeneratingReport = true;
+    
+    try {
+      // Prepare filters for the PDF service
+      const filters: any = {
+        status: this.reportFilters.status
+      };
+
+      // Add date range if specified
+      if (this.reportFilters.dateRange.start && this.reportFilters.dateRange.end) {
+        filters.dateRange = {
+          start: this.reportFilters.dateRange.start,
+          end: this.reportFilters.dateRange.end
+        };
+      }
+
+      // Add vehicle filter if any vehicles are selected
+      if (this.reportFilters.vehicles.length > 0) {
+        filters.vehicles = this.reportFilters.vehicles;
+      }
+
+      // Generate the detailed report
+      this.pdfReportService.generateDetailedReport(this.vanIssues, filters);
+      
+      // Close modal after successful generation
+      this.closeReportModal();
+      
+    } catch (error) {
+      console.error('Error generating detailed PDF report:', error);
+    } finally {
+      this.isGeneratingReport = false;
+    }
+  }
+
+  generateQuickReport(type: 'all' | 'verified' | 'pending'): void {
+    this.isGeneratingReport = true;
+    
+    try {
+      const filters = { status: type };
+      this.pdfReportService.generateFilteredReport(this.vanIssues, filters);
+    } catch (error) {
+      console.error('Error generating quick report:', error);
+    } finally {
+      this.isGeneratingReport = false;
+    }
+  }
+
+  getVerifiedCount(): number {
+    return this.vanIssues.filter(issue => issue.verified).length;
+  }
+
+  getPendingCount(): number {
+    return this.vanIssues.filter(issue => !issue.verified).length;
   }
 } 

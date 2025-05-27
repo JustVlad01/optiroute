@@ -39,7 +39,8 @@
 
         <div *ngIf="forms.length > 0" class="forms-list">
           <div class="form-card" *ngFor="let form of forms">
-            <div class="form-header">
+            <div class="form-header d-flex justify-content-between align-items-center">
+              <h5 class="form-title mb-0">Daily Driver Form</h5>
               <span class="badge" [ngClass]="getStatusBadgeClass(form.status)">{{form.status}}</span>
             </div>
             <div class="form-body p-3">

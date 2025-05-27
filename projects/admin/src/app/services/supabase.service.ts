@@ -719,7 +719,7 @@ export class SupabaseService {
     }
     
     // Remove fields that don't exist in the database schema
-    const nonExistentColumns = ['opening_time_bankholiday', 'opening_time_sunday', 'opening_time_saturday', 'openining_time_sunday'];
+    const nonExistentColumns = ['opening_time_sunday', 'opening_time_saturday'];
     nonExistentColumns.forEach(column => {
       if (column in fixedRow) {
         delete fixedRow[column];
@@ -745,7 +745,8 @@ export class SupabaseService {
       'city', 'county', 'eircode', 'latitude', 'longitude', 'route', 
       'alarm_code', 'fridge_code', 'keys_available', 'key_code',
       'prior_registration_required', 'hour_access_24',
-      'email', 'phone'
+      'email', 'phone', 'opening_time_weekdays', 'opening_time_sat', 'opening_time_bankholiday',
+      'deliver_monday', 'deliver_tuesday', 'deliver_wednesday', 'deliver_thursday', 'deliver_friday', 'deliver_saturday'
     ];
     
     // Replace any mismatched column names
@@ -1193,7 +1194,7 @@ export class SupabaseService {
     }
     
     // Remove fields that don't exist in the database schema
-    const nonExistentColumns = ['opening_time_bankholiday', 'opening_time_sunday', 'opening_time_saturday', 'openining_time_sunday'];
+    const nonExistentColumns = ['opening_time_sunday', 'opening_time_saturday'];
     nonExistentColumns.forEach(column => {
       if (column in storeUpdates) {
         delete storeUpdates[column];
@@ -1739,6 +1740,138 @@ export class SupabaseService {
     } catch (err) {
       console.error('Exception fetching driver delivery update:', err);
       return { data: null, error: err };
+    }
+  }
+
+  // Staff Roster Management Methods
+  
+  // Method to upload a file to Supabase storage
+  async uploadFile(bucket: string, fileName: string, file: File): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log(`Uploading file ${fileName} to bucket ${bucket}`);
+      
+      const { data, error } = await this.supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error uploading file:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('File uploaded successfully:', data);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Exception uploading file:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to get public URL for a file
+  getPublicUrl(bucket: string, fileName: string): string {
+    const { data } = this.supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+    
+    return data.publicUrl;
+  }
+
+  // Method to delete a file from storage
+  async deleteFile(bucket: string, fileName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`Deleting file ${fileName} from bucket ${bucket}`);
+      
+      const { error } = await this.supabase.storage
+        .from(bucket)
+        .remove([fileName]);
+
+      if (error) {
+        console.error('Error deleting file:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('File deleted successfully');
+      return { success: true };
+    } catch (err) {
+      console.error('Exception deleting file:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to save staff roster data to database
+  async saveStaffRoster(rosterData: any): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('Saving staff roster data:', rosterData);
+      
+      const { data, error } = await this.supabase
+        .from('staff_rosters')
+        .insert([{
+          ...rosterData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving staff roster:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('Staff roster saved successfully:', data);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Exception saving staff roster:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to get all staff rosters
+  async getStaffRosters(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      console.log('Fetching staff rosters');
+      
+      const { data, error } = await this.supabase
+        .from('staff_rosters')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching staff rosters:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log(`Retrieved ${data?.length || 0} staff rosters`);
+      return { success: true, data: data || [] };
+    } catch (err) {
+      console.error('Exception fetching staff rosters:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to delete a staff roster
+  async deleteStaffRoster(rosterId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`Deleting staff roster with ID: ${rosterId}`);
+      
+      const { error } = await this.supabase
+        .from('staff_rosters')
+        .delete()
+        .eq('id', rosterId);
+
+      if (error) {
+        console.error('Error deleting staff roster:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('Staff roster deleted successfully');
+      return { success: true };
+    } catch (err) {
+      console.error('Exception deleting staff roster:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }
 }

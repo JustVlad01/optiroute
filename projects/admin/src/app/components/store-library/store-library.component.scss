@@ -307,315 +307,431 @@ a {
   }
 }
 
-// Library container layout
-.library-container {
-  display: grid;
-  grid-template-columns: 270px 1fr;
-  gap: 1rem;
-  height: calc(100vh - 120px);
+// Search Results Container
+.search-results-container {
+  margin-bottom: 1rem;
   
-  @media (max-width: 992px) {
-    grid-template-columns: 1fr;
-    height: auto;
-    gap: 1rem;
-  }
-}
-
-// Search panel with improved styling
-.search-panel {
-  @include card-style;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  
-  h3 {
-    @include section-heading;
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    margin-bottom: 0.6rem;
-    
-    i {
-      margin-right: 0.3rem;
-      color: $primary-color;
-    }
-  }
-  
-  .search-box {
-    position: relative;
-    margin-bottom: 0.8rem;
-    
-    i.bi-search {
-      position: absolute;
-      left: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: $grey-dark;
-      pointer-events: none;
-      font-size: 0.7rem;
-    }
-    
-    .search-input {
-      @include input-style;
-      padding-left: 1.8rem;
-      padding-right: 4.5rem;
-      height: 2rem;
-    }
-    
-    .clear-btn {
-      @include button-reset;
-      position: absolute;
-      right: 4rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: $grey-dark;
-      padding: 0.3rem;
-      
-      &:hover {
-        color: $error-color;
-      }
-    }
-    
-    .search-btn {
-      @include button-primary;
-      position: absolute;
-      right: 0;
-      top: 0;
-      height: 100%;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-      
-      i {
-        margin-right: 0.3rem;
-        font-size: 0.7rem;
-      }
-    }
-    
-    // Enhanced suggestions dropdown
-    .suggestions-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      margin-top: 0.2rem;
-      background-color: $text-light;
-      border: 1px solid $border-color;
-      border-radius: $border-radius;
-      box-shadow: $shadow-lg;
-      z-index: 100;
-      max-height: 200px;
-      overflow-y: auto;
-      animation: fadeIn 0.2s ease-out;
-      font-size: 0.8rem;
-      
-      .suggestion-item {
-        padding: 0.5rem 0.7rem;
-        cursor: pointer;
-        border-bottom: 1px solid $grey-light;
-        transition: background-color 0.1s;
-        
-        &:last-child {
-          border-bottom: none;
-        }
-        
-        &:hover {
-          background-color: $primary-light;
-        }
-        
-        .suggestion-store-name {
-          font-weight: 600;
-          margin-bottom: 0.15rem;
-          color: $text-dark;
-          font-size: 0.8rem;
-        }
-        
-        .suggestion-store-details {
-          font-size: 0.75rem;
-          color: $grey-dark;
-        }
-      }
-    }
-  }
-  
-  .store-list-container {
-    flex: 1;
-    overflow-y: auto;
-    border: 1px solid $border-color;
-    border-radius: $border-radius;
-    background-color: $grey-light;
-    
-    .loading-spinner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem 0;
-      
-      .spinner {
-        width: 24px;
-        height: 24px;
-        border: 2px solid rgba($primary-color, 0.2);
-        border-top-color: $primary-color;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      
-      p {
-        margin-top: 0.6rem;
-        color: $grey-dark;
-        font-weight: 500;
-        font-size: 0.8rem;
-      }
-    }
-    
-    .no-results, .search-prompt {
-      text-align: center;
-      padding: 1.5rem 1rem;
-      color: $grey-dark;
-      
-      i {
-        font-size: 1.5rem;
-        color: $grey-dark;
-        margin-bottom: 0.6rem;
-        opacity: 0.6;
-      }
-      
-      p {
-        font-size: 0.8rem;
-      }
-    }
-    
-    .store-list {
-      .store-item {
-        padding: 0.6rem 0.7rem;
-        border-bottom: 1px solid $border-color;
-        cursor: pointer;
-        transition: all 0.2s;
-        background-color: $text-light;
-        
-        &:hover {
-          background-color: $primary-light;
-        }
-        
-        &.active {
-          background-color: $primary-light;
-          border-left: 3px solid $primary-color;
-        }
-        
-        .store-name {
-          font-weight: 600;
-          font-size: 0.85rem;
-          margin-bottom: 0.15rem;
-          color: $text-dark;
-        }
-        
-        .store-details {
-          font-size: 0.75rem;
-          color: $grey-dark;
-          margin-bottom: 0.15rem;
-        }
-        
-        .store-address {
-          font-size: 0.75rem;
-          color: $grey-dark;
-        }
-      }
-    }
-  }
-}
-
-// Details panel
-.details-panel {
-  @include card-style;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  
-  .no-store-selected {
-    flex: 1;
+  .loading-spinner {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1.5rem;
-    text-align: center;
+    padding: 2rem 0;
     
-    i {
-      font-size: 2.5rem;
-      color: $grey-dark;
-      margin-bottom: 1rem;
-      opacity: 0.3;
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba($primary-color, 0.2);
+      border-top-color: $primary-color;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
     
     p {
-      font-size: 0.9rem;
+      margin-top: 1rem;
       color: $grey-dark;
+      font-weight: 500;
+      font-size: 1rem;
     }
   }
   
-  .store-details-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  .no-results {
+    text-align: center;
+    padding: 2rem;
+    color: $grey-dark;
     
-    .store-header {
-      padding: 0.8rem 1rem;
-      background-color: $primary-color;
-      color: $text-light;
-      position: relative;
+    i {
+      font-size: 2rem;
+      color: $grey-dark;
+      margin-bottom: 1rem;
+      opacity: 0.6;
+    }
+    
+    p {
+      font-size: 1rem;
+    }
+  }
+  
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    
+    .store-card {
+      @include card-style;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-lg;
+        border-color: $primary-light;
+      }
+      
+      &.active {
+        border-color: $primary-color;
+        background-color: $primary-light;
+      }
+      
+      .store-name {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: $text-dark;
+      }
+      
+      .store-details {
+        font-size: 0.9rem;
+        color: $primary-color;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      
+      .store-address {
+        font-size: 0.85rem;
+        color: $grey-dark;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// Main Content Area
+.main-content {
+  width: 100%;
+}
+
+// Remove the old library container grid layout
+.library-container {
+  display: block;
+  width: 100%;
+}
+
+// Hide the old search panel since we moved it to the top
+.search-panel {
+  display: none;
+}
+
+// Update details panel to take full width
+.details-panel {
+  width: 100%;
+  @include card-style;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 600px;
+}
+
+// Store details container
+.store-details-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  
+  .store-header {
+    padding: 0.8rem 1rem;
+    background-color: $primary-color;
+    color: $text-light;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .store-code-container {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 0.5rem;
       
-      .store-code-container {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        
-        i {
-          font-size: 1.2rem;
-        }
-        
-        h3 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin: 0;
-        }
+      i {
+        font-size: 1.2rem;
       }
       
-      .store-location {
-        font-size: 0.8rem;
-        opacity: 0.9;
-      }
-      
-      .edit-button {
-        @include button-secondary;
-        padding: 0.3rem;
-        width: auto;
-        height: auto;
-        
-        i {
-          font-size: 0.9rem;
-        }
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
       }
     }
     
-    .edit-mode-controls {
+    .header-actions {
       display: flex;
+      align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 0.8rem;
-      background-color: $grey-light;
-      border-bottom: 1px solid $border-color;
+    }
+    
+    .edit-button, .close-details-btn {
+      @include button-secondary;
+      padding: 0.3rem;
+      width: auto;
+      height: auto;
       
-      .cancel-edit-btn {
+      i {
+        font-size: 0.9rem;
+      }
+    }
+
+    .close-details-btn {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: $text-light;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+  
+  .edit-mode-controls {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background-color: $grey-light;
+    border-bottom: 1px solid $border-color;
+    
+    .cancel-edit-btn {
+      @include button-secondary;
+    }
+    
+    .save-changes-btn {
+      @include button-success;
+      flex: 1;
+      
+      &.saving {
+        opacity: 0.8;
+        pointer-events: none;
+      }
+      
+      .spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba($text-light, 0.3);
+        border-top-color: $text-light;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 0.4rem;
+      }
+    }
+  }
+}
+
+// Store info box with more professional styling
+.store-info-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8rem;
+  
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 0.7rem;
+    margin-bottom: 0.5rem;
+    color: $text-dark;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid $grey-medium;
+    
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+  
+  .info-row {
+    display: flex;
+    margin-bottom: 0.6rem;
+    align-items: flex-start;
+      
+    .info-label {
+      width: 120px;
+      flex-shrink: 0;
+      font-weight: 600;
+      color: $text-dark;
+      font-size: 0.8rem;
+      padding-top: 0.4rem;
+      
+      i {
+        margin-right: 0.4rem;
+        color: $primary-color;
+        font-size: 0.9rem;
+      }
+    }
+      
+    .info-value {
+      flex: 1;
+      color: $text-dark;
+      font-size: 0.8rem;
+      
+      &.view-mode {
+        padding: 0.4rem 0;
+        min-height: 30px;
+      }
+      
+      input, textarea, select {
+        @include input-style;
+      }
+      
+      textarea {
+        min-height: 60px;
+        resize: vertical;
+      }
+      
+      &.edited {
+        background-color: $accent-light;
+        border-radius: $border-radius;
+      }
+    }
+  }
+  
+  // Enhanced delivery days styling
+  .delivery-days-section {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    
+    .delivery-days-chips, .delivery-days-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      
+      .delivery-day-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        background-color: $grey-light;
+        border: 1px solid $border-color;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        
+        input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        
+        span {
+          font-weight: 500;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          
+          i {
+            margin-right: 0.4rem;
+            font-size: 0.9rem;
+            
+            &.spin-icon {
+              margin-left: 0.4rem;
+              margin-right: 0;
+              animation: spin 1s linear infinite;
+              font-size: 0.7rem;
+            }
+          }
+        }
+        
+        &:hover {
+          background-color: $grey-medium;
+          transform: translateY(-1px);
+          box-shadow: $shadow-xs;
+        }
+        
+        &.active {
+          background-color: $primary-color;
+          color: $text-light;
+          border-color: $primary-color;
+        }
+        
+        &.saving {
+          pointer-events: none;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+}
+
+// Tab Navigation
+.tab-navigation {
+  display: flex;
+  background-color: $grey-light;
+  border-top: 1px solid $border-color;
+  
+  .tab-btn {
+    @include button-reset;
+    flex: 1;
+    padding: 0.6rem;
+    text-align: center;
+    font-weight: 600;
+    color: $grey-dark;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    
+    i {
+      margin-right: 0.3rem;
+    }
+    
+    &:hover {
+      background-color: $grey-medium;
+    }
+    
+    &.active {
+      color: $primary-color;
+      border-bottom-color: $primary-color;
+      background-color: $text-light;
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8rem;
+  
+  &.images-tab {
+    background-color: $grey-light;
+  }
+  
+  .section-title {
+    @include section-heading;
+    margin-top: 1rem;
+    
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+  
+  // Additional Info tab
+  .additional-info-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    textarea {
+      @include input-style;
+      flex: 1;
+      min-height: 150px;
+      resize: none;
+      margin-bottom: 0.7rem;
+    }
+    
+    .info-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      
+      .cancel-btn {
         @include button-secondary;
       }
       
-      .save-changes-btn {
+      .save-btn {
         @include button-success;
-        flex: 1;
+        min-width: 100px;
         
         &.saving {
           opacity: 0.8;
@@ -634,665 +750,73 @@ a {
       }
     }
   }
-  
-  // Store info box with more professional styling
-  .store-info-box {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.8rem;
-    
-    .section-title {
-        font-size: 0.9rem;
-      font-weight: 600;
-      margin-top: 0.7rem;
-      margin-bottom: 0.5rem;
-      color: $text-dark;
-      padding-bottom: 0.3rem;
-      border-bottom: 1px solid $grey-medium;
-      
-      &:first-child {
-        margin-top: 0;
-      }
-    }
-    
-    .info-row {
-      display: flex;
-      margin-bottom: 0.6rem;
-      align-items: flex-start;
-        
-        .info-label {
-        width: 120px;
-        flex-shrink: 0;
-        font-weight: 600;
-        color: $text-dark;
-        font-size: 0.8rem;
-        padding-top: 0.4rem;
-        
-        i {
-          margin-right: 0.4rem;
-          color: $primary-color;
-          font-size: 0.9rem;
-        }
-        }
-        
-        .info-value {
-        flex: 1;
-          color: $text-dark;
-        font-size: 0.8rem;
-        
-        &.view-mode {
-          padding: 0.4rem 0;
-          min-height: 30px;
-        }
-        
-        input, textarea, select {
-          @include input-style;
-        }
-        
-        textarea {
-          min-height: 60px;
-          resize: vertical;
-        }
-        
-        &.edited {
-          background-color: $accent-light;
-          border-radius: $border-radius;
-        }
-      }
-    }
-    
-    // Enhanced delivery days styling
-    .delivery-days-section {
-      margin-top: 1rem;
-    margin-bottom: 1.5rem;
-      position: relative;
-      
-      .delivery-days-chips, .delivery-days-display {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        
-        .delivery-day-chip {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.4rem 0.8rem;
-          background-color: $grey-light;
-          border: 1px solid $border-color;
-          border-radius: 30px;
-      cursor: pointer;
-      transition: all 0.2s;
-          user-select: none;
-          
-          input[type="checkbox"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-          }
-          
-          span {
-            font-weight: 500;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            
-            i {
-              margin-right: 0.4rem;
-              font-size: 0.9rem;
-              
-              &.spin-icon {
-                margin-left: 0.4rem;
-                margin-right: 0;
-                animation: spin 1s linear infinite;
-                font-size: 0.7rem;
-              }
-            }
-      }
-      
-      &:hover {
-            background-color: $grey-medium;
-            transform: translateY(-1px);
-            box-shadow: $shadow-xs;
-      }
-      
-      &.active {
-            background-color: $primary-color;
-            color: $text-light;
-            border-color: $primary-color;
-          }
-          
-          &.saving {
-            pointer-events: none;
-            opacity: 0.8;
-          }
-        }
-      }
-      
-      .delivery-day-status {
-        display: flex;
-        align-items: center;
-        margin-top: 0.75rem;
-        padding: 0.5rem;
-        border-radius: $border-radius;
-        background-color: rgba($grey-light, 0.6);
-        animation: fadeIn 0.3s ease-in-out;
-        
-        i {
-          margin-right: 0.5rem;
-      font-size: 0.9rem;
-          
-          &.success-icon {
-            color: $success-color;
-          }
-          
-          &.error-icon {
-            color: $error-color;
-          }
-        }
-        
-        span {
-          font-size: 0.8rem;
-          
-          &.success-text {
-            color: color.adjust($success-color, $lightness: -10%);
-          }
-          
-          &.error-text {
-            color: color.adjust($error-color, $lightness: -10%);
-          }
-        }
-      }
-      
-      .delivery-days-display {
-        .delivery-day-chip {
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
-          
-          &:after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        &:hover {
-            transform: translateY(-2px);
-            box-shadow: $shadow-sm;
-            
-            &:after {
-              opacity: 1;
-            }
-          }
-          
-          &:active {
-            transform: translateY(1px);
-          }
-          
-          &.active {
-            background-color: $primary-color;
-            font-weight: 600;
-        
-        &:hover {
-              background-color: color.adjust($primary-color, $lightness: -5%);
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // Tab Navigation
-  .tab-navigation {
-    display: flex;
-    background-color: $grey-light;
-    border-top: 1px solid $border-color;
-    
-    .tab-btn {
-      @include button-reset;
-      flex: 1;
-      padding: 0.6rem;
-      text-align: center;
-      font-weight: 600;
-      color: $grey-dark;
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
-          display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      
-      i {
-        margin-right: 0.3rem;
-      }
-      
-      &:hover {
-        background-color: $grey-medium;
-      }
-      
-      &.active {
-        color: $primary-color;
-        border-bottom-color: $primary-color;
-        background-color: $text-light;
-      }
-    }
-  }
-  
-  // Tab Content
-  .tab-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.8rem;
-    
-    &.images-tab {
-      background-color: $grey-light;
-    }
-    
-    .section-title {
-      @include section-heading;
-      margin-top: 1rem;
-      
-      &:first-child {
-        margin-top: 0;
-      }
-    }
-    
-    // Additional Info tab
-    .additional-info-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      
-      textarea {
-        @include input-style;
-        flex: 1;
-        min-height: 150px;
-        resize: none;
-        margin-bottom: 0.7rem;
-      }
-      
-      .info-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.6rem;
-        
-        .cancel-btn {
-          @include button-secondary;
-        }
-        
-        .save-btn {
-          @include button-success;
-          min-width: 100px;
-          
-          &.saving {
-            opacity: 0.8;
-            pointer-events: none;
-          }
-          
-          .spinner {
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba($text-light, 0.3);
-            border-top-color: $text-light;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 0.4rem;
-          }
-        }
-      }
-    }
-    
-    // Enhanced image gallery
-    .image-gallery {
-      .shop-image-upload-container, .image-upload-container {
-        @include card-style;
-        padding: 0.8rem;
-        margin-bottom: 0.8rem;
-        background-color: $text-light;
-        
-        h5 {
-          font-size: 0.9rem;
-          font-weight: 600;
-          margin-bottom: 0.6rem;
-          color: $text-dark;
-          display: flex;
-          align-items: center;
-          
-          i {
-            margin-right: 0.3rem;
-            color: $primary-color;
-          }
-        }
-        
-        .upload-form {
-          .upload-options {
-            margin-bottom: 0.6rem;
-            
-            .file-input-label {
-              @include button-primary;
-              display: inline-flex;
-              padding: 0.4rem 0.8rem;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              max-width: 100%;
-              
-              &.special-upload {
-                background-color: $accent-color;
-          
-          &:hover {
-                  background-color: $accent-dark;
-                }
-              }
-              
-              input[type="file"] {
-                position: absolute;
-                width: 0;
-                height: 0;
-                opacity: 0;
-              }
-            }
-          }
-          
-        .paste-container {
-            margin-bottom: 0.6rem;
-        
-        .paste-area {
-              border: 2px dashed $border-color;
-              border-radius: $border-radius;
-              padding: 1rem;
-          text-align: center;
-          cursor: pointer;
-              transition: all 0.2s;
-              
-              &:hover, &:focus {
-                border-color: $primary-color;
-                background-color: $primary-light;
-          outline: none;
-              }
-              
-              i {
-                font-size: 1.1rem;
-                color: $grey-dark;
-                margin-bottom: 0.3rem;
-                display: block;
-          }
-          
-          .paste-text {
-                color: $grey-dark;
-                font-size: 0.75rem;
-          }
-          
-          &.storefront-paste-area {
-                border-color: $accent-color;
-            
-            &:hover, &:focus {
-                  border-color: $accent-dark;
-                  background-color: $accent-light;
-                }
-              }
-            }
-          }
-        
-        .image-preview-container {
-            margin-top: 0.8rem;
-          
-          .image-preview {
-              width: 100%;
-              max-height: 200px;
-              object-fit: contain;
-              margin-bottom: 0.6rem;
-            border-radius: $border-radius;
-              border: 1px solid $border-color;
-          }
-          
-          .image-annotation-input {
-              @include input-style;
-              min-height: 60px;
-              margin-bottom: 0.6rem;
-            resize: vertical;
-          }
-          
-          .upload-actions {
-            display: flex;
-            justify-content: flex-end;
-              gap: 0.5rem;
-            
-            .cancel-btn {
-                @include button-secondary;
-            }
-            
-            .upload-btn {
-                @include button-primary;
-                min-width: 100px;
-                
-                &.shop-upload-btn {
-                  background-color: $accent-color;
-              
-              &:hover {
-                    background-color: $accent-dark;
-                  }
-                }
-                
-                .spinning {
-                  animation: spin 1s linear infinite;
-                  margin-right: 0.3rem;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    .existing-images {
-        margin-top: 1rem;
-        
-        h5 {
-          font-size: 0.9rem;
-          font-weight: 600;
-          margin-bottom: 0.6rem;
-          color: $text-dark;
-        }
-        
-        .no-images-message {
-        text-align: center;
-          padding: 1.5rem;
-          background-color: $text-light;
-        border-radius: $border-radius;
-          
-          i {
-            font-size: 2rem;
-            color: $grey-dark;
-            margin-bottom: 0.6rem;
-            opacity: 0.3;
-          }
-          
-          p {
-            color: $grey-dark;
-            font-size: 0.8rem;
-        }
-      }
-      
-      .image-grid {
-        display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 0.7rem;
-        
-        .image-card {
-            @include card-style;
-          position: relative;
-            background-color: $text-light;
-            transition: transform 0.2s, box-shadow 0.2s;
-            
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: $shadow-lg;
-            }
-            
-            .image-wrapper {
-              position: relative;
-              padding-top: 75%; // 4:3 aspect ratio
-          overflow: hidden;
-              
-              img {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-              }
-              
-              .storefront-badge {
-                position: absolute;
-                top: 0.3rem;
-                right: 0.3rem;
-                background-color: $accent-color;
-                color: $text-light;
-                padding: 0.15rem 0.3rem;
-                border-radius: $border-radius;
-                font-size: 0.65rem;
-                font-weight: 600;
-                z-index: 2;
-              }
-            }
-            
-            .image-details {
-              padding: 0.6rem;
-              
-              .image-annotation {
-                font-size: 0.75rem;
-                margin-bottom: 0.5rem;
-                color: $text-dark;
-                max-height: 40px;
-                overflow: hidden;
-              }
-              
-              .image-controls {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-              }
-              
-              .image-actions {
-            display: flex;
-                justify-content: space-between;
-                
-                .action-btn {
-                  @include button-secondary;
-                  padding: 0.25rem 0.35rem;
-                  font-size: 0.7rem;
-                  
-                  &.delete-btn {
-                    color: $error-color;
-                    
-                    &:hover {
-                      background-color: rgba($error-color, 0.1);
-                    }
-                  }
-                  
-                  &.edit-btn {
-                    color: $primary-color;
-                    
-                    &:hover {
-                      background-color: rgba($primary-color, 0.1);
-                    }
-                  }
-                  
-                  &.storefront-btn {
-                    color: $accent-color;
-                    
-                    &:hover {
-                      background-color: rgba($accent-color, 0.1);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 // Status messages
 .status-message {
-  padding: 0.5rem 0.7rem;
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 0.5rem;
   border-radius: $border-radius;
-  margin-bottom: 0.6rem;
   display: flex;
   align-items: center;
-  animation: fadeIn 0.3s;
-            font-size: 0.8rem;
-            
-            i {
-              margin-right: 0.5rem;
-              font-size: 0.9rem;
+  
+  i {
+    margin-right: 0.5rem;
   }
   
   &.success {
     background-color: rgba($success-color, 0.1);
-    color: color.adjust($success-color, $lightness: -10%);
-    border-left: 2px solid $success-color;
+    color: $success-color;
+    border: 1px solid rgba($success-color, 0.2);
   }
   
   &.error {
     background-color: rgba($error-color, 0.1);
-    color: color.adjust($error-color, $lightness: -10%);
-    border-left: 2px solid $error-color;
-  }
-  
-  &.warning {
-    background-color: rgba($warning-color, 0.1);
-    color: color.adjust($warning-color, $lightness: -10%);
-    border-left: 2px solid $warning-color;
-  }
-  
-  &.info {
-    background-color: rgba($primary-color, 0.1);
-    color: color.adjust($primary-color, $lightness: -10%);
-    border-left: 2px solid $primary-color;
+    color: $error-color;
+    border: 1px solid rgba($error-color, 0.2);
   }
 }
 
-// Loading overlay
-.loading-overlay {
-            position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.85);
-            display: flex;
-  flex-direction: column;
-            align-items: center;
-            justify-content: center;
-  z-index: 999;
-  
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba($primary-color, 0.3);
-    border-radius: 50%;
-    border-top-color: $primary-color;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+// Section headers with navigation-style look
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: $primary-light;
+  color: $primary-color;
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: $border-radius $border-radius 0 0;
+  margin-top: 1rem;
+  border-left: 3px solid $primary-color;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    
+    i {
+      margin-right: 0.25rem;
+      font-size: 0.9rem;
+    }
   }
   
-  .loading-message {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: $text-dark;
+  &:first-child {
+    margin-top: 0;
   }
 }
 
-// Edit field hover effect
+// Info section cards
+.info-section-card {
+  background-color: $text-light;
+  border: 1px solid $border-color;
+  border-radius: 0 0 $border-radius $border-radius;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  box-shadow: $shadow-xs;
+}
+
+// Editable field styling
 .editable-field {
   position: relative;
   
@@ -1305,7 +829,7 @@ a {
     background-color: $primary-light;
     color: $primary-color;
     padding: 0.15rem 0.3rem;
-          border-radius: $border-radius;
+    border-radius: $border-radius;
     font-size: 0.65rem;
     font-weight: 600;
     opacity: 0.8;
@@ -1315,7 +839,7 @@ a {
     padding: 0.4rem;
     min-height: 30px;
     border: 1px solid transparent;
-            border-radius: $border-radius;
+    border-radius: $border-radius;
     cursor: pointer;
     
     &:hover {
@@ -1378,7 +902,7 @@ a {
       position: static;
       width: 100%;
       margin-top: 0.4rem;
-              border-radius: $border-radius;
+      border-radius: $border-radius;
     }
   }
   
@@ -1391,10 +915,10 @@ a {
 
 // Compact mode toggle button
 .compact-toggle {
-              display: flex;
-              align-items: center;
-              
-              i {
+  display: flex;
+  align-items: center;
+  
+  i {
     margin-right: 0.3rem;
   }
 }
@@ -1466,6 +990,170 @@ a {
     padding: 0.3rem 0.6rem !important;
     font-size: 0.75rem !important;
   }
+  
+  // Table-specific compact styles
+  .excel-table {
+    font-size: 0.75rem !important;
+    
+    th {
+      padding: 0.4rem 0.3rem !important;
+      font-size: 0.75rem !important;
+      font-weight: 500 !important;
+    }
+    
+    td {
+      padding: 0.25rem 0.3rem !important;
+      font-size: 0.75rem !important;
+      line-height: 1.2 !important;
+    }
+    
+    .cell-value {
+      padding: 0.2rem 0.3rem !important;
+      min-height: 1.2rem !important;
+      font-size: 0.75rem !important;
+    }
+    
+    .cell-input {
+      padding: 0.2rem 0.3rem !important;
+      font-size: 0.75rem !important;
+      height: auto !important;
+      min-height: 1.8rem !important;
+    }
+  }
+  
+  // Compact action buttons
+  .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    padding: 0.15rem 0.3rem !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    font-size: 0.65rem !important;
+    
+    i {
+      font-size: 0.7rem !important;
+    }
+  }
+  
+  .btn-view {
+    padding: 0.15rem 0.3rem !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    font-size: 0.65rem !important;
+    
+    i {
+      font-size: 0.7rem !important;
+    }
+  }
+  
+  .action-buttons {
+    gap: 0.15rem !important;
+  }
+  
+  // Compact column widths
+  .col-actions {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  .col-store-code {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+  
+  .col-dispatch-code {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+  
+  .col-address {
+    width: 180px !important;
+    min-width: 150px !important;
+  }
+  
+  .col-opening-weekdays,
+  .col-opening-sat,
+  .col-opening-bank {
+    width: 90px !important;
+    min-width: 80px !important;
+  }
+  
+  .col-route {
+    width: 80px !important;
+    min-width: 80px !important;
+  }
+  
+  // Compact delivery day columns
+  .col-delivery-mon,
+  .col-delivery-tue,
+  .col-delivery-wed,
+  .col-delivery-thu,
+  .col-delivery-fri,
+  .col-delivery-sat {
+    width: 35px !important;
+    min-width: 35px !important;
+  }
+  
+  .delivery-day-cell {
+    padding: 0.25rem 0.15rem !important;
+    
+    .delivery-checkbox .checkbox-custom {
+      width: 14px !important;
+      height: 14px !important;
+      
+      &::after {
+        left: 3px !important;
+        top: 1px !important;
+        width: 3px !important;
+        height: 6px !important;
+      }
+    }
+    
+    .delivery-status i {
+      font-size: 0.9rem !important;
+    }
+    
+    .delivery-status.clickable {
+      padding: 0.15rem !important;
+      
+      &:hover {
+        transform: scale(1.05) !important;
+      }
+      
+      &.saving .spin-icon {
+        font-size: 0.7rem !important;
+      }
+    }
+  }
+  
+  // Compact header
+  .masterfile-header {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .compact-toggle .toggle-label {
+    font-size: 0.8rem !important;
+  }
+  
+  // Compact search box
+  .search-input {
+    height: 2rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .search-btn {
+    font-size: 0.75rem !important;
+    padding: 0 0.75rem !important;
+  }
+  
+  // Compact 24-hour filter button
+  .btn-24hour-filter {
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    
+    i {
+      font-size: 0.8rem !important;
+    }
+  }
 }
 
 // Section title with toggle
@@ -1481,7 +1169,7 @@ a {
     .toggle-label {
       font-size: 0.75rem;
       font-weight: normal;
-            margin-right: 0.5rem;
+      margin-right: 0.5rem;
       color: $grey-dark;
     }
     
@@ -1539,127 +1227,1774 @@ a {
   }
 }
 
-// Section headers with navigation-style look
-.section-header {
+// Excel Spreadsheet Styles
+.masterfile-section {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.masterfile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  
+  // Search box styles when in header
+  .search-box {
+    position: relative;
+    max-width: 500px;
+    width: 100%;
+    
+    i.bi-search {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $grey-dark;
+      pointer-events: none;
+      font-size: 0.9rem;
+    }
+    
+    .search-input {
+      @include input-style;
+      padding-left: 2.5rem;
+      padding-right: 8rem;
+      height: 2.5rem;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    
+    .clear-btn {
+      @include button-reset;
+      position: absolute;
+      right: 6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $grey-dark;
+      padding: 0.5rem;
+      
+      &:hover {
+        color: $error-color;
+      }
+    }
+    
+    .search-btn {
+      @include button-primary;
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      padding: 0 1rem;
+      font-size: 0.8rem;
+      
+      i {
+        margin-right: 0.3rem;
+        font-size: 0.8rem;
+      }
+    }
+    
+    // Enhanced suggestions dropdown
+    .suggestions-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 0.2rem;
+      background-color: $text-light;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      box-shadow: $shadow-lg;
+      z-index: 100;
+      max-height: 200px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-out;
+      font-size: 0.85rem;
+      
+      .suggestion-item {
+        padding: 0.6rem 0.8rem;
+        cursor: pointer;
+        border-bottom: 1px solid $grey-light;
+        transition: background-color 0.1s;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        &:hover {
+          background-color: $primary-light;
+        }
+        
+        .suggestion-store-name {
+          font-weight: 600;
+          margin-bottom: 0.2rem;
+          color: $text-dark;
+          font-size: 0.85rem;
+        }
+        
+        .suggestion-store-details {
+          font-size: 0.75rem;
+          color: $grey-dark;
+        }
+      }
+    }
+  }
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.compact-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  .toggle-label {
+    font-size: 0.875rem;
+    color: $text-muted;
+    font-weight: 500;
+  }
+  
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      
+      &:checked + .toggle-slider {
+        background: linear-gradient(135deg, $primary-color, $secondary-color);
+      }
+      
+      &:checked + .toggle-slider:before {
+        transform: translateX(20px);
+      }
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: $grey-medium;
+      transition: .3s;
+      border-radius: 24px;
+      
+      &:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+    }
+  }
+}
+
+.btn-24hour-filter {
+  @include button-secondary;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 2px solid $border-color;
+  
+  i {
+    font-size: 0.9rem;
+    color: $warning-color;
+  }
+  
+  &:hover:not(:disabled) {
+    border-color: $warning-color;
+    background-color: rgba($warning-color, 0.1);
+    color: $warning-color;
+    transform: translateY(-1px);
+  }
+  
+  &.active {
+    background: linear-gradient(135deg, $warning-color, #e67e22);
+    color: white;
+    border-color: $warning-color;
+    
+    i {
+      color: white;
+    }
+    
+    &:hover {
+      background: linear-gradient(135deg, #e67e22, #d35400);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.store-count {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.count-text {
+  font-size: 0.875rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+.page-info {
+  font-size: 0.8rem;
+  color: $text-muted;
+}
+
+.btn-add {
+  @include button-success;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem 1rem;
+  border-radius: $border-radius;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #f5c6cb;
+}
+
+.delivery-update-message {
+  padding: 0.75rem 1rem;
+  border-radius: $border-radius;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-out;
+  
+  &.success {
+    background-color: rgba($success-color, 0.1);
+    color: $success-color;
+    border: 1px solid rgba($success-color, 0.2);
+  }
+  
+  &.error {
+    background-color: rgba($error-color, 0.1);
+    color: $error-color;
+    border: 1px solid rgba($error-color, 0.2);
+  }
+  
+  i {
+    font-size: 1rem;
+  }
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 2rem;
+  color: $text-muted;
+  font-size: 0.875rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.spreadsheet-container {
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
+  overflow: hidden;
+  border: 1px solid $border-color;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.spreadsheet-wrapper {
+  overflow-x: auto;
+  flex: 1;
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.excel-table thead {
+  background: linear-gradient(135deg, $grey-light, $grey-medium);
+  border-bottom: 2px solid $border-color;
+}
+
+.excel-table th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: $primary-color;
+  border-right: 1px solid $border-color;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.excel-table th:last-child {
+  border-right: none;
+}
+
+.excel-table tbody tr {
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.15s ease;
+}
+
+.excel-table tbody tr:hover {
+  background-color: $grey-light;
+}
+
+.excel-table tbody tr.editing-row {
+  background-color: #fff3cd;
+  border-color: $warning-color;
+}
+
+.excel-table tbody tr.new-row {
+  background-color: #d1ecf1;
+  border-color: $secondary-color;
+}
+
+.excel-table td {
+  padding: 0.5rem;
+  border-right: 1px solid #f1f3f4;
+  vertical-align: middle;
+}
+
+.excel-table td:last-child {
+  border-right: none;
+}
+
+// Column widths
+.col-actions {
+  width: 120px;
+  min-width: 120px;
+}
+
+.col-store-code {
+  width: 120px;
+  min-width: 120px;
+}
+
+.col-dispatch-code {
+  width: 140px;
+  min-width: 140px;
+}
+
+.col-address {
+  width: 250px;
+  min-width: 200px;
+}
+
+.col-opening-weekdays {
+  width: 130px;
+  min-width: 120px;
+}
+
+.col-opening-sat {
+  width: 130px;
+  min-width: 120px;
+}
+
+.col-opening-sun {
+  width: 130px;
+  min-width: 120px;
+}
+
+.col-opening-bank {
+  width: 130px;
+  min-width: 120px;
+}
+
+.col-route {
+  width: 120px;
+  min-width: 120px;
+}
+
+// Delivery day columns
+.col-delivery-mon,
+.col-delivery-tue,
+.col-delivery-wed,
+.col-delivery-thu,
+.col-delivery-fri,
+.col-delivery-sat {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+}
+
+// Delivery day cell styles
+.delivery-day-cell {
+  text-align: center;
+  padding: 0.5rem 0.25rem !important;
+  
+  .delivery-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    
+    input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .checkbox-custom {
+      width: 18px;
+      height: 18px;
+      border: 2px solid $border-color;
+      border-radius: 3px;
+      background-color: $text-light;
+      position: relative;
+      transition: all 0.2s ease;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 4px;
+        height: 8px;
+        border: solid $text-light;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+    }
+    
+    input[type="checkbox"]:checked + .checkbox-custom {
+      background-color: $success-color;
+      border-color: $success-color;
+      
+      &::after {
+        opacity: 1;
+      }
+    }
+    
+    &:hover .checkbox-custom {
+      border-color: $primary-color;
+    }
+  }
+  
+  .delivery-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    i {
+      font-size: 1.1rem;
+      color: $grey-dark;
+      transition: color 0.2s ease;
+    }
+    
+    &.active i {
+      color: $success-color;
+    }
+    
+    &.clickable {
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      position: relative;
+      
+      &:hover {
+        background-color: rgba($primary-color, 0.1);
+        transform: scale(1.1);
+        
+        i {
+          color: $primary-color;
+        }
+        
+        &.active i {
+          color: $success-color;
+        }
+      }
+      
+      &.saving {
+        pointer-events: none;
+        opacity: 0.7;
+        
+        .spin-icon {
+          position: absolute;
+          font-size: 0.8rem;
+          animation: spin 1s linear infinite;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+.actions-cell {
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.btn-edit, .btn-delete, .btn-save, .btn-cancel {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, $secondary-color, #2980b9);
+  color: white;
+}
+
+.btn-edit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9, #1f5582);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, $error-color, #c0392b);
+  color: white;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, $success-color, #229954);
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #229954, #1e8449);
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, $text-muted, #5a6268);
+  color: white;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6268, #495057);
+}
+
+.btn-edit:disabled, .btn-delete:disabled, .btn-save:disabled, .btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-view:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.data-cell {
+  position: relative;
+}
+
+.cell-input {
+  width: 100%;
+  border: 2px solid $secondary-color;
+  border-radius: 3px;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.cell-input:focus {
+  outline: none;
+  border-color: $primary-color;
+  box-shadow: 0 0 0 2px rgba($secondary-color, 0.2);
+}
+
+.cell-value {
+  display: block;
+  padding: 0.375rem 0.5rem;
+  min-height: 1.5rem;
+  word-wrap: break-word;
+}
+
+.empty-row {
+  background: $grey-light;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.empty-state {
+  color: $text-muted;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+// Pagination styles
+.pagination-container {
+  margin-top: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: $primary-light;
-  color: $primary-color;
-  padding: 0.5rem 0.8rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: $border-radius $border-radius 0 0;
-  margin-top: 1rem;
-  border-left: 3px solid $primary-color;
+  padding: 1rem;
+  background: white;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-sm;
+}
 
-  .header-title {
+.pagination-info {
   display: flex;
+  align-items: center;
+}
+
+.showing-text {
+  font-size: 0.875rem;
+  color: $text-muted;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-page {
+  background: linear-gradient(135deg, $secondary-color, #2980b9);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: $border-radius;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9, #1f5582);
+  transform: translateY(-1px);
+}
+
+.btn-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 1rem;
+}
+
+.btn-page-number {
+  background: white;
+  color: $primary-color;
+  border: 1px solid $border-color;
+  padding: 0.5rem 0.75rem;
+  border-radius: $border-radius;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  text-align: center;
+}
+
+.btn-page-number:hover:not(:disabled) {
+  background: $grey-light;
+  border-color: $secondary-color;
+}
+
+.btn-page-number.active {
+  background: linear-gradient(135deg, $secondary-color, #2980b9);
+  color: white;
+  border-color: $secondary-color;
+}
+
+.btn-page-number:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: $text-muted;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+// Responsive design for Excel spreadsheet
+@media (max-width: 768px) {
+  .masterfile-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    
+    .header-left {
+      .search-box {
+        max-width: 100%;
+        
+        .search-input {
+          padding-right: 2rem;
+        }
+        
+        .clear-btn {
+          right: 0.5rem;
+        }
+        
+        .search-btn {
+          position: static;
+          width: 100%;
+          margin-top: 0.5rem;
+          border-radius: $border-radius;
+        }
+      }
+    }
+  }
+
+  .header-left {
     align-items: center;
+    text-align: center;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .page-numbers {
+    margin: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .excel-table {
+    font-size: 0.8rem;
+  }
+
+  .excel-table th,
+  .excel-table td {
+    padding: 0.375rem 0.25rem;
+  }
+
+  .col-address {
+    min-width: 150px;
+  }
+
+  .col-opening-weekdays,
+  .col-opening-sat,
+  .col-opening-bank {
+    min-width: 100px;
+  }
+}
+
+// Image Gallery and Upload Styles
+.image-gallery {
+  padding: 0.5rem;
+  
+  h5 {
+    @include section-heading;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
     
     i {
-      margin-right: 0.25rem;
+      margin-right: 0.3rem;
+      color: $primary-color;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Two-column upload layout
+.upload-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+// Storefront Image Upload Container
+.shop-image-upload-container {
+  @include card-style;
+  margin-bottom: 0.8rem;
+  
+  h5 {
+    background: linear-gradient(135deg, $accent-color, $accent-dark);
+    color: $text-light;
+    padding: 0.5rem 0.8rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border-radius: $border-radius $border-radius 0 0;
+    
+    i {
+      margin-right: 0.3rem;
+      color: $text-light;
+      font-size: 0.8rem;
+    }
+  }
+  
+  .upload-form {
+    padding: 0.8rem;
+  }
+}
+
+// Regular Image Upload Container
+.image-upload-container {
+  @include card-style;
+  margin-bottom: 0.8rem;
+  
+  h5 {
+    background: linear-gradient(135deg, $primary-color, $primary-dark);
+    color: $text-light;
+    padding: 0.5rem 0.8rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border-radius: $border-radius $border-radius 0 0;
+    
+    i {
+      margin-right: 0.3rem;
+      color: $text-light;
+      font-size: 0.8rem;
+    }
+  }
+  
+  .upload-form {
+    padding: 0.8rem;
+  }
+}
+
+// Upload Options
+.upload-options {
+  margin-bottom: 0.5rem;
+  
+  .file-input-label {
+    @include button-primary;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    
+    &.special-upload {
+      background: linear-gradient(135deg, $accent-color, $accent-dark);
+      
+      &:hover {
+        background: linear-gradient(135deg, $accent-dark, color.adjust($accent-dark, $lightness: -10%));
+      }
+    }
+    
+    i {
+      margin-right: 0.3rem;
+      font-size: 0.8rem;
+    }
+    
+    input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+// Paste Container
+.paste-container {
+  margin-bottom: 0.5rem;
+  
+  .paste-area {
+    border: 2px dashed $border-color;
+    border-radius: $border-radius;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: $grey-light;
+    
+    &:hover, &:focus {
+      border-color: $primary-color;
+      background-color: $primary-light;
+      outline: none;
+    }
+    
+    &.storefront-paste-area {
+      border-color: $accent-color;
+      
+      &:hover, &:focus {
+        border-color: $accent-dark;
+        background-color: $accent-light;
+      }
+    }
+    
+    i {
+      font-size: 1.2rem;
+      color: $grey-dark;
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+    
+    .paste-text {
+      color: $grey-dark;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+  }
+}
+
+// Image Preview Container
+.image-preview-container {
+  @include card-style;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  
+  .image-preview {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border-radius: $border-radius;
+    margin-bottom: 0.5rem;
+    box-shadow: $shadow;
+  }
+  
+  .image-annotation-input {
+    @include input-style;
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.4rem;
+  }
+  
+  .upload-actions {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+    
+    .cancel-btn {
+      @include button-secondary;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    
+    .upload-btn {
+      @include button-primary;
+      min-width: 80px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      
+      &.shop-upload-btn {
+        background: linear-gradient(135deg, $accent-color, $accent-dark);
+        
+        &:hover {
+          background: linear-gradient(135deg, $accent-dark, color.adjust($accent-dark, $lightness: -10%));
+        }
+      }
+      
+      i.spinning {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+}
+
+// Existing Images Section
+.existing-images {
+  @include card-style;
+  
+  h5 {
+    background: linear-gradient(135deg, $grey-medium, $grey-dark);
+    color: $text-dark;
+    padding: 0.5rem 0.8rem;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border-radius: $border-radius $border-radius 0 0;
+  }
+  
+  .no-images-message {
+    text-align: center;
+    padding: 1.5rem 0.8rem;
+    color: $grey-dark;
+    
+    i {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+    
+    p {
+      font-size: 0.85rem;
+      margin: 0;
+    }
+  }
+  
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+    padding: 0.8rem;
+  }
+}
+
+// Image Card
+.image-card {
+  @include card-style;
+  overflow: hidden;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: $shadow-lg;
+  }
+  
+  .image-wrapper {
+    position: relative;
+    
+    img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .storefront-badge {
+      position: absolute;
+      top: 0.3rem;
+      right: 0.3rem;
+      background: linear-gradient(135deg, $accent-color, $accent-dark);
+      color: $text-light;
+      padding: 0.15rem 0.3rem;
+      border-radius: $border-radius;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      box-shadow: $shadow;
+    }
+  }
+  
+  .image-details {
+    padding: 0.5rem;
+    
+    .image-annotation {
+      font-size: 0.75rem;
+      color: $text-dark;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+      min-height: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .image-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      .image-actions {
+        display: flex;
+        gap: 0.2rem;
+        
+        .action-btn {
+          @include button-reset;
+          padding: 0.25rem;
+          border-radius: $border-radius;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          
+          i {
+            font-size: 0.7rem;
+          }
+          
+          &.edit-btn {
+            background-color: $secondary-color;
+            color: $text-light;
+            
+            &:hover {
+              background-color: color.adjust($secondary-color, $lightness: -10%);
+            }
+          }
+          
+          &.storefront-btn {
+            background-color: $accent-color;
+            color: $text-light;
+            
+            &:hover {
+              background-color: $accent-dark;
+            }
+          }
+          
+          &.delete-btn {
+            background-color: $error-color;
+            color: $text-light;
+            
+            &:hover {
+              background-color: color.adjust($error-color, $lightness: -10%);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments for images
+@media (max-width: 768px) {
+  .upload-sections {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  
+  .image-card {
+    .image-wrapper img {
+      height: 100px;
+    }
+    
+    .image-details {
+      padding: 0.4rem;
+      
+      .image-annotation {
+        font-size: 0.7rem;
+        margin-bottom: 0.3rem;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+      }
+      
+      .image-actions {
+        .action-btn {
+          width: 20px;
+          height: 20px;
+          
+          i {
+            font-size: 0.6rem;
+          }
+        }
+      }
+    }
+  }
+  
+  .paste-area {
+    padding: 0.8rem;
+    
+    i {
+      font-size: 1rem;
+    }
+    
+    .paste-text {
+      font-size: 0.7rem;
+    }
+  }
+  
+  .image-preview {
+    max-width: 150px !important;
+  }
+  
+  .shop-image-upload-container,
+  .image-upload-container {
+    margin-bottom: 0.5rem;
+    
+    .upload-form {
+      padding: 0.5rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.4rem;
+    padding: 0.4rem;
+  }
+  
+  .image-card {
+    .image-wrapper img {
+      height: 80px;
+    }
+    
+    .image-details {
+      padding: 0.3rem;
+    }
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+    gap: 0.3rem;
+    
+    .cancel-btn, .upload-btn {
+      width: 100%;
+      padding: 0.4rem;
+      font-size: 0.7rem;
+    }
+  }
+  
+  .paste-area {
+    padding: 0.6rem;
+    
+    i {
       font-size: 0.9rem;
     }
+    
+    .paste-text {
+      font-size: 0.65rem;
+    }
   }
+}
+
+// Route Filter Styles
+.route-filter-container {
+  position: relative;
+  margin-top: 1rem;
   
-  &:first-child {
-    margin-top: 0;
-  }
-  
-  .toggle-container {
+  .route-filter-toggle {
+    @include button-secondary;
     display: flex;
-  align-items: center;
-    margin-left: auto;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
     
-    .toggle-label {
-      font-size: 0.75rem;
-      font-weight: normal;
-      margin-right: 0.5rem;
-      color: $grey-dark;
+    &.active {
+      background-color: $primary-light;
+      border-color: $primary-color;
+      color: $primary-color;
     }
     
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 36px;
-      height: 20px;
+    .filter-count {
+      background-color: $primary-color;
+      color: $text-light;
+      border-radius: 50%;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      min-width: 1.2rem;
+      text-align: center;
+    }
+  }
+  
+  .route-filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: $text-light;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    box-shadow: $shadow-lg;
+    z-index: 1000;
+    margin-top: 0.2rem;
+    max-height: 300px;
+    overflow-y: auto;
+    animation: fadeIn 0.2s ease-out;
+    
+    .filter-header {
+      padding: 0.6rem;
+      border-bottom: 1px solid $border-color;
+      background-color: $grey-light;
       
-      input {
-    opacity: 0;
-    width: 0;
-        height: 0;
+      .filter-actions {
+        display: flex;
+        gap: 0.5rem;
         
-        &:checked + .toggle-slider {
-          background-color: $primary-color;
-        }
-        
-        &:checked + .toggle-slider:before {
-          transform: translateX(16px);
+        .filter-action-btn {
+          @include button-reset;
+          padding: 0.3rem 0.5rem;
+          font-size: 0.75rem;
+          color: $primary-color;
+          border-radius: $border-radius;
+          transition: background-color 0.2s;
+          
+          &:hover {
+            background-color: $primary-light;
+          }
+          
+          i {
+            margin-right: 0.3rem;
+          }
         }
       }
+    }
+    
+    .route-checkboxes {
+      padding: 0.5rem;
       
-      .toggle-slider {
-        position: absolute;
+      .route-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 0.4rem 0.5rem;
         cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: $grey-medium;
-        transition: .3s;
-        border-radius: 20px;
+        border-radius: $border-radius;
+        transition: background-color 0.2s;
         
-        &:before {
-          position: absolute;
-          content: "";
-          height: 16px;
+        &:hover {
+          background-color: $grey-light;
+        }
+        
+        input[type="checkbox"] {
+          display: none;
+        }
+        
+        .checkbox-custom {
           width: 16px;
-          left: 2px;
-          bottom: 2px;
-          background-color: $text-light;
-          transition: .3s;
-          border-radius: 50%;
+          height: 16px;
+          border: 2px solid $border-color;
+          border-radius: 3px;
+          margin-right: 0.6rem;
+          position: relative;
+          transition: all 0.2s;
+          flex-shrink: 0;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid $text-light;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            opacity: 0;
+            transition: opacity 0.2s;
+          }
+        }
+        
+        input[type="checkbox"]:checked + .checkbox-custom {
+          background-color: $primary-color;
+          border-color: $primary-color;
+          
+          &::after {
+            opacity: 1;
+          }
+        }
+        
+        .route-name {
+          font-size: 0.8rem;
+          color: $text-dark;
+          font-weight: 500;
+        }
+      }
+      
+      .no-routes {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        color: $grey-dark;
+        font-size: 0.8rem;
+        
+        i {
+          margin-right: 0.5rem;
+          opacity: 0.6;
         }
       }
     }
   }
 }
 
-// Info section cards
-.info-section-card {
-  background-color: $text-light;
-  border: 1px solid $border-color;
-  border-radius: 0 0 $border-radius $border-radius;
-  padding: 0.8rem;
-  margin-bottom: 0.8rem;
-  box-shadow: $shadow-xs;
+// Responsive adjustments for route filter
+@media (max-width: 768px) {
+  .route-filter-container {
+    .route-filter-dropdown {
+      position: fixed;
+      top: auto;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      max-height: 50vh;
+    }
+  }
 }
 
-// Status badges for route status
-.status-badge {
-  display: inline-block;
+// Column Header with Filter Styles
+.column-header-with-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  
+  span {
+    flex: 1;
+  }
+  
+  .route-filter-container {
+    position: relative;
+    margin-top: 0;
+    
+    .route-filter-icon {
+      @include button-reset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: $border-radius;
+      background-color: transparent;
+      color: $primary-color;
+      transition: all 0.2s;
+      position: relative;
+      
+      &:hover {
+        background-color: $primary-light;
+      }
+      
+      &.active {
+        background-color: $primary-color;
+        color: $text-light;
+      }
+      
+      i {
+        font-size: 0.7rem;
+      }
+      
+      .filter-count {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background-color: $error-color;
+        color: $text-light;
+        border-radius: 50%;
+        padding: 0.1rem 0.3rem;
+        font-size: 0.6rem;
+        font-weight: 600;
+        min-width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+    }
+    
+    .route-filter-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      left: auto;
+      width: 250px;
+      background-color: $text-light;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      box-shadow: $shadow-lg;
+      z-index: 1001;
+      margin-top: 0.2rem;
+      max-height: 300px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-out;
+      
+      .filter-header {
+        padding: 0.6rem;
+        border-bottom: 1px solid $border-color;
+        background-color: $grey-light;
+        
+        .filter-actions {
+          display: flex;
+          gap: 0.5rem;
+          
+          .filter-action-btn {
+            @include button-reset;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.75rem;
+            color: $primary-color;
+            border-radius: $border-radius;
+            transition: background-color 0.2s;
+            
+            &:hover {
+              background-color: $primary-light;
+            }
+            
+            i {
+              margin-right: 0.3rem;
+            }
+          }
+        }
+      }
+      
+      .route-checkboxes {
+        padding: 0.5rem;
+        
+        .route-checkbox {
+          display: flex;
+          align-items: center;
+          padding: 0.4rem 0.5rem;
+          cursor: pointer;
+          border-radius: $border-radius;
+          transition: background-color 0.2s;
+          
+          &:hover {
+            background-color: $grey-light;
+          }
+          
+          input[type="checkbox"] {
+            display: none;
+          }
+          
+          .checkbox-custom {
+            width: 16px;
+            height: 16px;
+            border: 2px solid $border-color;
+            border-radius: 3px;
+            margin-right: 0.6rem;
+            position: relative;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            
+            &::after {
+              content: '';
+              position: absolute;
+              left: 4px;
+              top: 1px;
+              width: 4px;
+              height: 8px;
+              border: solid $text-light;
+              border-width: 0 2px 2px 0;
+              transform: rotate(45deg);
+              opacity: 0;
+              transition: opacity 0.2s;
+            }
+          }
+          
+          input[type="checkbox"]:checked + .checkbox-custom {
+            background-color: $primary-color;
+            border-color: $primary-color;
+            
+            &::after {
+              opacity: 1;
+            }
+          }
+          
+          .route-name {
+            font-size: 0.8rem;
+            color: $text-dark;
+            font-weight: 500;
+          }
+        }
+        
+        .no-routes {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          color: $grey-dark;
+          font-size: 0.8rem;
+          
+          i {
+            margin-right: 0.5rem;
+            opacity: 0.6;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments for column header filter
+@media (max-width: 768px) {
+  .column-header-with-filter {
+    .route-filter-container {
+      .route-filter-dropdown {
+        position: fixed;
+        top: auto;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        width: auto;
+        max-height: 50vh;
+      }
+    }
+  }
+}
+
+// Filtered Results Info Styles
+.filtered-results-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-sm;
+  
+  .filter-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    
+    i {
+      color: $primary-color;
+      margin-right: 0.5rem;
+    }
+    
+    span {
+      flex: 1;
+      font-size: 0.875rem;
+      color: $text-dark;
+      font-weight: 500;
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    
+    .clear-filter-btn {
+      @include button-secondary;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      color: $error-color;
+      border-color: $error-color;
+      
+      &:hover {
+        background-color: $error-color;
+        color: $text-light;
+      }
+      
+      i {
+        margin-right: 0.3rem;
+        color: inherit;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filtered-results-info {
+    .filter-info {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      text-align: center;
+      
+      .filter-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      
+      .clear-filter-btn {
+        align-self: center;
+      }
+    }
+  }
+}
+
+.btn-view {
+  background: linear-gradient(135deg, $accent-color, $accent-dark);
+  color: white;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.7rem;
-  font-weight: 500;
-  text-transform: capitalize;
-  
-  &.status-active {
-    background-color: rgba(25, 135, 84, 0.15);
-    color: #198754;
-    border: 1px solid rgba(25, 135, 84, 0.2);
-  }
-  
-  &.status-inactive {
-    background-color: rgba(108, 117, 125, 0.15);
-    color: #6c757d;
-    border: 1px solid rgba(108, 117, 125, 0.2);
-  }
-  
-  &.status-pending {
-    background-color: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
-    border: 1px solid rgba(255, 193, 7, 0.2);
-  }
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.btn-view:hover:not(:disabled) {
+  background: linear-gradient(135deg, $accent-dark, color.adjust($accent-dark, $lightness: -10%));
 }

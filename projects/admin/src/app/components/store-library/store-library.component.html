@@ -11,654 +11,1028 @@
 
   <!-- Main Content Area -->
   <div class="content">
+    <!-- Search Results List (when search is performed) -->
+    <div class="search-results-container" *ngIf="searchPerformed">
+      <!-- Loading Spinner -->
+      <div class="loading-spinner" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading stores...</p>
+      </div>
+      
+      <!-- No Results -->
+      <div class="no-results" *ngIf="!loading && (!filteredStores || filteredStores.length === 0)">
+        <i class="bi bi-exclamation-circle"></i>
+        <p>No stores found matching your search.</p>
+      </div>
+      
+      <!-- Store List -->
+      <div class="store-grid" *ngIf="!loading && filteredStores && filteredStores.length > 0">
+        <div class="store-card" *ngFor="let store of filteredStores" 
+             [class.active]="selectedStore && selectedStore.id === store.id"
+             (click)="selectStore(store)">
+          <div class="store-name">{{ store.store_name || 'Unnamed Store' }}</div>
+          <div class="store-details">
+            <span *ngIf="store.store_code">{{ store.store_code }}</span>
+            <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
+          </div>
+          <div class="store-address">{{ store.address || store.address_line || 'No address' }}</div>
+        </div>
+      </div>
+    </div>
 
-
-    <!-- Library Container: Search Panel + Details Panel -->
-    <div class="library-container">
-      <!-- Search Panel -->
-      <div class="search-panel">
-        <h3><i class="bi bi-search"></i> Find Stores</h3>
-        
-        <!-- Search Box -->
-        <div class="search-box">
-          <i class="bi bi-search"></i>
-          <input type="text" class="search-input" placeholder="Search by name, code or address..." 
-                [(ngModel)]="searchQuery" 
-                (keyup.enter)="searchStores()"
-                (input)="onSearchInputChange()">
-          <button *ngIf="searchQuery" class="clear-btn" (click)="clearSearch()">
-            <i class="bi bi-x-circle"></i>
-          </button>
-          <button class="search-btn" (click)="searchStores()">
-            <i class="bi bi-search"></i> Search
-          </button>
-          
-          <!-- Search Suggestions -->
-          <div class="suggestions-dropdown" *ngIf="showSuggestions && filteredSuggestions.length > 0">
-            <div class="suggestion-item" *ngFor="let suggestion of filteredSuggestions" (click)="selectSuggestion(suggestion)">
-              <div class="suggestion-store-name">{{ suggestion.store_name }}</div>
-              <div class="suggestion-store-details">{{ suggestion.store_code }} - {{ suggestion.address }}</div>
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Show Excel Spreadsheet when no store is selected -->
+      <div class="masterfile-section" *ngIf="!selectedStore">
+        <div class="masterfile-header">
+          <div class="header-left">
+            <!-- Search Bar moved here -->
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" class="search-input" placeholder="Search by name, code or address..." 
+                    [(ngModel)]="searchQuery" 
+                    (keyup.enter)="searchStores()"
+                    (input)="onSearchInputChange()">
+              <button *ngIf="searchQuery" class="clear-btn" (click)="clearSearch()">
+                <i class="bi bi-x-circle"></i>
+              </button>
+              <button class="search-btn" (click)="searchStores()">
+                <i class="bi bi-search"></i> Search
+              </button>
+              
+              <!-- Search Suggestions -->
+              <div class="suggestions-dropdown" *ngIf="showSuggestions && filteredSuggestions.length > 0">
+                <div class="suggestion-item" *ngFor="let suggestion of filteredSuggestions" (click)="selectSuggestion(suggestion)">
+                  <div class="suggestion-store-name">{{ suggestion.store_name }}</div>
+                  <div class="suggestion-store-details">{{ suggestion.store_code }} - {{ suggestion.address }}</div>
+                </div>
+              </div>
             </div>
           </div>
+          
+          <div class="header-controls">
+            <!-- Compact Mode Toggle -->
+            
+            
+            <!-- 24-Hour Filter Button -->
+            <button class="btn-24hour-filter" 
+                    [class.active]="show24HourFilter" 
+                    (click)="toggle24HourFilter()" 
+                    [disabled]="loading">
+              <i class="bi bi-clock"></i> 24 Hours
+            </button>
+            
+            <button class="btn-add" (click)="addNewRow()" [disabled]="loading">
+              <i class="bi bi-plus-circle"></i> Add New Store
+            </button>
+          </div>
         </div>
-        
-        <!-- Store List -->
-        <div class="store-list-container">
-          <!-- Loading Spinner -->
-          <div class="loading-spinner" *ngIf="loading">
-            <div class="spinner"></div>
-            <p>Loading stores...</p>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="error-message">
+          <i class="bi bi-exclamation-triangle"></i>
+          {{ error }}
+        </div>
+
+        <!-- Delivery Day Update Status -->
+        <div *ngIf="dayUpdateStatus.show" class="delivery-update-message" 
+             [class.success]="dayUpdateStatus.type === 'success'" 
+             [class.error]="dayUpdateStatus.type === 'error'">
+          <i class="bi" [ngClass]="dayUpdateStatus.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'"></i>
+          {{ dayUpdateStatus.text }}
+        </div>
+
+        <!-- Loading Indicator -->
+        <div *ngIf="loading" class="loading-indicator">
+          <i class="bi bi-arrow-clockwise spin"></i> Loading...
+        </div>
+
+        <!-- Excel-style Spreadsheet -->
+        <div class="spreadsheet-container">
+          <div class="spreadsheet-wrapper">
+            <table class="excel-table">
+              <thead>
+                <tr>
+                  <th class="col-actions">Actions</th>
+                  <th class="col-store-code">Store Code</th>
+                  <th class="col-dispatch-code">Dispatch Code</th>
+                  <th class="col-address">Store Address</th>
+                  <th class="col-opening-weekdays">Weekdays</th>
+                  <th class="col-opening-sat">Saturday</th>
+                  <th class="col-opening-bank">Bank Holiday</th>
+                  <th class="col-route">
+                    <div class="column-header-with-filter">
+                      <span>Route</span>
+                      <div class="route-filter-container">
+                        <button class="route-filter-icon" (click)="toggleRouteFilter()" [class.active]="showRouteFilter">
+                          <i class="bi bi-funnel"></i>
+                          <span class="filter-count" *ngIf="getSelectedRoutesCount() > 0">{{ getSelectedRoutesCount() }}</span>
+                        </button>
+                        
+                        <div class="route-filter-dropdown" *ngIf="showRouteFilter">
+                          <div class="filter-header">
+                            <div class="filter-actions">
+                              <button class="filter-action-btn" (click)="selectAllRoutes()">
+                                <i class="bi bi-check-all"></i> Select All
+                              </button>
+                              <button class="filter-action-btn" (click)="clearAllRoutes()">
+                                <i class="bi bi-x-circle"></i> Clear All
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div class="route-checkboxes">
+                            <label class="route-checkbox" *ngFor="let route of availableRoutes">
+                              <input type="checkbox" 
+                                     [checked]="selectedRoutes.has(route)"
+                                     (change)="toggleRouteSelection(route)">
+                              <span class="checkbox-custom"></span>
+                              <span class="route-name">{{ route }}</span>
+                            </label>
+                            
+                            <div class="no-routes" *ngIf="availableRoutes.length === 0">
+                              <i class="bi bi-info-circle"></i>
+                              <span>No routes available</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th class="col-delivery-mon">Mon</th>
+                  <th class="col-delivery-tue">Tue</th>
+                  <th class="col-delivery-wed">Wed</th>
+                  <th class="col-delivery-thu">Thu</th>
+                  <th class="col-delivery-fri">Fri</th>
+                  <th class="col-delivery-sat">Sat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let store of stores; let i = index" 
+                    [class.editing-row]="store.isEditing"
+                    [class.new-row]="!store.id">
+                  
+                  <!-- Actions Column -->
+                  <td class="actions-cell">
+                    <div class="action-buttons" *ngIf="!store.isEditing">
+                      <button class="btn-view" (click)="viewStoreDetails(store)" [disabled]="loading" title="View Details">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn-edit" (click)="editRow(i)" [disabled]="loading">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn-delete" (click)="deleteRow(i)" [disabled]="loading">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                    <div class="action-buttons" *ngIf="store.isEditing">
+                      <button class="btn-save" (click)="saveRow(i)" [disabled]="loading">
+                        <i class="bi bi-check"></i>
+                      </button>
+                      <button class="btn-cancel" (click)="cancelEdit()" [disabled]="loading">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </td>
+
+                  <!-- Store Code -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.store_code"
+                           class="cell-input"
+                           placeholder="Store Code">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.store_code }}</span>
+                  </td>
+
+                  <!-- Dispatch Code -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.dispatch_code"
+                           class="cell-input"
+                           placeholder="Dispatch Code">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.dispatch_code }}</span>
+                  </td>
+
+                  <!-- Store Address -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.store_address"
+                           class="cell-input"
+                           placeholder="Store Address">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.store_address }}</span>
+                  </td>
+
+                  <!-- Opening Times Weekdays -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.opening_time_weekdays"
+                           class="cell-input"
+                           placeholder="e.g., 09:00-17:00">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.opening_time_weekdays }}</span>
+                  </td>
+
+                  <!-- Opening Times Saturday -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.opening_time_sat"
+                           class="cell-input"
+                           placeholder="e.g., 09:00-18:00">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.opening_time_sat }}</span>
+                  </td>
+
+                  <!-- Opening Times Bank Holiday -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.openining_time_bankholiday"
+                           class="cell-input"
+                           placeholder="e.g., 10:00-16:00">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.openining_time_bankholiday }}</span>
+                  </td>
+
+                  <!-- Route -->
+                  <td class="data-cell">
+                    <input *ngIf="store.isEditing" 
+                           type="text" 
+                           [(ngModel)]="store.route"
+                           class="cell-input"
+                           placeholder="Route">
+                    <span *ngIf="!store.isEditing" class="cell-value">{{ store.route }}</span>
+                  </td>
+
+                  <!-- Delivery Days -->
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_monday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_monday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_monday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_monday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_monday')">
+                      <i class="bi" [ngClass]="store.deliver_monday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_monday')"></i>
+                    </span>
+                  </td>
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_tuesday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_tuesday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_tuesday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_tuesday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_tuesday')">
+                      <i class="bi" [ngClass]="store.deliver_tuesday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_tuesday')"></i>
+                    </span>
+                  </td>
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_wednesday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_wednesday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_wednesday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_wednesday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_wednesday')">
+                      <i class="bi" [ngClass]="store.deliver_wednesday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_wednesday')"></i>
+                    </span>
+                  </td>
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_thursday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_thursday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_thursday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_thursday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_thursday')">
+                      <i class="bi" [ngClass]="store.deliver_thursday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_thursday')"></i>
+                    </span>
+                  </td>
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_friday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_friday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_friday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_friday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_friday')">
+                      <i class="bi" [ngClass]="store.deliver_friday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_friday')"></i>
+                    </span>
+                  </td>
+                  <td class="data-cell delivery-day-cell">
+                    <label *ngIf="store.isEditing" class="delivery-checkbox">
+                      <input type="checkbox" 
+                             [checked]="store.deliver_saturday === 'yes'"
+                             (change)="updateDeliveryDayInTable(store, 'deliver_saturday', $event)">
+                      <span class="checkbox-custom"></span>
+                    </label>
+                    <span *ngIf="!store.isEditing" class="delivery-status clickable" 
+                          [class.active]="store.deliver_saturday === 'yes'"
+                          [class.saving]="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_saturday')"
+                          (click)="toggleDeliveryDayInTable(store, 'deliver_saturday')">
+                      <i class="bi" [ngClass]="store.deliver_saturday === 'yes' ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDayInTable === getStoreDeliveryKey(store, 'deliver_saturday')"></i>
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Empty state -->
+                <tr *ngIf="stores.length === 0 && !loading" class="empty-row">
+                  <td colspan="15" class="empty-cell">
+                    <div class="empty-state">
+                      <i class="bi bi-inbox"></i>
+                      <p>No stores found on this page.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" *ngIf="!isFiltering && totalPages > 1">
+          <div class="pagination-info">
+            <span class="showing-text">
+              Showing {{ ((currentPage - 1) * pageSize) + 1 }} to 
+              {{ getEndIndex() }} of {{ totalStores }} stores
+            </span>
           </div>
           
-          <!-- Search Prompt -->
-          <div class="search-prompt" *ngIf="!loading && (!filteredStores || filteredStores.length === 0) && !searchPerformed">
-            <i class="bi bi-shop"></i>
-            <p>Search for stores to view details</p>
+          <div class="pagination-controls">
+            <!-- Previous Button -->
+            <button class="btn-page" 
+                    (click)="previousPage()" 
+                    [disabled]="currentPage === 1 || loading">
+              <i class="bi bi-chevron-left"></i> Previous
+            </button>
+
+            <!-- Page Numbers -->
+            <div class="page-numbers">
+              <!-- First page if not in visible range -->
+              <button *ngIf="getPageNumbers()[0] > 1" 
+                      class="btn-page-number" 
+                      (click)="goToPage(1)">
+                1
+              </button>
+              <span *ngIf="getPageNumbers()[0] > 2" class="page-ellipsis">...</span>
+
+              <!-- Visible page numbers -->
+              <button *ngFor="let page of getPageNumbers()" 
+                      class="btn-page-number" 
+                      [class.active]="page === currentPage"
+                      (click)="goToPage(page)"
+                      [disabled]="loading">
+                {{ page }}
+              </button>
+
+              <!-- Last page if not in visible range -->
+              <span *ngIf="getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1" 
+                    class="page-ellipsis">...</span>
+              <button *ngIf="getPageNumbers()[getPageNumbers().length - 1] < totalPages" 
+                      class="btn-page-number" 
+                      (click)="goToPage(totalPages)">
+                {{ totalPages }}
+              </button>
+            </div>
+
+            <!-- Next Button -->
+            <button class="btn-page" 
+                    (click)="nextPage()" 
+                    [disabled]="currentPage === totalPages || loading">
+              Next <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
-          
-          <!-- No Results -->
-          <div class="no-results" *ngIf="!loading && searchPerformed && (!filteredStores || filteredStores.length === 0)">
-            <i class="bi bi-exclamation-circle"></i>
-            <p>No stores found matching your search.</p>
-          </div>
-          
-          <!-- Store List -->
-          <div class="store-list" *ngIf="!loading && filteredStores && filteredStores.length > 0">
-            <div class="store-item" *ngFor="let store of filteredStores" 
-                 [class.active]="selectedStore && selectedStore.id === store.id"
-                 (click)="selectStore(store)">
-              <div class="store-name">{{ store.store_name || 'Unnamed Store' }}</div>
-              <div class="store-details">
-                <span *ngIf="store.store_code">{{ store.store_code }}</span>
-                <span *ngIf="store.dispatch_code">({{ store.dispatch_code }})</span>
-              </div>
-              <div class="store-address">{{ store.address || store.address_line || 'No address' }}</div>
+        </div>
+
+        <!-- Filtered Results Info -->
+        <div class="filtered-results-info" *ngIf="isFiltering">
+          <div class="filter-info">
+            <i class="bi bi-funnel-fill"></i>
+            <span>
+              Showing {{ stores.length }} stores filtered by 
+              <span *ngIf="getSelectedRoutesCount() > 0 && show24HourFilter">route and 24-hour operation</span>
+              <span *ngIf="getSelectedRoutesCount() > 0 && !show24HourFilter">route</span>
+              <span *ngIf="getSelectedRoutesCount() === 0 && show24HourFilter">24-hour operation</span>
+            </span>
+            <div class="filter-actions">
+              <button class="clear-filter-btn" *ngIf="getSelectedRoutesCount() > 0" (click)="clearAllRoutes()">
+                <i class="bi bi-x-circle"></i> Clear Route Filter
+              </button>
+              <button class="clear-filter-btn" *ngIf="show24HourFilter" (click)="toggle24HourFilter()">
+                <i class="bi bi-x-circle"></i> Clear 24-Hour Filter
+              </button>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Details Panel -->
-      <div class="details-panel">
-        <!-- No Store Selected Message -->
-        <div class="no-store-selected" *ngIf="!selectedStore">
-          <i class="bi bi-building"></i>
-          <p>Select a store to view details</p>
-        </div>
-        
-        <!-- Store Details Container -->
-        <div class="store-details-container" *ngIf="selectedStore">
-          <!-- Store Header -->
-          <div class="store-header">
-            <div class="store-code-container">
-              <i class="bi bi-shop"></i>
-              <h3>{{ selectedStore.store_code || 'Store Code' }}</h3>
-            </div>
+      <!-- Show Original Store Details when a store is selected -->
+      <div class="store-details-container" *ngIf="selectedStore">
+        <!-- Store Header -->
+        <div class="store-header">
+          <div class="store-code-container">
+            <i class="bi bi-shop"></i>
+            <h3>{{ selectedStore.store_code || 'Store Code' }}</h3>
+          </div>
+          <div class="header-actions">
+            <button class="close-details-btn" (click)="clearSelectedStore()">
+              <i class="bi bi-x-lg"></i>
+            </button>
             <button class="edit-button" (click)="toggleEditMode()" *ngIf="!editMode">
               <i class="bi bi-pencil-square"></i>
             </button>
           </div>
+        </div>
+        
+        <!-- Edit Mode Controls -->
+        <div class="edit-mode-controls" *ngIf="editMode">
+          <button class="cancel-edit-btn" (click)="cancelEdit()">
+            <i class="bi bi-x-circle"></i> Cancel
+          </button>
+          <button class="save-changes-btn" [class.saving]="savingChanges" (click)="saveChanges()">
+            <span class="spinner" *ngIf="savingChanges"></span>
+            <i class="bi bi-check-circle" *ngIf="!savingChanges"></i> Save
+          </button>
+        </div>
+        
+        <!-- Status Messages -->
+        <div class="status-message success" *ngIf="statusMessage.show && statusMessage.type === 'success'">
+          <i class="bi bi-check-circle"></i> {{ statusMessage.text }}
+        </div>
+        <div class="status-message error" *ngIf="statusMessage.show && statusMessage.type === 'error'">
+          <i class="bi bi-exclamation-triangle"></i> {{ statusMessage.text }}
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">
+            <i class="bi bi-info-circle"></i> Details
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'additional-info'" (click)="setActiveTab('additional-info')">
+            <i class="bi bi-journal-text"></i> Info
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'images'" (click)="setActiveTab('images')">
+            <i class="bi bi-images"></i> Images
+          </button>
+        </div>
+        
+        <!-- Details Tab -->
+        <div class="store-info-box" *ngIf="activeTab === 'details'">
           
-          <!-- Edit Mode Controls -->
-          <div class="edit-mode-controls" *ngIf="editMode">
-            <button class="cancel-edit-btn" (click)="cancelEdit()">
-              <i class="bi bi-x-circle"></i> Cancel
-            </button>
-            <button class="save-changes-btn" [class.saving]="savingChanges" (click)="saveChanges()">
-              <span class="spinner" *ngIf="savingChanges"></span>
-              <i class="bi bi-check-circle" *ngIf="!savingChanges"></i> Save
-            </button>
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-shop"></i>Store Information</div>
           </div>
-          
-          <!-- Status Messages -->
-          <div class="status-message success" *ngIf="statusMessage.show && statusMessage.type === 'success'">
-            <i class="bi bi-check-circle"></i> {{ statusMessage.text }}
-          </div>
-          <div class="status-message error" *ngIf="statusMessage.show && statusMessage.type === 'error'">
-            <i class="bi bi-exclamation-triangle"></i> {{ statusMessage.text }}
-          </div>
-          
-          <!-- Tab Navigation -->
-          <div class="tab-navigation">
-            <button class="tab-btn" [class.active]="activeTab === 'details'" (click)="setActiveTab('details')">
-              <i class="bi bi-info-circle"></i> Details
-            </button>
-            <button class="tab-btn" [class.active]="activeTab === 'additional-info'" (click)="setActiveTab('additional-info')">
-              <i class="bi bi-journal-text"></i> Info
-            </button>
-            <button class="tab-btn" [class.active]="activeTab === 'images'" (click)="setActiveTab('images')">
-              <i class="bi bi-images"></i> Images
-            </button>
-          </div>
-          
-          <!-- Details Tab -->
-          <div class="store-info-box" *ngIf="activeTab === 'details'">
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-shop"></i>Store Information</div>
+          <div class="info-section-card">
+            <!-- Basic Store Details -->
+            <div class="info-row" *ngIf="selectedStore.id" style="display: none;">
+              <div class="info-label">Store ID</div>
+              <div class="info-value">{{ selectedStore.id }}</div>
             </div>
-            <div class="info-section-card">
-              <!-- Basic Store Details -->
-              <div class="info-row" *ngIf="selectedStore.id" style="display: none;">
-                <div class="info-label">Store ID</div>
-                <div class="info-value">{{ selectedStore.id }}</div>
+            
+            <div class="info-row">
+              <div class="info-label">Store Name</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_name')" *ngIf="!editMode">
+                {{ selectedStore.store_name || 'Not specified' }}
               </div>
-              
-              <div class="info-row">
-                <div class="info-label">Store Name</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_name')" *ngIf="!editMode">
-                  {{ selectedStore.store_name || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.store_name" placeholder="Enter store name">
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Store Code</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_code')" *ngIf="!editMode">
-                  {{ selectedStore.store_code || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.store_code" placeholder="Enter store code">
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Dispatch Code</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_code')" *ngIf="!editMode">
-                  {{ selectedStore.dispatch_code || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.dispatch_code" placeholder="Enter dispatch code">
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Dispatch Name</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_store_name')" *ngIf="!editMode">
-                  {{ selectedStore.dispatch_store_name || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.dispatch_store_name" placeholder="Enter dispatch store name">
-                </div>
-              </div>
-              
-              <div class="info-row" style="display: none;">
-                <div class="info-label">Company</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_company')" *ngIf="!editMode">
-                  {{ selectedStore.store_company || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.store_company" placeholder="Enter store company">
-                </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.store_name" placeholder="Enter store name">
               </div>
             </div>
             
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-geo-alt"></i>Location Information</div>
+            <div class="info-row">
+              <div class="info-label">Store Code</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_code')" *ngIf="!editMode">
+                {{ selectedStore.store_code || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.store_code" placeholder="Enter store code">
+              </div>
             </div>
-            <div class="info-section-card">
+            
+            <div class="info-row">
+              <div class="info-label">Dispatch Code</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_code')" *ngIf="!editMode">
+                {{ selectedStore.dispatch_code || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.dispatch_code" placeholder="Enter dispatch code">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Dispatch Name</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('dispatch_store_name')" *ngIf="!editMode">
+                {{ selectedStore.dispatch_store_name || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.dispatch_store_name" placeholder="Enter dispatch store name">
+              </div>
+            </div>
+            
+            <div class="info-row" style="display: none;">
+              <div class="info-label">Company</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('store_company')" *ngIf="!editMode">
+                {{ selectedStore.store_company || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.store_company" placeholder="Enter store company">
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-geo-alt"></i>Location Information</div>
+          </div>
+          <div class="info-section-card">
+            <div class="info-row">
+              <div class="info-label">Address</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('address_line')" *ngIf="!editMode">
+                {{ selectedStore.address_line || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.address_line" placeholder="Enter address">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">City</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('city')" *ngIf="!editMode">
+                {{ selectedStore.city || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.city" placeholder="Enter city">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">County</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('county')" *ngIf="!editMode">
+                {{ selectedStore.county || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.county" placeholder="Enter county">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Eircode</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('eircode')" *ngIf="!editMode">
+                {{ selectedStore.eircode || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.eircode" placeholder="Enter eircode">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Coordinates</div>
+              <div class="info-value" *ngIf="!editMode">
+                <span *ngIf="selectedStore.latitude && selectedStore.longitude">
+                  {{ selectedStore.latitude }}, {{ selectedStore.longitude }}
+                </span>
+                <span *ngIf="!selectedStore.latitude || !selectedStore.longitude">Not specified</span>
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <div style="display: flex; gap: 5px;">
+                  <input type="text" [(ngModel)]="editableStore.latitude" placeholder="Lat" style="flex: 1;">
+                  <input type="text" [(ngModel)]="editableStore.longitude" placeholder="Long" style="flex: 1;">
+                </div>
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Route</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('route')" *ngIf="!editMode">
+                {{ selectedStore.route || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.route" placeholder="Enter route">
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-truck"></i>Route Information</div>
+          </div>
+          <div class="info-section-card">
+            <div class="info-row">
+              <div class="info-label">Route Name</div>
+              <div class="info-value" [class.view-mode]="!editMode">
+                {{ selectedStore.route || 'Not specified' }}
+              </div>
+            </div>
+            
+            <div class="info-row" *ngIf="selectedStore.route_details">
+              <div class="info-label">Route Number</div>
+              <div class="info-value" [class.view-mode]="!editMode">
+                {{ selectedStore.route_details.route_number || 'Not specified' }}
+              </div>
+            </div>
+            
+            <div class="info-row" *ngIf="selectedStore.route_details">
+              <div class="info-label">Route Status</div>
+              <div class="info-value" [class.view-mode]="!editMode">
+                <span class="status-badge" [ngClass]="{
+                  'status-active': selectedStore.route_details.route_status === 'active',
+                  'status-inactive': selectedStore.route_details.route_status === 'inactive',
+                  'status-pending': selectedStore.route_details.route_status === 'pending'
+                }">
+                  {{ selectedStore.route_details.route_status || 'Unknown' }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="info-row" *ngIf="selectedStore.route_details">
+              <div class="info-label">Last Delivery</div>
+              <div class="info-value" [class.view-mode]="!editMode">
+                {{ selectedStore.route_details.last_delivery_date ? (selectedStore.route_details.last_delivery_date | date:'medium') : 'No recent deliveries' }}
+              </div>
+            </div>
+            
+            <div class="info-row" *ngIf="selectedStore.route_details">
+              <div class="info-label">Next Delivery</div>
+              <div class="info-value" [class.view-mode]="!editMode">
+                {{ selectedStore.route_details.next_delivery_date ? (selectedStore.route_details.next_delivery_date | date:'medium') : 'No scheduled deliveries' }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-key"></i>Access Information</div>
+          </div>
+          <div class="info-section-card">
+            <div class="access-codes-container">
               <div class="info-row">
-                <div class="info-label">Address</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('address_line')" *ngIf="!editMode">
-                  {{ selectedStore.address_line || 'Not specified' }}
+                <div class="info-label">
+                  <i class="bi bi-shield-lock"></i> Alarm Code
+                </div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('alarm_code')" *ngIf="!editMode">
+                  {{ selectedStore.alarm_code || 'Not specified' }}
                 </div>
                 <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.address_line" placeholder="Enter address">
+                  <input type="text" [(ngModel)]="editableStore.alarm_code" placeholder="Enter alarm code">
                 </div>
               </div>
               
               <div class="info-row">
-                <div class="info-label">City</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('city')" *ngIf="!editMode">
-                  {{ selectedStore.city || 'Not specified' }}
+                <div class="info-label">
+                  <i class="bi bi-thermometer-snow"></i> Fridge Code
+                </div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('fridge_code')" *ngIf="!editMode">
+                  {{ selectedStore.fridge_code || 'Not specified' }}
                 </div>
                 <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.city" placeholder="Enter city">
+                  <input type="text" [(ngModel)]="editableStore.fridge_code" placeholder="Enter fridge code">
                 </div>
               </div>
               
               <div class="info-row">
-                <div class="info-label">County</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('county')" *ngIf="!editMode">
-                  {{ selectedStore.county || 'Not specified' }}
+                <div class="info-label">
+                  <i class="bi bi-key-fill"></i> Key Code
+                </div>
+                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('key_code')" *ngIf="!editMode">
+                  {{ selectedStore.key_code || 'Not specified' }}
                 </div>
                 <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.county" placeholder="Enter county">
+                  <input type="text" [(ngModel)]="editableStore.key_code" placeholder="Enter key code">
                 </div>
               </div>
-              
-              <div class="info-row">
-                <div class="info-label">Eircode</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('eircode')" *ngIf="!editMode">
-                  {{ selectedStore.eircode || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.eircode" placeholder="Enter eircode">
-                </div>
+            </div>
+          </div>
+          
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-clock"></i>Operating Hours</div>
+          </div>
+          <div class="info-section-card">
+            <div class="info-row">
+              <div class="info-label">Weekdays</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_weekdays')" *ngIf="!editMode">
+                {{ selectedStore.opening_time_weekdays || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.opening_time_weekdays" placeholder="e.g. 9:00 - 17:30">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Saturday</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_sat')" *ngIf="!editMode">
+                {{ selectedStore.opening_time_sat || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.opening_time_sat" placeholder="e.g. 10:00 - 17:00">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Bank Holidays</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('openining_time_bankholiday')" *ngIf="!editMode">
+                {{ selectedStore.openining_time_bankholiday || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="text" [(ngModel)]="editableStore.openining_time_bankholiday" placeholder="e.g. 10:00 - 16:00">
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-truck"></i>Delivery Days</div>
+          </div>
+          <div class="info-section-card">
+            <div class="delivery-days-section">
+              <div class="delivery-days-chips" *ngIf="editMode">
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_monday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_monday" [checked]="editableStore?.deliver_monday === 'yes'" (change)="updateDeliveryDay('deliver_monday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Monday</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_tuesday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_tuesday" [checked]="editableStore?.deliver_tuesday === 'yes'" (change)="updateDeliveryDay('deliver_tuesday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Tuesday</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_wednesday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_wednesday" [checked]="editableStore?.deliver_wednesday === 'yes'" (change)="updateDeliveryDay('deliver_wednesday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Wednesday</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_thursday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_thursday" [checked]="editableStore?.deliver_thursday === 'yes'" (change)="updateDeliveryDay('deliver_thursday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Thursday</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_friday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_friday" [checked]="editableStore?.deliver_friday === 'yes'" (change)="updateDeliveryDay('deliver_friday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Friday</span>
+                </label>
+                <label class="delivery-day-chip" [class.active]="editableStore?.deliver_saturday === 'yes'">
+                  <input type="checkbox" [(ngModel)]="editableStore.deliver_saturday" [checked]="editableStore?.deliver_saturday === 'yes'" (change)="updateDeliveryDay('deliver_saturday', $event)">
+                  <span><i class="bi bi-calendar-date"></i> Saturday</span>
+                </label>
               </div>
               
-              <div class="info-row">
-                <div class="info-label">Coordinates</div>
-                <div class="info-value" *ngIf="!editMode">
-                  <span *ngIf="selectedStore.latitude && selectedStore.longitude">
-                    {{ selectedStore.latitude }}, {{ selectedStore.longitude }}
+              <div class="delivery-days-display" *ngIf="!editMode">
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_monday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_monday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_monday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_monday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_monday === 'yes'}"></i>
+                    Monday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_monday'"></i>
                   </span>
-                  <span *ngIf="!selectedStore.latitude || !selectedStore.longitude">Not specified</span>
                 </div>
-                <div class="info-value" *ngIf="editMode">
-                  <div style="display: flex; gap: 5px;">
-                    <input type="text" [(ngModel)]="editableStore.latitude" placeholder="Lat" style="flex: 1;">
-                    <input type="text" [(ngModel)]="editableStore.longitude" placeholder="Long" style="flex: 1;">
-                  </div>
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Route</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('route')" *ngIf="!editMode">
-                  {{ selectedStore.route || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.route" placeholder="Enter route">
-                </div>
-              </div>
-            </div>
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-truck"></i>Route Information</div>
-            </div>
-            <div class="info-section-card">
-              <div class="info-row">
-                <div class="info-label">Route Name</div>
-                <div class="info-value" [class.view-mode]="!editMode">
-                  {{ selectedStore.route || 'Not specified' }}
-                </div>
-              </div>
-              
-              <div class="info-row" *ngIf="selectedStore.route_details">
-                <div class="info-label">Route Number</div>
-                <div class="info-value" [class.view-mode]="!editMode">
-                  {{ selectedStore.route_details.route_number || 'Not specified' }}
-                </div>
-              </div>
-              
-              <div class="info-row" *ngIf="selectedStore.route_details">
-                <div class="info-label">Route Status</div>
-                <div class="info-value" [class.view-mode]="!editMode">
-                  <span class="status-badge" [ngClass]="{
-                    'status-active': selectedStore.route_details.route_status === 'active',
-                    'status-inactive': selectedStore.route_details.route_status === 'inactive',
-                    'status-pending': selectedStore.route_details.route_status === 'pending'
-                  }">
-                    {{ selectedStore.route_details.route_status || 'Unknown' }}
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_tuesday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_tuesday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_tuesday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_tuesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_tuesday === 'yes'}"></i>
+                    Tuesday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_tuesday'"></i>
                   </span>
                 </div>
-              </div>
-              
-              <div class="info-row" *ngIf="selectedStore.route_details">
-                <div class="info-label">Last Delivery</div>
-                <div class="info-value" [class.view-mode]="!editMode">
-                  {{ selectedStore.route_details.last_delivery_date ? (selectedStore.route_details.last_delivery_date | date:'medium') : 'No recent deliveries' }}
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_wednesday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_wednesday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_wednesday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_wednesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_wednesday === 'yes'}"></i>
+                    Wednesday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_wednesday'"></i>
+                  </span>
                 </div>
-              </div>
-              
-              <div class="info-row" *ngIf="selectedStore.route_details">
-                <div class="info-label">Next Delivery</div>
-                <div class="info-value" [class.view-mode]="!editMode">
-                  {{ selectedStore.route_details.next_delivery_date ? (selectedStore.route_details.next_delivery_date | date:'medium') : 'No scheduled deliveries' }}
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_thursday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_thursday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_thursday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_thursday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_thursday === 'yes'}"></i>
+                    Thursday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_thursday'"></i>
+                  </span>
                 </div>
-              </div>
-            </div>
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-key"></i>Access Information</div>
-            </div>
-            <div class="info-section-card">
-              <div class="access-codes-container">
-                <div class="info-row">
-                  <div class="info-label">
-                    <i class="bi bi-shield-lock"></i> Alarm Code
-                  </div>
-                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('alarm_code')" *ngIf="!editMode">
-                    {{ selectedStore.alarm_code || 'Not specified' }}
-                  </div>
-                  <div class="info-value" *ngIf="editMode">
-                    <input type="text" [(ngModel)]="editableStore.alarm_code" placeholder="Enter alarm code">
-                  </div>
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_friday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_friday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_friday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_friday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_friday === 'yes'}"></i>
+                    Friday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_friday'"></i>
+                  </span>
                 </div>
-                
-                <div class="info-row">
-                  <div class="info-label">
-                    <i class="bi bi-thermometer-snow"></i> Fridge Code
-                  </div>
-                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('fridge_code')" *ngIf="!editMode">
-                    {{ selectedStore.fridge_code || 'Not specified' }}
-                  </div>
-                  <div class="info-value" *ngIf="editMode">
-                    <input type="text" [(ngModel)]="editableStore.fridge_code" placeholder="Enter fridge code">
-                  </div>
-                </div>
-                
-                <div class="info-row">
-                  <div class="info-label">
-                    <i class="bi bi-key-fill"></i> Key Code
-                  </div>
-                  <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('key_code')" *ngIf="!editMode">
-                    {{ selectedStore.key_code || 'Not specified' }}
-                  </div>
-                  <div class="info-value" *ngIf="editMode">
-                    <input type="text" [(ngModel)]="editableStore.key_code" placeholder="Enter key code">
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-clock"></i>Operating Hours</div>
-            </div>
-            <div class="info-section-card">
-              <div class="info-row">
-                <div class="info-label">Weekdays</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_weekdays')" *ngIf="!editMode">
-                  {{ selectedStore.opening_time_weekdays || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.opening_time_weekdays" placeholder="e.g. 9:00 - 17:30">
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Saturday</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('opening_time_sat')" *ngIf="!editMode">
-                  {{ selectedStore.opening_time_sat || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.opening_time_sat" placeholder="e.g. 10:00 - 17:00">
-                </div>
-              </div>
-              
-              <div class="info-row">
-                <div class="info-label">Bank Holidays</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('openining_time_bankholiday')" *ngIf="!editMode">
-                  {{ selectedStore.openining_time_bankholiday || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="text" [(ngModel)]="editableStore.openining_time_bankholiday" placeholder="e.g. 10:00 - 16:00">
-                </div>
-              </div>
-            </div>
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-truck"></i>Delivery Days</div>
-            </div>
-            <div class="info-section-card">
-              <div class="delivery-days-section">
-                <div class="delivery-days-chips" *ngIf="editMode">
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_monday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_monday" [checked]="editableStore?.deliver_monday === 'yes'" (change)="updateDeliveryDay('deliver_monday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Monday</span>
-                  </label>
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_tuesday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_tuesday" [checked]="editableStore?.deliver_tuesday === 'yes'" (change)="updateDeliveryDay('deliver_tuesday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Tuesday</span>
-                  </label>
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_wednesday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_wednesday" [checked]="editableStore?.deliver_wednesday === 'yes'" (change)="updateDeliveryDay('deliver_wednesday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Wednesday</span>
-                  </label>
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_thursday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_thursday" [checked]="editableStore?.deliver_thursday === 'yes'" (change)="updateDeliveryDay('deliver_thursday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Thursday</span>
-                  </label>
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_friday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_friday" [checked]="editableStore?.deliver_friday === 'yes'" (change)="updateDeliveryDay('deliver_friday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Friday</span>
-                  </label>
-                  <label class="delivery-day-chip" [class.active]="editableStore?.deliver_saturday === 'yes'">
-                    <input type="checkbox" [(ngModel)]="editableStore.deliver_saturday" [checked]="editableStore?.deliver_saturday === 'yes'" (change)="updateDeliveryDay('deliver_saturday', $event)">
-                    <span><i class="bi bi-calendar-date"></i> Saturday</span>
-                  </label>
-                </div>
-                
-                <div class="delivery-days-display" *ngIf="!editMode">
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_monday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_monday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_monday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_monday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_monday === 'yes'}"></i>
-                      Monday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_monday'"></i>
-                    </span>
-                  </div>
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_tuesday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_tuesday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_tuesday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_tuesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_tuesday === 'yes'}"></i>
-                      Tuesday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_tuesday'"></i>
-                    </span>
-                  </div>
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_wednesday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_wednesday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_wednesday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_wednesday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_wednesday === 'yes'}"></i>
-                      Wednesday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_wednesday'"></i>
-                    </span>
-                  </div>
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_thursday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_thursday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_thursday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_thursday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_thursday === 'yes'}"></i>
-                      Thursday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_thursday'"></i>
-                    </span>
-                  </div>
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_friday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_friday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_friday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_friday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_friday === 'yes'}"></i>
-                      Friday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_friday'"></i>
-                    </span>
-                  </div>
-                  <div class="delivery-day-chip" 
-                       [class.active]="selectedStore?.deliver_saturday === 'yes'" 
-                       [class.saving]="savingDeliveryDay === 'deliver_saturday'"
-                       (click)="toggleAndSaveDeliveryDay('deliver_saturday')">
-                    <span>
-                      <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_saturday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_saturday === 'yes'}"></i>
-                      Saturday
-                      <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_saturday'"></i>
-                    </span>
-                  </div>
-                </div>
-                
-                <!-- Day-specific saving indicator for better visual feedback -->
-                <div class="delivery-day-status" *ngIf="dayUpdateStatus.show">
-                  <i class="bi" [ngClass]="dayUpdateStatus.type === 'success' ? 'bi-check-circle-fill success-icon' : 'bi-exclamation-triangle-fill error-icon'"></i>
-                  <span [class.success-text]="dayUpdateStatus.type === 'success'" [class.error-text]="dayUpdateStatus.type === 'error'">
-                    {{ dayUpdateStatus.text }}
+                <div class="delivery-day-chip" 
+                     [class.active]="selectedStore?.deliver_saturday === 'yes'" 
+                     [class.saving]="savingDeliveryDay === 'deliver_saturday'"
+                     (click)="toggleAndSaveDeliveryDay('deliver_saturday')">
+                  <span>
+                    <i class="bi" [ngClass]="{'bi-calendar-date': selectedStore?.deliver_saturday !== 'yes', 'bi-calendar-check-fill': selectedStore?.deliver_saturday === 'yes'}"></i>
+                    Saturday
+                    <i class="bi bi-arrow-repeat spin-icon" *ngIf="savingDeliveryDay === 'deliver_saturday'"></i>
                   </span>
                 </div>
               </div>
-            </div>
-            
-            <div class="section-header">
-              <div class="header-title"><i class="bi bi-envelope"></i>Contact Information</div>
-            </div>
-            <div class="info-section-card">
-              <div class="info-row">
-                <div class="info-label">Email</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('email')" *ngIf="!editMode">
-                  {{ selectedStore.email || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="email" [(ngModel)]="editableStore.email" placeholder="Enter email address">
-                </div>
-              </div>
               
-              <div class="info-row">
-                <div class="info-label">Phone</div>
-                <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('phone')" *ngIf="!editMode">
-                  {{ selectedStore.phone || 'Not specified' }}
-                </div>
-                <div class="info-value" *ngIf="editMode">
-                  <input type="tel" [(ngModel)]="editableStore.phone" placeholder="Enter phone number">
-                </div>
+              <!-- Day-specific saving indicator for better visual feedback -->
+              <div class="delivery-day-status" *ngIf="dayUpdateStatus.show">
+                <i class="bi" [ngClass]="dayUpdateStatus.type === 'success' ? 'bi-check-circle-fill success-icon' : 'bi-exclamation-triangle-fill error-icon'"></i>
+                <span [class.success-text]="dayUpdateStatus.type === 'success'" [class.error-text]="dayUpdateStatus.type === 'error'">
+                  {{ dayUpdateStatus.text }}
+                </span>
               </div>
             </div>
           </div>
           
-          <!-- Additional Info Tab -->
-          <div class="tab-content" *ngIf="activeTab === 'additional-info'">
-            <div class="additional-info-container">
-              <h4 class="section-title">Additional Information</h4>
-              <p *ngIf="!additionalInfoEditing && (!selectedStore.additionalInfo || selectedStore.additionalInfo.length === 0)" class="text-muted">
-                No additional information available. Click edit to add notes.
-              </p>
-              
-              <div *ngIf="!additionalInfoEditing && selectedStore.additionalInfo && selectedStore.additionalInfo.length > 0" class="info-content">
-                <div *ngFor="let info of selectedStore.additionalInfo" class="info-item">
-                  <div class="info-text">{{ info.content }}</div>
-                  <div class="info-date">Added: {{ info.created_at | date:'medium' }}</div>
-                </div>
+          <div class="section-header">
+            <div class="header-title"><i class="bi bi-envelope"></i>Contact Information</div>
+          </div>
+          <div class="info-section-card">
+            <div class="info-row">
+              <div class="info-label">Email</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('email')" *ngIf="!editMode">
+                {{ selectedStore.email || 'Not specified' }}
               </div>
-              
-              <button *ngIf="!additionalInfoEditing" class="edit-info-btn" (click)="startEditingAdditionalInfo()">
-                <i class="bi bi-pencil-square"></i> Add/Edit Notes
+              <div class="info-value" *ngIf="editMode">
+                <input type="email" [(ngModel)]="editableStore.email" placeholder="Enter email address">
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Phone</div>
+              <div class="info-value" [class.view-mode]="!editMode" [class.editable-field]="!editMode" (click)="editField('phone')" *ngIf="!editMode">
+                {{ selectedStore.phone || 'Not specified' }}
+              </div>
+              <div class="info-value" *ngIf="editMode">
+                <input type="tel" [(ngModel)]="editableStore.phone" placeholder="Enter phone number">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Additional Info Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'additional-info'">
+          <div class="additional-info-container">
+            <h4 class="section-title">Additional Information</h4>
+            <p *ngIf="!additionalInfoEditing && (!selectedStore.additionalInfo || selectedStore.additionalInfo.length === 0)" class="text-muted">
+              No additional information available. Click edit to add notes.
+            </p>
+            
+            <div *ngIf="!additionalInfoEditing && selectedStore.additionalInfo && selectedStore.additionalInfo.length > 0" class="info-content">
+              <div *ngFor="let info of selectedStore.additionalInfo" class="info-item">
+                <div class="info-text">{{ info.content }}</div>
+                <div class="info-date">Added: {{ info.created_at | date:'medium' }}</div>
+              </div>
+            </div>
+            
+            <button *ngIf="!additionalInfoEditing" class="edit-info-btn" (click)="startEditingAdditionalInfo()">
+              <i class="bi bi-pencil-square"></i> Add/Edit Notes
+            </button>
+            
+            <textarea *ngIf="additionalInfoEditing" [(ngModel)]="additionalInfoText" 
+              placeholder="Enter additional notes, instructions or information about this store..."></textarea>
+            
+            <div class="info-actions" *ngIf="additionalInfoEditing">
+              <button class="cancel-btn" (click)="cancelAdditionalInfoEdit()">
+                <i class="bi bi-x-circle"></i> Cancel
               </button>
-              
-              <textarea *ngIf="additionalInfoEditing" [(ngModel)]="additionalInfoText" 
-                placeholder="Enter additional notes, instructions or information about this store..."></textarea>
-              
-              <div class="info-actions" *ngIf="additionalInfoEditing">
-                <button class="cancel-btn" (click)="cancelAdditionalInfoEdit()">
-                  <i class="bi bi-x-circle"></i> Cancel
-                </button>
-                <button class="save-btn" [class.saving]="savingAdditionalInfo" (click)="saveAdditionalInfo()">
-                  <span class="spinner" *ngIf="savingAdditionalInfo"></span>
-                  <i class="bi bi-check-circle" *ngIf="!savingAdditionalInfo"></i> Save
-                </button>
-              </div>
+              <button class="save-btn" [class.saving]="savingAdditionalInfo" (click)="saveAdditionalInfo()">
+                <span class="spinner" *ngIf="savingAdditionalInfo"></span>
+                <i class="bi bi-check-circle" *ngIf="!savingAdditionalInfo"></i> Save
+              </button>
             </div>
           </div>
-          
-          <!-- Images Tab -->
-          <div class="tab-content images-tab" *ngIf="activeTab === 'images'">
-            <div class="image-gallery">
-              <!-- Storefront Image Upload -->
-              <div class="shop-image-upload-container">
-                <h5><i class="bi bi-shop"></i> Upload Storefront Image</h5>
-                <div class="upload-form">
-                  <div class="upload-options">
-                    <label class="file-input-label special-upload">
-                      <i class="bi bi-upload"></i> Select Storefront
-                      <input type="file" accept="image/*" (change)="onStorefrontImageSelected($event)">
-                    </label>
-                  </div>
-                  
-                  <div class="paste-container">
-                    <div class="paste-area storefront-paste-area" tabindex="0" (paste)="onStorefrontImagePasted($event)" (click)="focusPasteArea($event)">
-                      <i class="bi bi-clipboard"></i>
-                      <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
+        </div>
+        
+        <!-- Images Tab -->
+        <div class="tab-content images-tab" *ngIf="activeTab === 'images'">
+          <div class="image-gallery">
+            <!-- Two-column upload layout -->
+            <div class="upload-sections">
+              <!-- Left Column: Storefront Image Upload -->
+              <div class="upload-column left-column">
+                <div class="shop-image-upload-container">
+                  <h5><i class="bi bi-shop"></i> Upload Storefront Image</h5>
+                  <div class="upload-form">
+                    <div class="upload-options">
+                      <label class="file-input-label special-upload">
+                        <i class="bi bi-upload"></i> Select Storefront
+                        <input type="file" accept="image/*" (change)="onStorefrontImageSelected($event)">
+                      </label>
                     </div>
-                  </div>
-                  
-                  <div class="image-preview-container" *ngIf="storefrontPreviewSrc">
-                    <img [src]="storefrontPreviewSrc" class="image-preview" alt="Storefront preview">
-                    <textarea class="image-annotation-input" [(ngModel)]="storefrontAnnotation" 
-                      placeholder="Add notes about this storefront image..."></textarea>
-                    <div class="upload-actions">
-                      <button class="cancel-btn" (click)="cancelStorefrontUpload()">
-                        <i class="bi bi-x-circle"></i> Cancel
-                      </button>
-                      <button class="upload-btn shop-upload-btn" [disabled]="uploadingStorefront" (click)="uploadStorefrontImage()">
-                        <i class="bi bi-upload" [class.spinning]="uploadingStorefront"></i>
-                        {{ uploadingStorefront ? 'Uploading...' : 'Upload' }}
-                      </button>
+                    
+                    <div class="paste-container">
+                      <div class="paste-area storefront-paste-area" tabindex="0" (paste)="onStorefrontImagePasted($event)" (click)="focusPasteArea($event)">
+                        <i class="bi bi-clipboard"></i>
+                        <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Regular Image Upload -->
-              <div class="image-upload-container">
-                <h5><i class="bi bi-image"></i> Upload Store Images</h5>
-                <div class="upload-form">
-                  <div class="upload-options">
-                    <label class="file-input-label">
-                      <i class="bi bi-upload"></i> Select Image
-                      <input type="file" accept="image/*" (change)="onRegularImageSelected($event)">
-                    </label>
-                  </div>
-                  
-                  <div class="paste-container">
-                    <div class="paste-area" tabindex="0" (paste)="onRegularImagePasted($event)" (click)="focusPasteArea($event)">
-                      <i class="bi bi-clipboard"></i>
-                      <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
-                    </div>
-                  </div>
-                  
-                  <div class="image-preview-container" *ngIf="regularPreviewSrc">
-                    <img [src]="regularPreviewSrc" class="image-preview" alt="Image preview">
-                    <textarea class="image-annotation-input" [(ngModel)]="regularAnnotation" 
-                      placeholder="Add notes about this image..."></textarea>
-                    <div class="upload-actions">
-                      <button class="cancel-btn" (click)="cancelRegularUpload()">
-                        <i class="bi bi-x-circle"></i> Cancel
-                      </button>
-                      <button class="upload-btn" [disabled]="uploadingRegular" (click)="uploadRegularImage()">
-                        <i class="bi bi-upload" [class.spinning]="uploadingRegular"></i>
-                        {{ uploadingRegular ? 'Uploading...' : 'Upload' }}
-                      </button>
+                    
+                    <div class="image-preview-container" *ngIf="storefrontPreviewSrc">
+                      <img [src]="storefrontPreviewSrc" class="image-preview" alt="Storefront preview">
+                      <textarea class="image-annotation-input" [(ngModel)]="storefrontAnnotation" 
+                        placeholder="Add notes about this storefront image..."></textarea>
+                      <div class="upload-actions">
+                        <button class="cancel-btn" (click)="cancelStorefrontUpload()">
+                          <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button class="upload-btn shop-upload-btn" [disabled]="uploadingStorefront" (click)="uploadStorefrontImage()">
+                          <i class="bi bi-upload" [class.spinning]="uploadingStorefront"></i>
+                          {{ uploadingStorefront ? 'Uploading...' : 'Upload' }}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <!-- Existing Images -->
-              <div class="existing-images">
-                <h5>Store Images</h5>
-                
-                <div class="no-images-message" *ngIf="!storeImages || storeImages.length === 0">
-                  <i class="bi bi-images"></i>
-                  <p>No images uploaded for this store yet.</p>
-                </div>
-                
-                <div class="image-grid" *ngIf="storeImages && storeImages.length > 0">
-                  <div class="image-card" 
-                       *ngFor="let image of storeImages; let i = index"
-                       [attr.data-image-id]="image.id">
-                    <div class="image-wrapper">
-                      <img [src]="image.url" alt="Store image">
-                      <span class="storefront-badge" *ngIf="image.is_storefront === 'true'">Storefront</span>
+              <!-- Right Column: Regular Image Upload -->
+              <div class="upload-column right-column">
+                <div class="image-upload-container">
+                  <h5><i class="bi bi-image"></i> Upload Store Images</h5>
+                  <div class="upload-form">
+                    <div class="upload-options">
+                      <label class="file-input-label">
+                        <i class="bi bi-upload"></i> Select Image
+                        <input type="file" accept="image/*" (change)="onRegularImageSelected($event)">
+                      </label>
                     </div>
-                    <div class="image-details">
-                      <div class="image-annotation" *ngIf="image.instructions">{{ image.instructions }}</div>
-                      <div class="image-controls">
-                        <div class="image-actions">
-                          <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
-                            <i class="bi bi-pencil"></i>
-                          </button>
-                          <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
-                            <i class="bi bi-shop"></i>
-                          </button>
-                          <button class="action-btn delete-btn" (click)="deleteImage(image)">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </div>
+                    
+                    <div class="paste-container">
+                      <div class="paste-area" tabindex="0" (paste)="onRegularImagePasted($event)" (click)="focusPasteArea($event)">
+                        <i class="bi bi-clipboard"></i>
+                        <div class="paste-text">or paste image from clipboard (Ctrl+V)</div>
+                      </div>
+                    </div>
+                    
+                    <div class="image-preview-container" *ngIf="regularPreviewSrc">
+                      <img [src]="regularPreviewSrc" class="image-preview" alt="Image preview">
+                      <textarea class="image-annotation-input" [(ngModel)]="regularAnnotation" 
+                        placeholder="Add notes about this image..."></textarea>
+                      <div class="upload-actions">
+                        <button class="cancel-btn" (click)="cancelRegularUpload()">
+                          <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button class="upload-btn" [disabled]="uploadingRegular" (click)="uploadRegularImage()">
+                          <i class="bi bi-upload" [class.spinning]="uploadingRegular"></i>
+                          {{ uploadingRegular ? 'Uploading...' : 'Upload' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Existing Images -->
+            <div class="existing-images">
+              <h5>Store Images</h5>
+              
+              <div class="no-images-message" *ngIf="!storeImages || storeImages.length === 0">
+                <i class="bi bi-images"></i>
+                <p>No images uploaded for this store yet.</p>
+              </div>
+              
+              <div class="image-grid" *ngIf="storeImages && storeImages.length > 0">
+                <div class="image-card" 
+                     *ngFor="let image of storeImages; let i = index"
+                     [attr.data-image-id]="image.id">
+                  <div class="image-wrapper">
+                    <img [src]="image.url" alt="Store image">
+                    <span class="storefront-badge" *ngIf="image.is_storefront === 'true'">Storefront</span>
+                  </div>
+                  <div class="image-details">
+                    <div class="image-annotation" *ngIf="image.instructions">{{ image.instructions }}</div>
+                    <div class="image-controls">
+                      <div class="image-actions">
+                        <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
+                          <i class="bi bi-shop"></i>
+                        </button>
+                        <button class="action-btn delete-btn" (click)="deleteImage(image)">
+                          <i class="bi bi-trash"></i>
+                        </button>
                       </div>
                     </div>
                   </div>

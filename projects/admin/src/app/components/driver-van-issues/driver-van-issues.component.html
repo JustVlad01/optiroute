@@ -14,6 +14,65 @@
     <p>All vehicles are currently operating without reported issues.</p>
   </div>
 
+  <!-- PDF Report Section -->
+  <div class="report-section" *ngIf="!isLoading && vanIssues.length > 0">
+    <div class="report-header">
+      <h3>
+        <i class="bi bi-file-earmark-pdf"></i>
+        Generate Reports
+      </h3>
+      <p>Create PDF reports for van issues with customizable filters</p>
+    </div>
+    
+    <div class="report-actions">
+      <!-- Quick Report Buttons -->
+      <div class="quick-reports">
+        <button 
+          class="report-btn quick-btn"
+          (click)="generateQuickReport('all')"
+          [disabled]="isGeneratingReport"
+          title="Generate report for all issues"
+        >
+          <i class="bi bi-file-earmark-pdf"></i>
+          All Issues ({{ vanIssues.length }})
+        </button>
+        
+        <button 
+          class="report-btn quick-btn verified"
+          (click)="generateQuickReport('verified')"
+          [disabled]="isGeneratingReport"
+          title="Generate report for verified issues only"
+        >
+          <i class="bi bi-check-circle"></i>
+          Verified ({{ getVerifiedCount() }})
+        </button>
+        
+        <button 
+          class="report-btn quick-btn pending"
+          (click)="generateQuickReport('pending')"
+          [disabled]="isGeneratingReport"
+          title="Generate report for pending issues only"
+        >
+          <i class="bi bi-clock"></i>
+          Pending ({{ getPendingCount() }})
+        </button>
+      </div>
+      
+      <!-- Custom Report Button -->
+      <div class="custom-report">
+        <button 
+          class="report-btn custom-btn"
+          (click)="openReportModal()"
+          [disabled]="isGeneratingReport"
+          title="Create custom report with filters"
+        >
+          <i class="bi bi-sliders"></i>
+          Custom Report
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Issues Table -->
   <div class="issues-table-container" *ngIf="!isLoading && vanIssues.length > 0">
     <table class="issues-table">
@@ -248,6 +307,153 @@
           <i class="bi bi-check-circle" *ngIf="!isVerifying[selectedIssueForVerification?.id || '']"></i>
           <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[selectedIssueForVerification?.id || '']"></i>
           {{ isVerifying[selectedIssueForVerification?.id || ''] ? 'Processing...' : 'Mark as Fixed' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Report Modal -->
+  <div class="modal-overlay" *ngIf="showReportModal" (click)="closeReportModal()" role="dialog" aria-modal="true">
+    <div class="modal-content report-modal" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4>
+          <i class="bi bi-file-earmark-pdf"></i>
+          Generate Custom Report
+        </h4>
+        <button class="close-btn" (click)="closeReportModal()" aria-label="Close report generator">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <!-- Status Filter -->
+        <div class="filter-section">
+          <label class="filter-label">
+            <i class="bi bi-funnel"></i>
+            Issue Status
+          </label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="status" value="all" [(ngModel)]="reportFilters.status">
+              <span class="radio-text">All Issues</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="status" value="verified" [(ngModel)]="reportFilters.status">
+              <span class="radio-text">Verified Only</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="status" value="pending" [(ngModel)]="reportFilters.status">
+              <span class="radio-text">Pending Only</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Date Range Filter -->
+        <div class="filter-section">
+          <label class="filter-label">
+            <i class="bi bi-calendar-range"></i>
+            Date Range
+          </label>
+          <div class="date-range">
+            <div class="date-input-group">
+              <label for="startDate">From:</label>
+              <input 
+                type="date" 
+                id="startDate"
+                [(ngModel)]="reportFilters.dateRange.start"
+                class="date-input"
+              >
+            </div>
+            <div class="date-input-group">
+              <label for="endDate">To:</label>
+              <input 
+                type="date" 
+                id="endDate"
+                [(ngModel)]="reportFilters.dateRange.end"
+                class="date-input"
+                [max]="getTodayDate()"
+              >
+            </div>
+          </div>
+        </div>
+        
+        <!-- Vehicle Filter -->
+        <div class="filter-section">
+          <label class="filter-label">
+            <i class="bi bi-truck"></i>
+            Vehicles ({{ reportFilters.vehicles.length }} selected)
+          </label>
+          <div class="vehicle-checkboxes" *ngIf="availableVehicles.length > 0">
+            <label 
+              *ngFor="let vehicle of availableVehicles" 
+              class="checkbox-option"
+            >
+              <input 
+                type="checkbox" 
+                [value]="vehicle"
+                [checked]="reportFilters.vehicles.includes(vehicle)"
+                (change)="onVehicleSelectionChange(vehicle, $event)"
+              >
+              <span class="checkbox-text">{{ vehicle }}</span>
+            </label>
+          </div>
+          <p class="help-text">Leave empty to include all vehicles</p>
+        </div>
+        
+        <!-- Report Preview -->
+        <div class="report-preview">
+          <h5>Report Preview</h5>
+          <div class="preview-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Issues:</span>
+              <span class="stat-value">{{ vanIssues.length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Date Range:</span>
+              <span class="stat-value">
+                {{ reportFilters.dateRange.start || 'All time' }} - 
+                {{ reportFilters.dateRange.end || 'Present' }}
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Vehicles:</span>
+              <span class="stat-value">
+                {{ reportFilters.vehicles.length === 0 ? 'All vehicles' : reportFilters.vehicles.length + ' selected' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeReportModal()">
+          Cancel
+        </button>
+        <button 
+          class="generate-btn summary-btn"
+          (click)="generatePdfReport()"
+          [disabled]="isGeneratingReport"
+          title="Generate summary report with truncated descriptions"
+        >
+          <i class="bi bi-file-earmark-pdf" *ngIf="!isGeneratingReport"></i>
+          <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
+          {{ isGeneratingReport ? 'Generating...' : 'Summary Report' }}
+        </button>
+        <button 
+          class="generate-btn detailed-btn"
+          (click)="generateDetailedPdfReport()"
+          [disabled]="isGeneratingReport"
+          title="Generate detailed report with full descriptions"
+        >
+          <i class="bi bi-file-earmark-text" *ngIf="!isGeneratingReport"></i>
+          <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
+          {{ isGeneratingReport ? 'Generating...' : 'Detailed Report' }}
         </button>
       </div>
     </div>

@@ -7,12 +7,12 @@ import { FormAssignmentsComponent } from './components/form-assignments/form-ass
 import { DriverDashboardComponent } from './components/driver-dashboard/driver-dashboard.component';
 import { DriverFormFillComponent } from './components/driver-form-fill/driver-form-fill.component';
 import { DriverFormContainerComponent } from './components/driver-form-container/driver-form-container.component';
-import { StoreMasterfileComponent } from './components/store-masterfile/store-masterfile.component';
 import { VehicleCrateTrackingComponent } from './components/vehicle-crate-tracking/vehicle-crate-tracking.component';
 import { DriverPerformanceComponent } from './components/driver-performance/driver-performance.component';
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
 import { DriverUpdatesComponent } from './components/driver-updates/driver-updates.component';
 import { DriverVanIssuesComponent } from './components/driver-van-issues/driver-van-issues.component';
+import { StaffRosterManagementComponent } from './components/staff-roster-management/staff-roster-management.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -37,13 +37,14 @@ export const routes: Routes = [
         redirectTo: 'route-planner?import=true',
         pathMatch: 'full'
     },
-    {
-        path: 'store-masterfile',
-        component: StoreMasterfileComponent
-    },
+    
     {
         path: 'store-library',
         component: StoreLibraryComponent
+    },
+    {
+        path: 'staff-roster-management',
+        component: StaffRosterManagementComponent
     },
     {
         path: 'vehicle-crate-tracking',

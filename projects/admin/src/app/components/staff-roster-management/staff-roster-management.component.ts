@@ -1,23 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 
-// Bootstrap types
-declare var bootstrap: any;
-
-// Define the Driver interface
-interface Driver {
-  id: number;
-  name: string;
-  custom_id: string;
-  role: string;
-  location: string;
-  phone_number?: string;
-}
-
-// Define the StaffRoster interface
 interface StaffRoster {
   id: number;
   title: string;
@@ -30,146 +15,40 @@ interface StaffRoster {
 }
 
 @Component({
-  selector: 'app-roster',
+  selector: 'app-staff-roster-management',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './roster.component.html',
-  styleUrls: ['./roster.component.scss']
+  imports: [CommonModule, FormsModule],
+  templateUrl: './staff-roster-management.component.html',
+  styleUrls: ['./staff-roster-management.component.scss']
 })
-export class RosterComponent implements OnInit {
-  // Tab management
-  activeTab: string = 'staff-list';
-  
-  // Staff list properties
-  drivers: Driver[] = [];
-  loading = true;
-  message = '';
-  isError = false;
-  selectedDriver: Driver | null = null;
-  showModal = false;
-  
-  // Roster images properties
+export class StaffRosterManagementComponent implements OnInit {
+  // Upload state
   selectedFile: File | null = null;
   isDragOver = false;
   uploading = false;
   rosterTitle = '';
   rosterDescription = '';
+
+  // Data state
   rosters: StaffRoster[] = [];
-  loadingRosters = false;
+  loading = false;
+
+  // Modal state
   selectedRoster: StaffRoster | null = null;
   rosterToDelete: StaffRoster | null = null;
   deleting = false;
+
+  // Alert state
   alertMessage = {
     show: false,
     type: 'success' as 'success' | 'error',
     text: ''
   };
-  
-  constructor(
-    private supabaseService: SupabaseService,
-    private router: Router
-  ) {}
+
+  constructor(private supabaseService: SupabaseService) {}
 
   ngOnInit(): void {
-    this.loadDrivers();
     this.loadRosters();
-  }
-
-  // Tab management methods
-  setActiveTab(tab: string): void {
-    this.activeTab = tab;
-  }
-
-  async loadDrivers(): Promise<void> {
-    this.loading = true;
-    try {
-      const data = await this.supabaseService.getAllDrivers();
-      if (data) {
-        this.drivers = data as Driver[];
-      } else {
-        this.drivers = [];
-        this.message = 'Failed to load drivers.';
-        this.isError = true;
-      }
-    } catch (error) {
-      console.error('Error loading drivers:', error);
-      this.message = 'An unexpected error occurred while loading drivers.';
-      this.isError = true;
-      this.drivers = [];
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  navigateToRegister(): void {
-    this.router.navigate(['/register']);
-  }
-
-  confirmDelete(driver: Driver): void {
-    this.selectedDriver = driver;
-    this.showModal = true;
-  }
-
-  closeModal(): void {
-    this.showModal = false;
-    this.selectedDriver = null;
-  }
-
-  async deleteDriver(): Promise<void> {
-    if (!this.selectedDriver) return;
-    
-    try {
-      const success = await this.supabaseService.deleteDriver(this.selectedDriver.id);
-      
-      // Close the modal
-      this.closeModal();
-      
-      if (success) {
-        this.message = `Driver ${this.selectedDriver.name} deleted successfully.`;
-        this.isError = false;
-        // Reload the drivers list
-        this.loadDrivers();
-      } else {
-        this.message = 'Failed to delete driver.';
-        this.isError = true;
-      }
-    } catch (error) {
-      console.error('Error deleting driver:', error);
-      this.message = 'An unexpected error occurred during deletion.';
-      this.isError = true;
-    } finally {
-      this.selectedDriver = null;
-    }
-  }
-
-  getInitials(name: string): string {
-    if (!name) return '';
-    
-    const words = name.trim().split(' ');
-    if (words.length === 1) {
-      return words[0].charAt(0).toUpperCase();
-    }
-    
-    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
-  }
-
-  async loadRosters(): Promise<void> {
-    this.loadingRosters = true;
-
-    try {
-      const result = await this.supabaseService.getStaffRosters();
-      
-      if (result.success && result.data) {
-        this.rosters = result.data;
-      } else {
-        this.showAlert('error', 'Failed to load staff rosters');
-      }
-    } catch (error) {
-      console.error('Load rosters error:', error);
-      this.showAlert('error', 'Failed to load staff rosters');
-    } finally {
-      this.loadingRosters = false;
-    }
   }
 
   // File handling methods
@@ -300,6 +179,26 @@ export class RosterComponent implements OnInit {
     }
   }
 
+  // Data loading methods
+  async loadRosters(): Promise<void> {
+    this.loading = true;
+
+    try {
+      const result = await this.supabaseService.getStaffRosters();
+      
+      if (result.success && result.data) {
+        this.rosters = result.data;
+      } else {
+        this.showAlert('error', 'Failed to load staff rosters');
+      }
+    } catch (error) {
+      console.error('Load rosters error:', error);
+      this.showAlert('error', 'Failed to load staff rosters');
+    } finally {
+      this.loading = false;
+    }
+  }
+
   // Roster management methods
   viewRoster(roster: StaffRoster): void {
     this.selectedRoster = roster;
@@ -309,7 +208,7 @@ export class RosterComponent implements OnInit {
     this.selectedRoster = null;
   }
 
-  confirmRosterDelete(roster: StaffRoster): void {
+  confirmDelete(roster: StaffRoster): void {
     this.rosterToDelete = roster;
   }
 

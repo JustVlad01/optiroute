@@ -1,13 +1,32 @@
 import { Component, OnInit, NgZone } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 
+interface StoreData {
+  id?: number;
+  store_code: string;
+  dispatch_code: string;
+  store_address: string;
+  opening_time_weekdays: string;
+  opening_time_sat: string;
+  openining_time_bankholiday: string;
+  route: string;
+  hour_access_24?: string;
+  deliver_monday?: string;
+  deliver_tuesday?: string;
+  deliver_wednesday?: string;
+  deliver_thursday?: string;
+  deliver_friday?: string;
+  deliver_saturday?: string;
+  isEditing?: boolean;
+}
+
 @Component({
   selector: 'app-store-library',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, DatePipe],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './store-library.component.html',
   styleUrl: './store-library.component.scss'
 })
@@ -20,6 +39,17 @@ export class StoreLibraryComponent implements OnInit {
   filteredSuggestions: any[] = [];
   searchPerformed: boolean = false;
   allStores: any[] = [];
+
+  // Excel spreadsheet data
+  stores: StoreData[] = [];
+  editingRowId: number | null = null;
+  error: string | null = null;
+  
+  // Pagination properties
+  currentPage = 1;
+  pageSize = 50;
+  totalStores = 0;
+  totalPages = 0;
 
   // Selected store
   selectedStore: any = null;
@@ -39,6 +69,7 @@ export class StoreLibraryComponent implements OnInit {
   
   // Delivery day status
   savingDeliveryDay: string | null = null;
+  savingDeliveryDayInTable: string | null = null;
   dayUpdateStatus: {show: boolean, type: string, text: string} = {
     show: false,
     type: '',
@@ -73,17 +104,279 @@ export class StoreLibraryComponent implements OnInit {
   // Compact mode
   compactMode: boolean = true;
 
+  // Route filter properties
+  availableRoutes: string[] = [];
+  selectedRoutes: Set<string> = new Set();
+  showRouteFilter: boolean = false;
+  originalStores: StoreData[] = []; // Store original unfiltered data
+  isFiltering: boolean = false; // Track if we're currently filtering
+  allStoresForFiltering: StoreData[] = []; // All stores from database for filtering
+  
+  // 24-hour filter properties
+  show24HourFilter: boolean = false;
+
   constructor(
     private supabaseService: SupabaseService,
     private ngZone: NgZone
   ) { }
   
   ngOnInit(): void {
+    this.loadStoresForSpreadsheet();
+    this.loadTotalCount();
     this.loadAllStores();
     // Try to load compact mode preference from localStorage
     const savedCompactMode = localStorage.getItem('storeLibraryCompactMode');
     if (savedCompactMode !== null) {
       this.compactMode = savedCompactMode === 'true';
+    }
+  }
+
+  // Excel spreadsheet methods
+  async loadTotalCount() {
+    try {
+      const { count, error } = await this.supabaseService.getSupabase()
+        .from('stores')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      
+      this.totalStores = count || 0;
+      this.totalPages = Math.ceil(this.totalStores / this.pageSize);
+    } catch (error: any) {
+      console.error('Error loading total count:', error);
+    }
+  }
+
+  async loadStoresForSpreadsheet() {
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      if (this.isFiltering) {
+        // When filtering, show filtered results without pagination
+        this.stores = [...this.allStoresForFiltering];
+        this.extractAvailableRoutes();
+      } else {
+        // Normal pagination when not filtering
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        
+        // Load stores from Supabase with pagination
+        const { data, error } = await this.supabaseService.getSupabase()
+          .from('stores')
+          .select('*')
+          .order('store_code')
+          .range(startIndex, startIndex + this.pageSize - 1);
+
+        if (error) throw error;
+
+        this.stores = data?.map(store => ({
+          id: store.id,
+          store_code: store.store_code || '',
+          dispatch_code: store.dispatch_code || '',
+          store_address: store.address_line || '',
+          opening_time_weekdays: store.opening_time_weekdays || '',
+          opening_time_sat: store.opening_time_sat || '',
+          openining_time_bankholiday: store.openining_time_bankholiday || '',
+          route: store.route || '',
+          hour_access_24: store.hour_access_24 || '',
+          deliver_monday: store.deliver_monday || '',
+          deliver_tuesday: store.deliver_tuesday || '',
+          deliver_wednesday: store.deliver_wednesday || '',
+          deliver_thursday: store.deliver_thursday || '',
+          deliver_friday: store.deliver_friday || '',
+          deliver_saturday: store.deliver_saturday || '',
+          isEditing: false
+        })) || [];
+
+        // Store original data and extract routes
+        this.originalStores = [...this.stores];
+        this.extractAvailableRoutes();
+      }
+
+    } catch (error: any) {
+      this.error = 'Failed to load stores: ' + error.message;
+      console.error('Error loading stores:', error);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Pagination methods
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.loadStoresForSpreadsheet();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadStoresForSpreadsheet();
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadStoresForSpreadsheet();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.pageSize, this.totalStores);
+  }
+
+  addNewRow() {
+    const newStore: StoreData = {
+      store_code: '',
+      dispatch_code: '',
+      store_address: '',
+      opening_time_weekdays: '',
+      opening_time_sat: '',
+      openining_time_bankholiday: '',
+      route: '',
+      hour_access_24: '',
+      deliver_monday: '',
+      deliver_tuesday: '',
+      deliver_wednesday: '',
+      deliver_thursday: '',
+      deliver_friday: '',
+      deliver_saturday: '',
+      isEditing: true
+    };
+    this.stores.unshift(newStore);
+    this.editingRowId = -1; // Use -1 for new rows
+  }
+
+  editRow(index: number) {
+    this.cancelEdit(); // Cancel any existing edits
+    this.stores[index].isEditing = true;
+    this.editingRowId = this.stores[index].id || index;
+  }
+
+  async saveRow(index: number) {
+    const store = this.stores[index];
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const updateData = {
+        store_code: store.store_code,
+        dispatch_code: store.dispatch_code,
+        address_line: store.store_address,
+        opening_time_weekdays: store.opening_time_weekdays,
+        opening_time_sat: store.opening_time_sat,
+        openining_time_bankholiday: store.openining_time_bankholiday,
+        route: store.route,
+        hour_access_24: store.hour_access_24,
+        deliver_monday: store.deliver_monday,
+        deliver_tuesday: store.deliver_tuesday,
+        deliver_wednesday: store.deliver_wednesday,
+        deliver_thursday: store.deliver_thursday,
+        deliver_friday: store.deliver_friday,
+        deliver_saturday: store.deliver_saturday
+      };
+
+      if (store.id) {
+        // Update existing store
+        const { error } = await this.supabaseService.getSupabase()
+          .from('stores')
+          .update(updateData)
+          .eq('id', store.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new store
+        const { data, error } = await this.supabaseService.getSupabase()
+          .from('stores')
+          .insert(updateData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        store.id = data.id;
+        
+        // Reload total count after adding new store
+        await this.loadTotalCount();
+      }
+
+      store.isEditing = false;
+      this.editingRowId = null;
+    } catch (error: any) {
+      this.error = 'Failed to save store: ' + error.message;
+      console.error('Error saving store:', error);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  cancelEdit() {
+    if (this.editingRowId === -1) {
+      // Remove the new row if it was being added
+      this.stores = this.stores.filter(store => store.id !== undefined);
+    } else {
+      // Reset editing state for existing rows
+      this.stores.forEach(store => store.isEditing = false);
+    }
+    this.editingRowId = null;
+  }
+
+  async deleteRow(index: number) {
+    const store = this.stores[index];
+    if (!store.id) {
+      // Just remove from array if it's a new unsaved row
+      this.stores.splice(index, 1);
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this store?')) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const { error } = await this.supabaseService.getSupabase()
+          .from('stores')
+          .delete()
+          .eq('id', store.id);
+
+        if (error) throw error;
+        this.stores.splice(index, 1);
+        
+        // Reload total count and current page after deletion
+        await this.loadTotalCount();
+        
+        // If current page is empty and not the first page, go to previous page
+        if (this.stores.length === 0 && this.currentPage > 1) {
+          this.currentPage--;
+        }
+        
+        this.loadStoresForSpreadsheet();
+      } catch (error: any) {
+        this.error = 'Failed to delete store: ' + error.message;
+        console.error('Error deleting store:', error);
+      } finally {
+        this.loading = false;
+      }
     }
   }
 
@@ -101,6 +394,8 @@ export class StoreLibraryComponent implements OnInit {
         const data = await this.supabaseService.getStoreInformation();
         if (data) {
         this.allStores = data.map(store => this.standardizeStoreData(store));
+        // Extract routes from all stores for the filter
+        this.extractAvailableRoutesFromAllStores();
         }
       } catch (error) {
         console.error('Error loading stores:', error);
@@ -145,8 +440,9 @@ export class StoreLibraryComponent implements OnInit {
 
   selectSuggestion(suggestion: any) {
     this.searchQuery = suggestion.store_name || suggestion.store_code || '';
-      this.showSuggestions = false;
-    this.searchStores();
+    this.showSuggestions = false;
+    // Directly select the store instead of showing search results
+    this.selectStore(suggestion);
   }
   
   searchStores() {
@@ -219,12 +515,102 @@ export class StoreLibraryComponent implements OnInit {
     }
   }
 
+  // View store details from table row
+  async viewStoreDetails(store: StoreData) {
+    if (!store.id) {
+      this.showStatusMessage('error', 'Cannot view details for unsaved store.');
+      return;
+    }
+    
+    // Use the existing selectStore method but pass the store data in the expected format
+    await this.selectStore({ id: store.id });
+  }
+
+  clearSelectedStore() {
+    this.selectedStore = null;
+    this.editableStore = null;
+    this.editMode = false;
+    this.activeTab = 'details';
+  }
+
   // Update delivery day checkbox value
   updateDeliveryDay(dayField: string, event: any): void {
     if (!this.editableStore) return;
     
     // Set the field value to 'yes' if checked, 'no' if unchecked
     this.editableStore[dayField] = event.target.checked ? 'yes' : 'no';
+  }
+
+  // Update delivery day checkbox value in table
+  updateDeliveryDayInTable(store: StoreData, dayField: string, event: any): void {
+    // Set the field value to 'yes' if checked, 'no' if unchecked
+    (store as any)[dayField] = event.target.checked ? 'yes' : 'no';
+  }
+
+  // Generate unique key for tracking saving state per store and day
+  getStoreDeliveryKey(store: StoreData, dayField: string): string {
+    return `${store.id}_${dayField}`;
+  }
+
+  // Toggle delivery day by clicking on the circle in table
+  async toggleDeliveryDayInTable(store: StoreData, dayField: string): Promise<void> {
+    if (!store.id || this.savingDeliveryDayInTable) return;
+    
+    try {
+      // Set the saving state for visual feedback
+      this.savingDeliveryDayInTable = this.getStoreDeliveryKey(store, dayField);
+      
+      // Toggle the current value
+      const currentValue = (store as any)[dayField] === 'yes' ? 'no' : 'yes';
+      
+      // Optimistically update the UI
+      (store as any)[dayField] = currentValue;
+      
+      // Create the update data for Supabase
+      const updateData = {
+        [dayField]: currentValue
+      };
+      
+      // Save to Supabase
+      const { error } = await this.supabaseService.getSupabase()
+        .from('stores')
+        .update(updateData)
+        .eq('id', store.id);
+      
+      if (error) throw error;
+      
+      // Update the store in other arrays if they exist
+      this.updateStoreInArrays(store.id.toString(), { [dayField]: currentValue });
+      
+      // Show brief success feedback
+      // this.showTableDeliveryUpdateStatus('success', `Updated delivery schedule for ${store.store_code}`);
+    } catch (error) {
+      console.error(`Error toggling delivery day ${dayField} for store ${store.store_code}:`, error);
+      
+      // Revert the UI change on failure
+      (store as any)[dayField] = (store as any)[dayField] === 'yes' ? 'no' : 'yes';
+      
+      this.showTableDeliveryUpdateStatus('error', `Failed to update delivery day. Please try again.`);
+    } finally {
+      // Clear the saving state
+      setTimeout(() => {
+        this.savingDeliveryDayInTable = null;
+      }, 300);
+    }
+  }
+
+  // Show delivery update status for table operations
+  private showTableDeliveryUpdateStatus(type: 'success' | 'error', text: string): void {
+    this.dayUpdateStatus = {
+      show: true,
+      type,
+      text
+    };
+    
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+      this.dayUpdateStatus.show = false;
+    }, 2000);
   }
 
   // Toggle and immediately save a delivery day setting
@@ -310,29 +696,12 @@ export class StoreLibraryComponent implements OnInit {
   }
 
   toggleEditMode() {
-    if (!this.editMode) {
-      // Create a deep copy of the selected store
-      this.editableStore = JSON.parse(JSON.stringify(this.selectedStore));
-      
-      // Initialize delivery day fields if they don't exist
-      const deliveryDays = ['deliver_monday', 'deliver_tuesday', 'deliver_wednesday', 
-                            'deliver_thursday', 'deliver_friday', 'deliver_saturday'];
-      
-      deliveryDays.forEach(day => {
-        if (!this.editableStore[day]) {
-          this.editableStore[day] = 'no';
-        }
-      });
-      
-      this.editMode = true;
+    if (this.editMode) {
+      this.cancelEdit();
     } else {
-      this.saveChanges();
+      this.editMode = true;
+      this.editableStore = { ...this.selectedStore };
     }
-  }
-
-  cancelEdit() {
-    this.editMode = false;
-    this.editableStore = null;
   }
 
   async saveChanges() {
@@ -786,6 +1155,154 @@ export class StoreLibraryComponent implements OnInit {
     } catch (error) {
       console.error('Error loading route details:', error);
     }
+  }
+
+  // Route filter methods
+  extractAvailableRoutes() {
+    const routes = new Set<string>();
+    this.originalStores.forEach(store => {
+      if (store.route && store.route.trim()) {
+        routes.add(store.route.trim());
+      }
+    });
+    this.availableRoutes = Array.from(routes).sort();
+  }
+
+  async toggleRouteFilter() {
+    this.showRouteFilter = !this.showRouteFilter;
+    
+    // Load all stores for filtering if not already loaded
+    if (this.showRouteFilter && this.allStoresForFiltering.length === 0) {
+      await this.loadAllStoresForFiltering();
+      // Extract routes from all stores
+      this.extractAvailableRoutesFromAllStores();
+    }
+  }
+
+  async toggleRouteSelection(route: string) {
+    if (this.selectedRoutes.has(route)) {
+      this.selectedRoutes.delete(route);
+    } else {
+      this.selectedRoutes.add(route);
+    }
+    
+    // Reload all stores for filtering if needed
+    if (this.allStoresForFiltering.length === 0) {
+      await this.loadAllStoresForFiltering();
+    }
+    
+    this.applyRouteFilter();
+  }
+
+  async selectAllRoutes() {
+    this.selectedRoutes = new Set(this.availableRoutes);
+    
+    // Reload all stores for filtering if needed
+    if (this.allStoresForFiltering.length === 0) {
+      await this.loadAllStoresForFiltering();
+    }
+    
+    this.applyRouteFilter();
+  }
+
+  async clearAllRoutes() {
+    this.selectedRoutes.clear();
+    this.applyRouteFilter();
+  }
+
+  applyRouteFilter() {
+    if (this.selectedRoutes.size === 0 && !this.show24HourFilter) {
+      // No filters active, return to normal pagination
+      this.isFiltering = false;
+      this.currentPage = 1;
+      this.loadStoresForSpreadsheet();
+    } else {
+      // Apply filters
+      this.isFiltering = true;
+      let filteredStores = this.allStoresForFiltering;
+      
+      // Apply route filter if routes are selected
+      if (this.selectedRoutes.size > 0) {
+        filteredStores = filteredStores.filter(store => 
+          store.route && this.selectedRoutes.has(store.route.trim())
+        );
+      }
+      
+      // Apply 24-hour filter if active
+      if (this.show24HourFilter) {
+        filteredStores = filteredStores.filter(store => 
+          this.is24HourStore(store)
+        );
+      }
+      
+      this.stores = filteredStores;
+    }
+  }
+
+  getSelectedRoutesCount(): number {
+    return this.selectedRoutes.size;
+  }
+
+  // New method to extract routes from all stores for the filter
+  extractAvailableRoutesFromAllStores() {
+    const routes = new Set<string>();
+    this.allStoresForFiltering.forEach(store => {
+      if (store.route && store.route.trim()) {
+        routes.add(store.route.trim());
+      }
+    });
+    this.availableRoutes = Array.from(routes).sort();
+  }
+
+  // Load all stores for filtering
+  async loadAllStoresForFiltering() {
+    try {
+      const { data, error } = await this.supabaseService.getSupabase()
+        .from('stores')
+        .select('*')
+        .order('store_code');
+
+      if (error) throw error;
+
+      this.allStoresForFiltering = data?.map(store => ({
+        id: store.id,
+        store_code: store.store_code || '',
+        dispatch_code: store.dispatch_code || '',
+        store_address: store.address_line || '',
+        opening_time_weekdays: store.opening_time_weekdays || '',
+        opening_time_sat: store.opening_time_sat || '',
+        openining_time_bankholiday: store.openining_time_bankholiday || '',
+        route: store.route || '',
+        hour_access_24: store.hour_access_24 || '',
+        deliver_monday: store.deliver_monday || '',
+        deliver_tuesday: store.deliver_tuesday || '',
+        deliver_wednesday: store.deliver_wednesday || '',
+        deliver_thursday: store.deliver_thursday || '',
+        deliver_friday: store.deliver_friday || '',
+        deliver_saturday: store.deliver_saturday || '',
+        isEditing: false
+      })) || [];
+
+    } catch (error: any) {
+      console.error('Error loading all stores for filtering:', error);
+    }
+  }
+
+  // 24-hour filter methods
+  async toggle24HourFilter() {
+    this.show24HourFilter = !this.show24HourFilter;
+    
+    // Load all stores for filtering if not already loaded
+    if (this.show24HourFilter && this.allStoresForFiltering.length === 0) {
+      await this.loadAllStoresForFiltering();
+    }
+    
+    this.applyRouteFilter();
+  }
+
+  private is24HourStore(store: StoreData): boolean {
+    // Check the dedicated hour_access_24 column for 'Y' value
+    return store.hour_access_24 === 'Y';
   }
 
   // --- Utility Functions ---

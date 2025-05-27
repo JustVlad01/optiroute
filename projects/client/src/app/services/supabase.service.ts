@@ -944,4 +944,29 @@ export class SupabaseService {
       return { data: null, error: err };
     }
   }
+
+  // Staff Roster Methods (Read-only for drivers)
+  
+  // Method to get all staff rosters for drivers to view
+  async getStaffRosters(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      console.log('Fetching staff rosters for driver view');
+      
+      const { data, error } = await this.supabase
+        .from('staff_rosters')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching staff rosters:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log(`Retrieved ${data?.length || 0} staff rosters for driver view`);
+      return { success: true, data: data || [] };
+    } catch (err) {
+      console.error('Exception fetching staff rosters:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
 }

@@ -1,0 +1,703 @@
+// Variables - Corporate color palette (matching other components)
+$primary-color: #1a5276;
+$primary-dark: #0d3c5a;
+$secondary-color: #2c5aa0;
+$success-color: #28a745;
+$danger-color: #dc3545;
+$warning-color: #ffc107;
+$text-light: #ffffff;
+$text-dark: #333333;
+$text-muted: #6c757d;
+$border-color: #dee2e6;
+$background-light: #f8f9fa;
+$border-radius: 8px;
+$shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.15);
+
+.staff-roster-management {
+  padding: 1.5rem;
+  background-color: #fafafa;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+// Header Section
+.header-section {
+  margin-bottom: 2rem;
+  
+  .header-left {
+    .page-title {
+      color: $primary-color;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      i {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .page-subtitle {
+      color: $text-muted;
+      font-size: 1rem;
+      margin: 0;
+    }
+  }
+}
+
+// Upload Section
+.upload-section {
+  margin-bottom: 3rem;
+  
+  .upload-card {
+    background: white;
+    border-radius: $border-radius;
+    box-shadow: $shadow;
+    padding: 2rem;
+    
+    .upload-header {
+      margin-bottom: 1.5rem;
+      
+      h3 {
+        color: $primary-color;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      p {
+        color: $text-muted;
+        margin: 0;
+      }
+    }
+    
+    .upload-area {
+      border: 2px dashed $border-color;
+      border-radius: $border-radius;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background-color: $background-light;
+      
+      &:hover {
+        border-color: $primary-color;
+        background-color: rgba(26, 82, 118, 0.05);
+      }
+      
+      &.dragover {
+        border-color: $primary-color;
+        background-color: rgba(26, 82, 118, 0.1);
+        transform: scale(1.02);
+      }
+      
+      .upload-content {
+        .upload-icon {
+          font-size: 3rem;
+          color: $primary-color;
+          margin-bottom: 1rem;
+        }
+        
+        h4 {
+          color: $text-dark;
+          font-size: 1.25rem;
+          font-weight: 500;
+          margin: 0 0 0.5rem 0;
+        }
+        
+        p {
+          color: $text-muted;
+          margin: 0 0 1rem 0;
+        }
+        
+        .file-types {
+          span {
+            color: $text-muted;
+            font-size: 0.875rem;
+            background-color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid $border-color;
+          }
+        }
+      }
+      
+      .file-preview {
+        .preview-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+          background-color: white;
+          padding: 1rem;
+          border-radius: $border-radius;
+          border: 1px solid $border-color;
+          
+          .preview-icon {
+            font-size: 2rem;
+            color: $primary-color;
+          }
+          
+          .file-info {
+            flex: 1;
+            text-align: left;
+            
+            h4 {
+              color: $text-dark;
+              font-size: 1rem;
+              font-weight: 500;
+              margin: 0 0 0.25rem 0;
+            }
+            
+            p {
+              color: $text-muted;
+              font-size: 0.875rem;
+              margin: 0;
+            }
+          }
+          
+          .btn-remove {
+            background-color: $danger-color;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            
+            &:hover {
+              background-color: darken($danger-color, 10%);
+            }
+          }
+        }
+      }
+    }
+    
+    .upload-actions {
+      margin-top: 1.5rem;
+      
+      .form-group {
+        margin-bottom: 1rem;
+        
+        label {
+          display: block;
+          color: $text-dark;
+          font-weight: 500;
+          margin-bottom: 0.5rem;
+        }
+        
+        .form-input {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid $border-color;
+          border-radius: $border-radius;
+          font-size: 1rem;
+          transition: border-color 0.3s;
+          
+          &:focus {
+            outline: none;
+            border-color: $primary-color;
+            box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.1);
+          }
+        }
+      }
+      
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+        
+        .btn-cancel {
+          background-color: $text-muted;
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: $border-radius;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
+          &:hover {
+            background-color: darken($text-muted, 10%);
+          }
+        }
+        
+        .btn-upload {
+          background: linear-gradient(135deg, $primary-color, $secondary-color);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: $border-radius;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: $shadow-hover;
+          }
+          
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Rosters Section
+.rosters-section {
+  .section-header {
+    margin-bottom: 1.5rem;
+    
+    h3 {
+      color: $primary-color;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    p {
+      color: $text-muted;
+      margin: 0;
+    }
+  }
+  
+  .loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: $text-muted;
+    gap: 0.75rem;
+    
+    i {
+      font-size: 1.25rem;
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: $text-muted;
+    
+    i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: $border-color;
+    }
+    
+    h4 {
+      font-size: 1.25rem;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    p {
+      margin: 0;
+    }
+  }
+  
+  .rosters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    
+    .roster-card {
+      background: white;
+      border-radius: $border-radius;
+      box-shadow: $shadow;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: $shadow-hover;
+      }
+      
+      .roster-image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+        
+        .roster-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          
+          .btn-view,
+          .btn-delete {
+            background-color: white;
+            border: none;
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            
+            i {
+              font-size: 1.25rem;
+            }
+          }
+          
+          .btn-view {
+            color: $primary-color;
+            
+            &:hover {
+              background-color: $primary-color;
+              color: white;
+            }
+          }
+          
+          .btn-delete {
+            color: $danger-color;
+            
+            &:hover {
+              background-color: $danger-color;
+              color: white;
+            }
+          }
+        }
+        
+        &:hover {
+          .roster-overlay {
+            opacity: 1;
+          }
+          
+          img {
+            transform: scale(1.1);
+          }
+        }
+      }
+      
+      .roster-info {
+        padding: 1.25rem;
+        
+        h4 {
+          color: $text-dark;
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem 0;
+        }
+        
+        .roster-description {
+          color: $text-muted;
+          font-size: 0.9rem;
+          margin: 0 0 1rem 0;
+          line-height: 1.4;
+        }
+        
+        .roster-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          
+          span {
+            color: $text-muted;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            
+            i {
+              font-size: 0.75rem;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Modals
+.image-modal,
+.delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  
+  .modal-content {
+    background: white;
+    border-radius: $border-radius;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid $border-color;
+      
+      h3 {
+        color: $text-dark;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: $text-muted;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 50%;
+        transition: all 0.3s;
+        
+        &:hover {
+          background-color: $background-light;
+          color: $text-dark;
+        }
+      }
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+      
+      img {
+        max-width: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+        border-radius: $border-radius;
+      }
+      
+      p {
+        margin: 0 0 1rem 0;
+        line-height: 1.5;
+        
+        &.warning-text {
+          color: $warning-color;
+          font-weight: 500;
+        }
+      }
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-top: 1px solid $border-color;
+      
+      .btn-cancel {
+        background-color: $text-muted;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: $border-radius;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        
+        &:hover {
+          background-color: darken($text-muted, 10%);
+        }
+      }
+      
+      .btn-delete-confirm {
+        background-color: $danger-color;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: $border-radius;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        &:hover:not(:disabled) {
+          background-color: darken($danger-color, 10%);
+        }
+        
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+.image-modal .modal-content {
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+// Alert Messages
+.alert-message {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  border-radius: $border-radius;
+  box-shadow: $shadow-hover;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  
+  &.success {
+    background-color: $success-color;
+    color: white;
+  }
+  
+  &.error {
+    background-color: $danger-color;
+    color: white;
+  }
+  
+  i {
+    font-size: 1.25rem;
+  }
+}
+
+// Animations
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+// Utility classes
+.text-warning {
+  color: $warning-color !important;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .staff-roster-management {
+    padding: 1rem;
+  }
+  
+  .upload-section .upload-card {
+    padding: 1.5rem;
+    
+    .upload-area {
+      padding: 2rem 1rem;
+    }
+    
+    .upload-actions .action-buttons {
+      flex-direction: column;
+      
+      .btn-cancel,
+      .btn-upload {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .rosters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .image-modal,
+  .delete-modal {
+    padding: 0.5rem;
+    
+    .modal-content {
+      max-width: 95vw;
+      max-height: 95vh;
+      
+      .modal-header,
+      .modal-body,
+      .modal-footer {
+        padding: 1rem;
+      }
+      
+      .modal-footer {
+        flex-direction: column;
+        
+        .btn-cancel,
+        .btn-delete-confirm {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+  
+  .alert-message {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+  }
+} 

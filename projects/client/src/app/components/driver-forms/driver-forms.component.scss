@@ -153,6 +153,13 @@
       background-color: var(--light-bg);
       border-bottom: 1px solid var(--border-color);
       
+      .form-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 1rem;
+        margin: 0;
+      }
+      
       .badge {
         padding: 5px 10px;
         font-size: 0.8rem;

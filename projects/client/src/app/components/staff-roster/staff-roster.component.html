@@ -1,0 +1,84 @@
+<div class="staff-roster-container">
+  <div class="header-section">
+    <h2 class="page-title">
+      <i class="bi bi-people"></i>
+      Staff Roster
+    </h2>
+    <p class="page-subtitle">View current staff schedules and assignments</p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <i class="bi bi-arrow-clockwise spin"></i>
+    <span>Loading staff rosters...</span>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && rosters.length === 0">
+    <i class="bi bi-calendar-x"></i>
+    <h3>No Staff Rosters Available</h3>
+    <p>There are currently no staff rosters uploaded. Please check back later.</p>
+  </div>
+
+  <!-- Rosters Grid -->
+  <div class="rosters-grid" *ngIf="!loading && rosters.length > 0">
+    <div class="roster-card" *ngFor="let roster of rosters">
+      <div class="roster-header">
+        <h3>{{ roster.title }}</h3>
+        <span class="roster-date">
+          <i class="bi bi-calendar"></i>
+          {{ formatDate(roster.created_at) }}
+        </span>
+      </div>
+      
+      <div class="roster-description" *ngIf="roster.description">
+        <p>{{ roster.description }}</p>
+      </div>
+      
+      <div class="roster-image-container">
+        <img [src]="roster.image_url" 
+             [alt]="roster.title"
+             (click)="viewRoster(roster)"
+             (error)="onImageError($event)">
+        <div class="image-overlay">
+          <button class="btn-view" (click)="viewRoster(roster)">
+            <i class="bi bi-eye"></i>
+            <span>View Full Size</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="roster-meta">
+        <span class="file-info">
+          <i class="bi bi-file-earmark"></i>
+          {{ roster.file_size ? formatFileSize(roster.file_size) : 'Unknown size' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Viewer Modal -->
+  <div class="image-modal" *ngIf="selectedRoster" (click)="closeViewer()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selectedRoster.title }}</h3>
+        <button class="btn-close" (click)="closeViewer()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img [src]="selectedRoster.image_url" [alt]="selectedRoster.title">
+        <div class="roster-details" *ngIf="selectedRoster.description">
+          <h4>Details</h4>
+          <p>{{ selectedRoster.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="errorMessage">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span>{{ errorMessage }}</span>
+  </div>
+</div> 

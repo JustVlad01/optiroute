@@ -1,0 +1,196 @@
+<div class="staff-roster-management">
+  <div class="header-section">
+    <div class="header-left">
+      <h2 class="page-title">
+        <i class="bi bi-people"></i>
+        Staff Roster Management
+      </h2>
+      <p class="page-subtitle">Upload and manage staff roster images for drivers to view</p>
+    </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <div class="upload-card">
+      <div class="upload-header">
+        <h3>
+          <i class="bi bi-cloud-upload"></i>
+          Upload New Staff Roster
+        </h3>
+        <p>Upload an image of the current staff roster schedule</p>
+      </div>
+
+      <div class="upload-area" 
+           [class.dragover]="isDragOver"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)"
+           (click)="fileInput.click()">
+        
+        <div class="upload-content" *ngIf="!selectedFile">
+          <i class="bi bi-cloud-upload upload-icon"></i>
+          <h4>Drag & drop your roster image here</h4>
+          <p>or click to browse files</p>
+          <div class="file-types">
+            <span>Supported formats: JPG, PNG, PDF</span>
+          </div>
+        </div>
+
+        <div class="file-preview" *ngIf="selectedFile">
+          <div class="preview-content">
+            <i class="bi bi-file-earmark-image preview-icon"></i>
+            <div class="file-info">
+              <h4>{{ selectedFile.name }}</h4>
+              <p>{{ formatFileSize(selectedFile.size) }}</p>
+            </div>
+            <button class="btn-remove" (click)="removeFile($event)">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <input #fileInput 
+               type="file" 
+               accept="image/*,.pdf" 
+               (change)="onFileSelected($event)"
+               style="display: none;">
+      </div>
+
+      <div class="upload-actions" *ngIf="selectedFile">
+        <div class="form-group">
+          <label for="rosterTitle">Roster Title</label>
+          <input type="text" 
+                 id="rosterTitle" 
+                 [(ngModel)]="rosterTitle" 
+                 placeholder="e.g., Weekly Schedule - Week 21"
+                 class="form-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="rosterDescription">Description (Optional)</label>
+          <textarea id="rosterDescription" 
+                    [(ngModel)]="rosterDescription" 
+                    placeholder="Additional notes about this roster..."
+                    rows="3"
+                    class="form-input"></textarea>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-cancel" (click)="cancelUpload()">
+            <i class="bi bi-x"></i> Cancel
+          </button>
+          <button class="btn-upload" 
+                  (click)="uploadRoster()" 
+                  [disabled]="uploading || !rosterTitle.trim()">
+            <i class="bi bi-cloud-upload" *ngIf="!uploading"></i>
+            <i class="bi bi-arrow-clockwise spin" *ngIf="uploading"></i>
+            {{ uploading ? 'Uploading...' : 'Upload Roster' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Rosters Section -->
+  <div class="rosters-section">
+    <div class="section-header">
+      <h3>
+        <i class="bi bi-images"></i>
+        Current Staff Rosters
+      </h3>
+      <p>Manage uploaded roster images</p>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      <i class="bi bi-arrow-clockwise spin"></i>
+      <span>Loading rosters...</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && rosters.length === 0">
+      <i class="bi bi-images"></i>
+      <h4>No rosters uploaded yet</h4>
+      <p>Upload your first staff roster image to get started</p>
+    </div>
+
+    <div class="rosters-grid" *ngIf="!loading && rosters.length > 0">
+      <div class="roster-card" *ngFor="let roster of rosters">
+        <div class="roster-image">
+          <img [src]="roster.image_url" 
+               [alt]="roster.title"
+               (error)="onImageError($event)">
+          <div class="roster-overlay">
+            <button class="btn-view" (click)="viewRoster(roster)">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn-delete" (click)="confirmDelete(roster)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="roster-info">
+          <h4>{{ roster.title }}</h4>
+          <p class="roster-description" *ngIf="roster.description">{{ roster.description }}</p>
+          <div class="roster-meta">
+            <span class="upload-date">
+              <i class="bi bi-calendar"></i>
+              {{ formatDate(roster.created_at) }}
+            </span>
+            <span class="file-size">
+              <i class="bi bi-file-earmark"></i>
+              {{ roster.file_size ? formatFileSize(roster.file_size) : 'Unknown size' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Viewer Modal -->
+  <div class="image-modal" *ngIf="selectedRoster" (click)="closeViewer()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selectedRoster.title }}</h3>
+        <button class="btn-close" (click)="closeViewer()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img [src]="selectedRoster.image_url" [alt]="selectedRoster.title">
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="delete-modal" *ngIf="rosterToDelete" (click)="cancelDelete()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <i class="bi bi-exclamation-triangle text-warning"></i>
+          Confirm Delete
+        </h3>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the roster "<strong>{{ rosterToDelete.title }}</strong>"?</p>
+        <p class="warning-text">This action cannot be undone and the roster will no longer be visible to drivers.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelDelete()">Cancel</button>
+        <button class="btn-delete-confirm" (click)="deleteRoster()" [disabled]="deleting">
+          <i class="bi bi-trash" *ngIf="!deleting"></i>
+          <i class="bi bi-arrow-clockwise spin" *ngIf="deleting"></i>
+          {{ deleting ? 'Deleting...' : 'Delete Roster' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div class="alert-message" 
+       *ngIf="alertMessage.show" 
+       [class.success]="alertMessage.type === 'success'"
+       [class.error]="alertMessage.type === 'error'">
+    <i class="bi" [ngClass]="alertMessage.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'"></i>
+    <span>{{ alertMessage.text }}</span>
+  </div>
+</div> 
