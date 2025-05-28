@@ -503,36 +503,37 @@ export class ReportsComponent implements OnInit, OnDestroy {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 15; // Reduced margin
+      const margin = 20;
       let yPosition = margin;
 
-      // Compact blue header section
-      pdf.setFillColor(52, 73, 94);
-      pdf.rect(0, 0, pageWidth, 35, 'F'); // Reduced height
+      // Professional header section with company branding
+      pdf.setFillColor(52, 73, 94); // Dark blue-gray
+      pdf.rect(0, 0, pageWidth, 45, 'F');
       
-      // Company name in white
+      // Company name
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(20); // Reduced font size
+      pdf.setFontSize(24);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('AROUND NOON', margin, 20);
+      pdf.text('AROUND NOON', margin, 25);
       
-      // Subtitle in white
-      pdf.setFontSize(12); // Reduced font size
+      // Subtitle
+      pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Vehicle Accident Report', margin, 28);
+      pdf.text('Vehicle Accident Report', margin, 35);
 
-      yPosition = 45; // Reduced spacing
+      yPosition = 60;
 
-      // Compact report details section
+      // Report header information box
       pdf.setFillColor(245, 245, 245);
-      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 25, 'F'); // Reduced height
+      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 35, 'F');
       pdf.setDrawColor(200, 200, 200);
-      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 25, 'S');
+      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 35, 'S');
 
+      // Report details in header box
       pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(10); // Reduced font size
+      pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(`Report ID: #${report.id}`, margin + 3, yPosition + 8);
+      pdf.text(`Report ID: #${report.id}`, margin + 5, yPosition + 12);
       
       const submissionDate = new Date(report.created_at).toLocaleDateString('en-GB', {
         day: '2-digit',
@@ -541,15 +542,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
         hour: '2-digit',
         minute: '2-digit'
       });
-      pdf.text(`Submitted: ${submissionDate}`, pageWidth - margin - 70, yPosition + 8);
+      pdf.text(`Submitted: ${submissionDate}`, pageWidth - margin - 80, yPosition + 12);
 
-      pdf.setFontSize(9); // Reduced font size
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       const collisionDate = new Date(report.date_of_collision).toLocaleDateString('en-GB');
-      pdf.text(`Collision Date: ${collisionDate}`, margin + 3, yPosition + 16);
+      pdf.text(`Collision Date: ${collisionDate}`, margin + 5, yPosition + 22);
       
-      // Compact location info
-      let locationHeight = 25; // Default height
+      // Location information
       if (report.location_of_collision) {
         let locationText = '';
         try {
@@ -558,14 +558,12 @@ export class ReportsComponent implements OnInit, OnDestroy {
           
           if (location) {
             if (location.latitude && location.longitude) {
-              locationText = `GPS: ${location.latitude}, ${location.longitude}`;
+              locationText = `GPS: ${parseFloat(location.latitude).toFixed(6)}, ${parseFloat(location.longitude).toFixed(6)}`;
               if (location.accuracy) {
                 locationText += ` (±${Math.round(location.accuracy)}m)`;
               }
             } else if (location.address) {
-              locationText = `Address: ${location.address}`;
-            } else if (location.type === 'manual_address') {
-              locationText = `Address: ${location.address}`;
+              locationText = location.address;
             }
           }
         } catch (e) {
@@ -574,252 +572,178 @@ export class ReportsComponent implements OnInit, OnDestroy {
         }
         
         if (locationText) {
-          const locationLines = pdf.splitTextToSize(locationText, pageWidth - 2 * margin - 6);
-          locationLines.forEach((line: string, index: number) => {
-            pdf.text(line, margin + 3, yPosition + 22 + (index * 4));
-          });
-          // Adjust height based on number of lines
-          if (locationLines.length > 1) {
-            locationHeight = 25 + ((locationLines.length - 1) * 4);
-          }
+          pdf.text(`GPS: ${locationText}`, margin + 5, yPosition + 30);
         }
       }
 
-      yPosition += locationHeight; // Use calculated height instead of fixed 35
+      yPosition += 50;
 
-      // Compact blue section header function
-      const createCompactBlueSection = (title: string) => {
+      // Section header function
+      const createSectionHeader = (title: string) => {
+        // Check if we need a new page
+        if (yPosition > pageHeight - 60) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
         pdf.setFillColor(52, 73, 94);
-        pdf.rect(margin, yPosition, pageWidth - 2 * margin, 8, 'F'); // Reduced height
+        pdf.rect(margin, yPosition, pageWidth - 2 * margin, 12, 'F');
         
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(10); // Reduced font size
+        pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(title, margin + 3, yPosition + 6);
+        pdf.text(title, margin + 5, yPosition + 8);
         
-        yPosition += 10; // Reduced spacing
+        yPosition += 15;
       };
 
-      // Compact table function for longer text fields
-      const createCompactTable = (data: [string, string][]) => {
+      // Professional table function
+      const createInfoTable = (data: [string, string][]) => {
         const startY = yPosition;
-        let currentY = startY + 5;
-        const labelWidth = 50;
+        const rowHeight = 8;
+        const labelWidth = 60;
         const valueWidth = pageWidth - 2 * margin - labelWidth - 10;
-        const lineHeight = 4;
-        const rowPadding = 2;
         
         // Calculate total height needed
-        let totalHeight = 8;
+        let totalHeight = 5;
         data.forEach(([label, value]) => {
-          if (value && value.length > 40) {
+          if (value && value.length > 50) {
             const lines = pdf.splitTextToSize(value, valueWidth);
-            totalHeight += Math.max(8, lines.length * lineHeight + rowPadding * 2);
+            totalHeight += Math.max(rowHeight, lines.length * 4 + 4);
           } else {
-            totalHeight += 8;
+            totalHeight += rowHeight;
           }
         });
-        
-        // Light background for table
-        pdf.setFillColor(250, 250, 250);
-        pdf.rect(margin, startY, pageWidth - 2 * margin, totalHeight, 'F');
-        pdf.setDrawColor(200, 200, 200);
-        pdf.rect(margin, startY, pageWidth - 2 * margin, totalHeight, 'S');
-        
-        data.forEach(([label, value]) => {
-          const rowStartY = currentY;
-          
-          // Draw label
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(52, 73, 94);
-          pdf.setFontSize(8);
-          pdf.text(label, margin + 3, currentY);
-          
-          // Draw value
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(0, 0, 0);
-          pdf.setFontSize(8);
-          
-          if (value && value.length > 40) {
-            // Handle multi-line text
-            const lines = pdf.splitTextToSize(value, valueWidth);
-            lines.forEach((line: string, index: number) => {
-              pdf.text(line, margin + labelWidth + 5, currentY + (index * lineHeight));
-            });
-            currentY += Math.max(8, lines.length * lineHeight + rowPadding);
-          } else {
-            pdf.text(value || 'Not provided', margin + labelWidth + 5, currentY);
-            currentY += 8;
-          }
-          
-          currentY += rowPadding; // Add padding between rows
-        });
-        
-        yPosition = startY + totalHeight + 15;
-      };
+        totalHeight += 5;
 
-      // Super compact table function for short fields (Make, Registration, Color, etc.)
-      const createSuperCompactTable = (data: [string, string][]) => {
-        const startY = yPosition;
-        let currentY = startY + 3;
-        const labelWidth = 50;
-        const rowHeight = 5; // Much smaller row height
-        const rowPadding = 1; // Minimal padding
-        
-        const totalHeight = data.length * rowHeight + 6;
-        
-        // Light background for table
+        // Check if table fits on current page
+        if (yPosition + totalHeight > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Table background
         pdf.setFillColor(250, 250, 250);
-        pdf.rect(margin, startY, pageWidth - 2 * margin, totalHeight, 'F');
-        pdf.setDrawColor(200, 200, 200);
-        pdf.rect(margin, startY, pageWidth - 2 * margin, totalHeight, 'S');
+        pdf.rect(margin, yPosition, pageWidth - 2 * margin, totalHeight, 'F');
+        pdf.setDrawColor(220, 220, 220);
+        pdf.rect(margin, yPosition, pageWidth - 2 * margin, totalHeight, 'S');
+        
+        let currentY = yPosition + 8;
         
         data.forEach(([label, value]) => {
-          // Draw label
+          // Label
           pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(52, 73, 94);
-          pdf.setFontSize(8);
-          pdf.text(label, margin + 3, currentY);
+          pdf.setFontSize(10);
+          pdf.text(label, margin + 5, currentY);
           
-          // Draw value
+          // Value
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(0, 0, 0);
-          pdf.setFontSize(8);
-          pdf.text(value || 'Not provided', margin + labelWidth + 5, currentY);
+          pdf.setFontSize(10);
           
-          currentY += rowHeight;
+          const displayValue = value || 'Not provided';
+          if (displayValue.length > 50) {
+            const lines = pdf.splitTextToSize(displayValue, valueWidth);
+            lines.forEach((line: string, index: number) => {
+              pdf.text(line, margin + labelWidth + 5, currentY + (index * 4));
+            });
+            currentY += Math.max(rowHeight, lines.length * 4 + 4);
+          } else {
+            pdf.text(displayValue, margin + labelWidth + 5, currentY);
+            currentY += rowHeight;
+          }
         });
         
-        yPosition = startY + totalHeight + 10;
+        yPosition += totalHeight + 10;
       };
 
       // MY VEHICLE DETAILS
-      createCompactBlueSection('MY VEHICLE DETAILS');
+      createSectionHeader('MY VEHICLE DETAILS');
       
-      // Short fields - super compact
-      const myVehicleShortData: [string, string][] = [
-        ['Make:', report.my_vehicle_make || 'Not provided'],
-        ['Registration:', report.my_vehicle_registration || 'Not provided'],
-        ['Color:', report.my_vehicle_colour || 'Not provided'],
-        ['Driver Name:', report.my_driver_name || 'Not provided']
+      const myVehicleData: [string, string][] = [
+        ['Make:', report.my_vehicle_make || ''],
+        ['Registration:', report.my_vehicle_registration || ''],
+        ['Color:', report.my_vehicle_colour || ''],
+        ['Driver Name:', report.my_driver_name || '']
       ];
       
-      createSuperCompactTable(myVehicleShortData);
-      
-      // Long fields - regular compact
-      const myVehicleLongData: [string, string][] = [
-        ['Address:', report.my_vehicle_address || 'Not provided'],
-        ['Transport Contact:', report.my_transport_contact || 'Not provided'],
-        ['Insurance Details:', report.my_insurance_details || 'Not provided'],
-        ['Policy Number:', report.my_policy_number || 'Not provided']
+      createInfoTable(myVehicleData);
+
+      // My vehicle contact details
+      const myVehicleContactData: [string, string][] = [
+        ['Address:', report.my_vehicle_address || ''],
+        ['Transport Contact:', report.my_transport_contact || ''],
+        ['Insurance Details:', report.my_insurance_details || ''],
+        ['Policy Number:', report.my_policy_number || '']
       ];
       
-      createCompactTable(myVehicleLongData);
+      createInfoTable(myVehicleContactData);
 
       // OTHER VEHICLE DETAILS
-      createCompactBlueSection('OTHER VEHICLE DETAILS');
+      createSectionHeader('OTHER VEHICLE DETAILS');
       
-      // Short fields - super compact
-      const otherVehicleShortData: [string, string][] = [
-        ['Make:', report.other_vehicle_make || 'Not provided'],
-        ['Registration:', report.other_vehicle_registration || 'Not provided'],
-        ['Color:', report.other_vehicle_colour || 'Not provided'],
-        ['Driver Name:', report.other_driver_name || 'Not provided']
+      const otherVehicleData: [string, string][] = [
+        ['Make:', report.other_vehicle_make || ''],
+        ['Registration:', report.other_vehicle_registration || ''],
+        ['Color:', report.other_vehicle_colour || ''],
+        ['Driver Name:', report.other_driver_name || '']
       ];
       
-      createSuperCompactTable(otherVehicleShortData);
-      
-      // Long fields - regular compact
-      const otherVehicleLongData: [string, string][] = [
-        ['Driver Address:', report.other_vehicle_address || 'Not provided'],
-        ['Vehicle Owner:', report.other_vehicle_owner || 'Not provided'],
-        ['Owner Address:', report.other_vehicle_owner_address || 'Not provided'],
-        ['Insurance Details:', report.other_insurance_details || 'Not provided'],
-        ['Policy Number:', report.other_policy_number || 'Not provided']
-      ];
-      
-      createCompactTable(otherVehicleLongData);
+      createInfoTable(otherVehicleData);
 
-      // DAMAGE & INJURIES - More compact
+      // Other vehicle contact details
+      const otherVehicleContactData: [string, string][] = [
+        ['Driver Address:', report.other_vehicle_address || ''],
+        ['Vehicle Owner:', report.other_vehicle_owner || ''],
+        ['Owner Address:', report.other_vehicle_owner_address || ''],
+        ['Insurance Details:', report.other_insurance_details || ''],
+        ['Policy Number:', report.other_policy_number || '']
+      ];
+      
+      createInfoTable(otherVehicleContactData);
+
+      // DAMAGE & INJURIES
       if (report.other_damage_description || report.my_injuries) {
-        createCompactBlueSection('DAMAGE & INJURIES');
+        createSectionHeader('DAMAGE & INJURIES');
         
-        // Compact damage section
-        const damageStartY = yPosition;
-        let damageHeight = 6;
-        
+        const damageData: [string, string][] = [];
         if (report.other_damage_description) {
-          damageHeight += 12; // Reduced height
+          damageData.push(['Damage Description:', report.other_damage_description]);
         }
         if (report.my_injuries) {
-          damageHeight += 12; // Reduced height
+          damageData.push(['Injuries Description:', report.my_injuries]);
         }
         
-        pdf.setFillColor(250, 250, 250);
-        pdf.rect(margin, damageStartY, pageWidth - 2 * margin, damageHeight, 'F');
-        pdf.setDrawColor(200, 200, 200);
-        pdf.rect(margin, damageStartY, pageWidth - 2 * margin, damageHeight, 'S');
-        
-        yPosition += 3;
-        
-        if (report.other_damage_description) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(52, 73, 94);
-          pdf.setFontSize(8); // Reduced font size
-          pdf.text('Damage Description:', margin + 3, yPosition);
-          yPosition += 4; // Reduced spacing
-          
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(0, 0, 0);
-          pdf.setFontSize(8); // Reduced font size
-          const damageLines = pdf.splitTextToSize(report.other_damage_description, pageWidth - 2 * margin - 6);
-          pdf.text(damageLines, margin + 3, yPosition);
-          yPosition += damageLines.length * 3 + 4; // Reduced spacing
-        }
-
-        if (report.my_injuries) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(52, 73, 94);
-          pdf.setFontSize(8); // Reduced font size
-          pdf.text('Injuries Description:', margin + 3, yPosition);
-          yPosition += 4; // Reduced spacing
-          
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(0, 0, 0);
-          pdf.setFontSize(8); // Reduced font size
-          const injuryLines = pdf.splitTextToSize(report.my_injuries, pageWidth - 2 * margin - 6);
-          pdf.text(injuryLines, margin + 3, yPosition);
-          yPosition += injuryLines.length * 3 + 10; // Reduced spacing
-        }
+        createInfoTable(damageData);
       }
 
-      // Move images to second page
+      // PHOTOGRAPHIC EVIDENCE
       if (report.images && report.images.length > 0) {
-        // Add second page for images
+        // Add new page for images
         pdf.addPage();
         yPosition = margin;
 
-        // Blue header for images page
+        // Header for images page
         pdf.setFillColor(52, 73, 94);
-        pdf.rect(0, 0, pageWidth, 35, 'F');
+        pdf.rect(0, 0, pageWidth, 45, 'F');
         
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(20);
+        pdf.setFontSize(24);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('AROUND NOON', margin, 20);
+        pdf.text('AROUND NOON', margin, 25);
         
-        pdf.setFontSize(12);
+        pdf.setFontSize(14);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('Vehicle Accident Report - Images', margin, 28);
+        pdf.text('Vehicle Accident Report - Images', margin, 35);
 
-        yPosition = 45;
-
-        createCompactBlueSection('PHOTOGRAPHIC EVIDENCE');
+        yPosition = 60;
+        createSectionHeader('PHOTOGRAPHIC EVIDENCE');
 
         for (const image of report.images) {
           try {
             // Check if we need a new page for the image
-            if (yPosition > pageHeight - 70) {
+            if (yPosition > pageHeight - 100) {
               pdf.addPage();
               yPosition = margin;
             }
@@ -843,9 +767,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
             const imgData = canvas.toDataURL('image/jpeg', 0.9);
             
-            // Compact image sizing
+            // Image sizing
             const maxWidth = pageWidth - 2 * margin;
-            const maxHeight = 60; // Reduced height
+            const maxHeight = 80;
             const imgRatio = img.width / img.height;
             
             let imgWidth = maxWidth;
@@ -859,54 +783,54 @@ export class ReportsComponent implements OnInit, OnDestroy {
             // Center the image
             const imgX = margin + (maxWidth - imgWidth) / 2;
 
-            // Compact image border
+            // Image border
             pdf.setDrawColor(200, 200, 200);
             pdf.setLineWidth(0.5);
-            pdf.rect(imgX - 1, yPosition - 1, imgWidth + 2, imgHeight + 2, 'S');
+            pdf.rect(imgX - 2, yPosition - 2, imgWidth + 4, imgHeight + 4, 'S');
 
             pdf.addImage(imgData, 'JPEG', imgX, yPosition, imgWidth, imgHeight);
             
-            // Compact image caption
-            pdf.setFontSize(7); // Reduced font size
+            // Image caption
+            pdf.setFontSize(9);
             pdf.setFont('helvetica', 'normal');
             pdf.setTextColor(100, 100, 100);
             const caption = image.original_filename || 'Incident Photo';
             const captionWidth = pdf.getTextWidth(caption);
-            pdf.text(caption, margin + (maxWidth - captionWidth) / 2, yPosition + imgHeight + 6);
+            pdf.text(caption, margin + (maxWidth - captionWidth) / 2, yPosition + imgHeight + 10);
             
-            yPosition += imgHeight + 12; // Reduced spacing
+            yPosition += imgHeight + 20;
 
           } catch (error) {
             console.error('Error loading image for PDF:', error);
-            pdf.setFontSize(7);
+            pdf.setFontSize(10);
             pdf.setFont('helvetica', 'italic');
             pdf.setTextColor(150, 150, 150);
             pdf.text(`Image unavailable: ${image.original_filename || 'Incident Photo'}`, margin, yPosition);
-            yPosition += 10; // Reduced spacing
+            yPosition += 15;
           }
         }
       }
 
-      // Compact footer
+      // Professional footer
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
         
         // Footer line
         pdf.setDrawColor(200, 200, 200);
-        pdf.setLineWidth(0.3);
-        pdf.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
         
-        // Compact footer content
-        pdf.setFontSize(7); // Reduced font size
+        // Footer content
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(100, 100, 100);
         
-        pdf.text('Generated by Around Noon Admin Dashboard', margin, pageHeight - 8);
+        pdf.text('Generated by Around Noon Admin Dashboard', margin, pageHeight - 12);
         
         const pageText = `Page ${i} of ${totalPages}`;
         const pageTextWidth = pdf.getTextWidth(pageText);
-        pdf.text(pageText, pageWidth - margin - pageTextWidth, pageHeight - 8);
+        pdf.text(pageText, pageWidth - margin - pageTextWidth, pageHeight - 12);
       }
 
       // Save with clean filename

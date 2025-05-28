@@ -10,7 +10,7 @@
   </div>
 </nav>
 
-<div class="container">
+<div class="main-container">
   <!-- Thank You Message -->
   <div class="thank-you-container" *ngIf="showThankYou">
     <div class="thank-you-content">
@@ -30,48 +30,56 @@
 
   <!-- Report Form -->
   <div class="report-form-container" *ngIf="!showThankYou">
-    <div class="form-header">
-      <div class="header-icon">
-        <img src="https://doftypeumwgvirppcuim.supabase.co/storage/v1/object/public/website-images/van-crash.png" alt="Accident Report" />
+    <!-- Professional Header -->
+    <div class="professional-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <img src="https://doftypeumwgvirppcuim.supabase.co/storage/v1/object/public/website-images/van-crash.png" alt="Accident Report" />
+        </div>
       </div>
-      <h2>RTC Bump Card - Vehicle Accident Report</h2>
-
+      <div class="form-title">
+        <h2>RTC Bump Card - Vehicle Accident Report</h2>
+       
+      </div>
     </div>
 
-    <form (ngSubmit)="submitAccidentReport()" #accidentForm="ngForm">
+    <form (ngSubmit)="submitAccidentReport()" #accidentForm="ngForm" class="professional-form">
       
       <!-- Basic Incident Information -->
-      <div class="form-section">
-        <h3>Incident Information</h3>
-        
-        <div class="form-group">
-          <label for="dateOfCollision">
-            <i class="bi bi-calendar"></i>
-            Date of Collision
-          </label>
-          <input
-            type="date"
-            id="dateOfCollision"
-            name="dateOfCollision"
-            [(ngModel)]="dateOfCollision"
-            class="form-control"
-            required
-            #dateInput="ngModel"
-          >
-          <div class="validation-error" *ngIf="dateInput.invalid && dateInput.touched">
-            Date of collision is required
-          </div>
+      <section class="form-section incident-section">
+        <div class="section-header">
+          <h3><i class="bi bi-exclamation-triangle-fill"></i>Incident Information</h3>
+          <div class="section-divider"></div>
         </div>
+        
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="dateOfCollision" class="field-label">
+              <i class="bi bi-calendar3"></i>
+              Date of Collision
+            </label>
+            <input
+              type="date"
+              id="dateOfCollision"
+              name="dateOfCollision"
+              [(ngModel)]="dateOfCollision"
+              class="field-input"
+              required
+              #dateInput="ngModel"
+            >
+            <div class="validation-message" *ngIf="dateInput.invalid && dateInput.touched">
+              Date of collision is required
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label for="locationOfCollision">
-            <i class="bi bi-geo-alt"></i>
-            Location of Collision
-          </label>
-          
-          <!-- Location Type Selection -->
-          <div class="location-type-selection">
-            <div class="radio-group">
+          <div class="form-field full-width">
+            <label class="field-label">
+              <i class="bi bi-geo-alt-fill"></i>
+              Location of Collision
+            </label>
+            
+            <!-- Location Type Selection -->
+            <div class="location-options">
               <label class="radio-option">
                 <input 
                   type="radio" 
@@ -80,7 +88,8 @@
                   [(ngModel)]="locationType"
                   (change)="onLocationTypeChange()"
                 >
-                <span class="radio-label">
+                <span class="radio-custom"></span>
+                <span class="radio-text">
                   <i class="bi bi-geo-alt-fill"></i>
                   Use Current Location (GPS)
                 </span>
@@ -94,283 +103,287 @@
                   [(ngModel)]="locationType"
                   (change)="onLocationTypeChange()"
                 >
-                <span class="radio-label">
-                  <i class="bi bi-house-door"></i>
+                <span class="radio-custom"></span>
+                <span class="radio-text">
+                  <i class="bi bi-house-door-fill"></i>
                   Enter Address Manually
                 </span>
               </label>
             </div>
-          </div>
 
-          <!-- GPS Coordinates Option -->
-          <div class="location-capture" *ngIf="locationType === 'coordinates'">
-            <button 
-              type="button" 
-              class="location-btn" 
-              [ngClass]="{'captured': locationOfCollision && locationData}"
-              (click)="captureLocation()"
-              [disabled]="isCapturingLocation"
-            >
-              <i class="bi bi-geo-alt-fill" *ngIf="!isCapturingLocation && (!locationOfCollision || !locationData)"></i>
-              <i class="bi bi-arrow-clockwise spin" *ngIf="isCapturingLocation"></i>
-              <i class="bi bi-check-circle-fill" *ngIf="!isCapturingLocation && locationOfCollision && locationData"></i>
-              {{ isCapturingLocation ? 'Capturing Location...' : (locationOfCollision && locationData ? 'Location Captured - Click to Recapture' : 'Capture Current Location') }}
-            </button>
-            
-            <div class="captured-coordinates" *ngIf="locationOfCollision && locationData">
-              <small class="coordinates-display">
-                <i class="bi bi-geo"></i>
-                {{ locationOfCollision }}
-              </small>
+            <!-- GPS Coordinates Option -->
+            <div class="location-capture" *ngIf="locationType === 'coordinates'">
+              <button 
+                type="button" 
+                class="capture-location-btn" 
+                (click)="captureLocation()"
+                [disabled]="isCapturingLocation"
+              >
+                <i class="bi" [ngClass]="isCapturingLocation ? 'bi-arrow-repeat spin' : 'bi-geo-alt-fill'"></i>
+                <span>{{ isCapturingLocation ? 'Capturing Location...' : 'Capture Current Location' }}</span>
+              </button>
+              
+              <div class="location-display" *ngIf="locationOfCollision">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>Location captured successfully</span>
+                <small>{{ locationOfCollision }}</small>
+              </div>
+              
+              <div class="location-error" *ngIf="locationError">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ locationError }}</span>
+              </div>
+            </div>
+
+            <!-- Manual Address Option -->
+            <div class="address-input" *ngIf="locationType === 'address'">
+              <textarea
+                id="manualAddress"
+                name="manualAddress"
+                [(ngModel)]="manualAddress"
+                placeholder="Enter the full address of the collision location..."
+                class="field-input address-textarea"
+                rows="3"
+              ></textarea>
+              <div class="field-help">
+                <i class="bi bi-info-circle-fill"></i>
+                Please provide as much detail as possible (street name, city, postcode, landmarks, etc.)
+              </div>
             </div>
             
-            <div class="location-error" *ngIf="locationError">
-              <i class="bi bi-exclamation-triangle"></i>
-              {{ locationError }}
+            <div class="validation-message" *ngIf="!getLocationValue() && dateInput.touched">
+              Location of collision is required
             </div>
-          </div>
-
-          <!-- Manual Address Option -->
-          <div class="address-input" *ngIf="locationType === 'address'">
-            <textarea
-              id="manualAddress"
-              name="manualAddress"
-              [(ngModel)]="manualAddress"
-              placeholder="Enter the full address of the collision location..."
-              class="form-control address-textarea"
-              rows="3"
-            ></textarea>
-            <small class="address-help">
-              <i class="bi bi-info-circle"></i>
-              Please provide as much detail as possible (street name, city, postcode, landmarks, etc.)
-            </small>
-          </div>
-          
-          <div class="validation-error" *ngIf="!getLocationValue() && dateInput.touched">
-            Location of collision is required
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- My Details Dropdown Section -->
-      <div class="form-section">
-        <div class="dropdown-header" (click)="toggleMyDetails()">
+      <!-- My Vehicle Details Section -->
+      <section class="form-section vehicle-section">
+        <div class="section-header expandable" (click)="toggleMyDetails()">
           <h3>
             <i class="bi bi-person-fill"></i>
             My Details/Your Vehicle
-            <i class="bi" [ngClass]="showMyDetails ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           </h3>
+          <i class="bi expand-icon" [ngClass]="showMyDetails ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          <div class="section-divider"></div>
         </div>
         
-        <div class="dropdown-content" [ngClass]="{'expanded': showMyDetails}">
-          <div class="form-row">
-            <div class="form-group half-width">
-              <label for="myMake">Make</label>
+        <div class="expandable-content" [ngClass]="{'expanded': showMyDetails}">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="myMake" class="field-label">Vehicle Make</label>
               <input
                 type="text"
                 id="myMake"
                 name="myMake"
                 [(ngModel)]="myVehicle.make"
-                placeholder="Vehicle make"
-                class="form-control"
+                placeholder="Enter vehicle make"
+                class="field-input"
               >
             </div>
-            <div class="form-group half-width">
-              <label for="myRegistration">Registration Number</label>
+            
+            <div class="form-field">
+              <label for="myRegistration" class="field-label">Registration Number</label>
               <input
                 type="text"
                 id="myRegistration"
                 name="myRegistration"
                 [(ngModel)]="myVehicle.registration"
-                placeholder="Registration number"
-                class="form-control"
+                placeholder="Enter registration number"
+                class="field-input"
               >
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="myVehicleColour">Vehicle Colour</label>
-            <input
-              type="text"
-              id="myVehicleColour"
-              name="myVehicleColour"
-              [(ngModel)]="myVehicle.colour"
-              placeholder="Vehicle colour"
-              class="form-control"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="myDriverName">Driver Name</label>
-            <input
-              type="text"
-              id="myDriverName"
-              name="myDriverName"
-              [(ngModel)]="myVehicle.driverName"
-              placeholder="Your full name"
-              class="form-control"
-            >
-          </div>
-
-          <div class="form-group">
-            <label>Address</label>
-            <div class="readonly-field">
-              <pre>{{ myVehicle.address }}</pre>
+            <div class="form-field">
+              <label for="myVehicleColour" class="field-label">Vehicle Colour</label>
+              <input
+                type="text"
+                id="myVehicleColour"
+                name="myVehicleColour"
+                [(ngModel)]="myVehicle.colour"
+                placeholder="Enter vehicle colour"
+                class="field-input"
+              >
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Transport Contact</label>
-            <div class="readonly-field">
-              <pre>{{ myVehicle.transportContact }}</pre>
+            <div class="form-field">
+              <label for="myDriverName" class="field-label">Driver Name</label>
+              <input
+                type="text"
+                id="myDriverName"
+                name="myDriverName"
+                [(ngModel)]="myVehicle.driverName"
+                placeholder="Enter your full name"
+                class="field-input"
+              >
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Insurance Details</label>
-            <div class="readonly-field">
-              <pre>{{ myVehicle.insuranceDetails }}</pre>
+            <div class="form-field full-width">
+              <label class="field-label">Address</label>
+              <div class="readonly-display">
+                <pre>{{ myVehicle.address }}</pre>
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Policy Number</label>
-            <div class="readonly-field">
-              {{ myVehicle.policyNumber }}
+            <div class="form-field full-width">
+              <label class="field-label">Transport Contact</label>
+              <div class="readonly-display">
+                <pre>{{ myVehicle.transportContact }}</pre>
+              </div>
+            </div>
+
+            <div class="form-field full-width">
+              <label class="field-label">Insurance Details</label>
+              <div class="readonly-display">
+                <pre>{{ myVehicle.insuranceDetails }}</pre>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">Policy Number</label>
+              <div class="readonly-display">
+                {{ myVehicle.policyNumber }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Other Driver Details Dropdown Section -->
-      <div class="form-section">
-        <div class="dropdown-header" (click)="toggleOtherDetails()">
+      <!-- Other Vehicle Details Section -->
+      <section class="form-section vehicle-section">
+        <div class="section-header expandable" (click)="toggleOtherDetails()">
           <h3>
             <i class="bi bi-person"></i>
             Details of Other Driver/Their Vehicle
-            <i class="bi" [ngClass]="showOtherDetails ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           </h3>
+          <i class="bi expand-icon" [ngClass]="showOtherDetails ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          <div class="section-divider"></div>
         </div>
         
-        <div class="dropdown-content" [ngClass]="{'expanded': showOtherDetails}">
-          <div class="form-row">
-            <div class="form-group half-width">
-              <label for="otherMake">Make</label>
+        <div class="expandable-content" [ngClass]="{'expanded': showOtherDetails}">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="otherMake" class="field-label">Vehicle Make</label>
               <input
                 type="text"
                 id="otherMake"
                 name="otherMake"
                 [(ngModel)]="otherVehicle.make"
-                placeholder="Other vehicle make"
-                class="form-control"
+                placeholder="Enter other vehicle make"
+                class="field-input"
               >
             </div>
-            <div class="form-group half-width">
-              <label for="otherRegistration">Registration Number</label>
+            
+            <div class="form-field">
+              <label for="otherRegistration" class="field-label">Registration Number</label>
               <input
                 type="text"
                 id="otherRegistration"
                 name="otherRegistration"
                 [(ngModel)]="otherVehicle.registration"
-                placeholder="Other vehicle registration"
-                class="form-control"
+                placeholder="Enter other vehicle registration"
+                class="field-input"
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="otherVehicleColour" class="field-label">Vehicle Colour</label>
+              <input
+                type="text"
+                id="otherVehicleColour"
+                name="otherVehicleColour"
+                [(ngModel)]="otherVehicle.colour"
+                placeholder="Enter other vehicle colour"
+                class="field-input"
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="otherDriverName" class="field-label">Driver Name</label>
+              <input
+                type="text"
+                id="otherDriverName"
+                name="otherDriverName"
+                [(ngModel)]="otherVehicle.driverName"
+                placeholder="Enter other driver's full name"
+                class="field-input"
+              >
+            </div>
+
+            <div class="form-field full-width">
+              <label for="otherAddress" class="field-label">Driver Address</label>
+              <textarea
+                id="otherAddress"
+                name="otherAddress"
+                [(ngModel)]="otherVehicle.address"
+                placeholder="Enter other driver's address"
+                rows="3"
+                class="field-input"
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="otherOwner" class="field-label">Vehicle Owner (if different)</label>
+              <input
+                type="text"
+                id="otherOwner"
+                name="otherOwner"
+                [(ngModel)]="otherVehicle.owner"
+                placeholder="Enter vehicle owner if different from driver"
+                class="field-input"
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="otherOwnerAddress" class="field-label">Owner Address</label>
+              <textarea
+                id="otherOwnerAddress"
+                name="otherOwnerAddress"
+                [(ngModel)]="otherVehicle.ownerAddress"
+                placeholder="Enter owner's address if different"
+                rows="3"
+                class="field-input"
+              ></textarea>
+            </div>
+
+            <div class="form-field full-width">
+              <label for="otherInsuranceDetails" class="field-label">Insurance Details</label>
+              <textarea
+                id="otherInsuranceDetails"
+                name="otherInsuranceDetails"
+                [(ngModel)]="otherVehicle.insuranceDetails"
+                placeholder="Enter other party's insurance details"
+                rows="3"
+                class="field-input"
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="otherPolicyNumber" class="field-label">Policy Number</label>
+              <input
+                type="text"
+                id="otherPolicyNumber"
+                name="otherPolicyNumber"
+                [(ngModel)]="otherVehicle.policyNumber"
+                placeholder="Enter other party's policy number"
+                class="field-input"
               >
             </div>
           </div>
-
-          <div class="form-group">
-            <label for="otherVehicleColour">Vehicle Colour</label>
-            <input
-              type="text"
-              id="otherVehicleColour"
-              name="otherVehicleColour"
-              [(ngModel)]="otherVehicle.colour"
-              placeholder="Other vehicle colour"
-              class="form-control"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="otherDriverName">Driver Name</label>
-            <input
-              type="text"
-              id="otherDriverName"
-              name="otherDriverName"
-              [(ngModel)]="otherVehicle.driverName"
-              placeholder="Other driver's full name"
-              class="form-control"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="otherAddress">Address</label>
-            <textarea
-              id="otherAddress"
-              name="otherAddress"
-              [(ngModel)]="otherVehicle.address"
-              placeholder="Other driver's address"
-              rows="3"
-              class="form-control"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="otherOwner">Owner (if different from above)</label>
-            <input
-              type="text"
-              id="otherOwner"
-              name="otherOwner"
-              [(ngModel)]="otherVehicle.owner"
-              placeholder="Vehicle owner if different from driver"
-              class="form-control"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="otherOwnerAddress">Owner Address</label>
-            <textarea
-              id="otherOwnerAddress"
-              name="otherOwnerAddress"
-              [(ngModel)]="otherVehicle.ownerAddress"
-              placeholder="Owner's address if different"
-              rows="3"
-              class="form-control"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="otherInsuranceDetails">Insurance Details</label>
-            <textarea
-              id="otherInsuranceDetails"
-              name="otherInsuranceDetails"
-              [(ngModel)]="otherVehicle.insuranceDetails"
-              placeholder="Other party's insurance details"
-              rows="3"
-              class="form-control"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="otherPolicyNumber">Policy Number</label>
-            <input
-              type="text"
-              id="otherPolicyNumber"
-              name="otherPolicyNumber"
-              [(ngModel)]="otherVehicle.policyNumber"
-              placeholder="Other party's policy number"
-              class="form-control"
-            >
-          </div>
         </div>
-      </div>
+      </section>
 
       <!-- Damage and Injury Details -->
-      <div class="form-section">
-        <h3>Damage and Injury Details</h3>
+      <section class="form-section damage-section">
+        <div class="section-header">
+          <h3><i class="bi bi-exclamation-triangle-fill"></i>Damage and Injury Details</h3>
+          <div class="section-divider"></div>
+        </div>
         
-        <div class="form-row">
-          <div class="form-group half-width">
-            <label for="otherDamageDescription">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label for="otherDamageDescription" class="field-label">
               <i class="bi bi-exclamation-triangle"></i>
               Brief Description and Location of Damage (Other Vehicle)
             </label>
@@ -380,14 +393,12 @@
               [(ngModel)]="otherDamageDescription"
               placeholder="Describe the damage to the other vehicle and its location"
               rows="4"
-              class="form-control"
+              class="field-input"
             ></textarea>
           </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-group half-width">
-            <label for="myInjuries">
+          <div class="form-field full-width">
+            <label for="myInjuries" class="field-label">
               <i class="bi bi-heart-pulse"></i>
               Record Any Injuries (Your Vehicle - N/A if none)
             </label>
@@ -397,28 +408,30 @@
               [(ngModel)]="myInjuries"
               placeholder="Record any injuries to occupants of your vehicle (write N/A if none)"
               rows="3"
-              class="form-control"
+              class="field-input"
             ></textarea>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Image Upload Section -->
-      <div class="form-section">
-        <div class="form-group">
-          <label>
-            <i class="bi bi-camera"></i>
-            Add Photos (Optional)
-          </label>
+      <section class="form-section photo-section">
+        <div class="section-header">
+          <h3><i class="bi bi-camera-fill"></i>Photographic Evidence</h3>
+          <div class="section-divider"></div>
+        </div>
+        
+        <div class="form-field full-width">
+ 
           
           <!-- Upload Options -->
           <div class="upload-options">
-            <button type="button" class="upload-option-btn" (click)="openFileSelector()">
+            <button type="button" class="upload-btn" (click)="openFileSelector()">
               <i class="bi bi-folder2-open"></i>
               <span>Select from Device</span>
             </button>
             
-            <button type="button" class="upload-option-btn" (click)="openCamera()">
+            <button type="button" class="upload-btn" (click)="openCamera()">
               <i class="bi bi-camera-fill"></i>
               <span>Take Photo</span>
             </button>
@@ -448,57 +461,54 @@
         <!-- Selected Images Preview -->
         <div class="selected-images" *ngIf="selectedImages.length > 0">
           <div class="images-header">
-            <h4>Selected Images ({{selectedImages.length}}/5)</h4>
-            <button 
-              type="button" 
-              class="add-more-btn" 
-              (click)="addMoreImages()"
-              *ngIf="selectedImages.length < 5"
-            >
+            <h4>Selected Images ({{ selectedImages.length }})</h4>
+            <button type="button" class="add-more-btn" (click)="openFileSelector()">
               <i class="bi bi-plus-circle"></i>
               Add More
             </button>
           </div>
           
           <div class="images-grid">
-            <div class="image-preview" *ngFor="let imagePreview of selectedImages; let i = index">
-              <img [src]="imagePreview.url" alt="Preview">
-              <button type="button" class="remove-btn" (click)="removeImage(i)">
-                <i class="bi bi-x"></i>
-              </button>
-              <span class="image-name">{{imagePreview.file.name}}</span>
+            <div class="image-preview" *ngFor="let image of selectedImages; let i = index">
+              <img [src]="image.url" [alt]="image.file.name">
+              <div class="image-overlay">
+                <button type="button" class="remove-image-btn" (click)="removeImage(i)">
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
+              </div>
+              <div class="image-info">
+                <span class="image-name">{{ image.file.name }}</span>
+                <span class="image-size">{{ (image.file.size / 1024 / 1024).toFixed(2) }}MB</span>
+              </div>
             </div>
           </div>
           
           <div class="upload-info">
-            <small>Maximum 5 images, up to 10MB each</small>
+            <small>
+              <i class="bi bi-info-circle"></i>
+              Images will be uploaded when you submit the report. Maximum 10 images, 5MB each.
+            </small>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Success Message -->
-      <div class="alert alert-success" *ngIf="submitSuccess">
-        <i class="bi bi-check-circle"></i>
-        Accident report submitted successfully! Your report has been submitted to management.
-      </div>
-
-      <!-- Error Message -->
-      <div class="alert alert-error" *ngIf="submitError">
-        <i class="bi bi-exclamation-circle"></i>
-        {{submitError}}
-      </div>
-
-      <!-- Submit Button -->
-      <div class="form-actions">
-        <button
-          type="submit"
+      <!-- Submit Section -->
+      <div class="submit-section">
+  
+        
+        <button 
+          type="submit" 
           class="submit-btn"
           [disabled]="isSubmitting || accidentForm.invalid"
         >
-          <i class="bi bi-send" *ngIf="!isSubmitting"></i>
-          <i class="bi bi-arrow-clockwise spin" *ngIf="isSubmitting"></i>
-          {{isSubmitting ? 'Submitting...' : 'Submit Accident Report'}}
+          <i class="bi" [ngClass]="isSubmitting ? 'bi-arrow-repeat spin' : 'bi-send-fill'"></i>
+          <span>{{ isSubmitting ? 'Submitting Report...' : 'Submit Accident Report' }}</span>
         </button>
+        
+        <div class="submit-error" *ngIf="submitError">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          {{ submitError }}
+        </div>
       </div>
     </form>
   </div>
