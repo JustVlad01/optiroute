@@ -515,12 +515,136 @@ html, body {
 /* Responsive adjustments - More compact */
 @media (max-width: 768px) {
   .navbar-custom {
-    height: 50px;
+    height: 48px;
+    padding: 0 12px;
+    
+    .nav-title {
+      font-size: 1.1rem;
+    }
+    
+    .home-button-flat {
+      width: 32px;
+      height: 32px;
+      
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+  
+  .search-container .search-box {
+    padding: 12px;
+    margin: 8px auto;
+    max-width: 95%;
+    
+    .search-input-group {
+      .search-input {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+      }
+      
+      .search-btn {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  .navigation-buttons {
+    margin: 12px auto 0;
+    padding: 0 12px;
+    
+    .nav-btn {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      min-width: 120px;
+      
+      i {
+        margin-right: 5px;
+        font-size: 0.85rem;
+      }
+    }
+  }
+  
+  .success-message {
+    margin: 12px auto 0;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+  
+  .store-details-container {
+    padding: 0 12px 15px;
+  }
+  
+  .info-card .card-header {
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 10px 14px;
+  }
+  
+  .info-card .card-content {
+    padding: 12px 14px;
+  }
+  
+  .store-code {
+    font-size: 20px;
+  }
+  
+  .opening-hours .time-row {
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+  
+  .delivery-days-grid .day-chip {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    min-height: 34px;
+  }
+  
+  .btn-maps {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    
+    i {
+      margin-right: 5px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-custom {
+    height: 46px;
     padding: 0 10px;
+    
+    .nav-title {
+      font-size: 1rem;
+    }
+    
+    .home-button-flat {
+      width: 30px;
+      height: 30px;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
   }
   
   .search-container .search-box {
     padding: 10px;
+    margin: 6px auto;
+    
+    .search-input-group {
+      .search-input {
+        padding: 7px 10px;
+        font-size: 0.85rem;
+      }
+      
+      .search-btn {
+        padding: 7px 10px;
+        font-size: 0.85rem;
+      }
+    }
   }
   
   .navigation-buttons {
@@ -528,69 +652,104 @@ html, body {
     padding: 0 10px;
     
     .nav-btn {
-      padding: 8px 12px;
-      font-size: 13px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      min-width: 110px;
       
       i {
         margin-right: 4px;
-        font-size: 13px;
+        font-size: 0.8rem;
       }
     }
   }
   
   .success-message {
     margin: 10px auto 0;
-    padding: 10px 12px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
   
   .store-details-container {
-    padding: 0 10px 15px;
+    padding: 0 10px 12px;
   }
   
-  .info-card .card-header {
-    font-size: 15px;
-    font-weight: 700;
-    padding: 10px 12px;
-  }
-  
-  .info-card .card-content {
-    padding: 10px 10px;
+  .info-card {
+    margin-bottom: 12px;
+    
+    .card-header {
+      font-size: 0.9rem;
+      padding: 8px 12px;
+    }
+    
+    .card-content {
+      padding: 10px 12px;
+    }
   }
   
   .store-code {
-    font-size: 22px;
+    font-size: 18px;
   }
   
   .opening-hours .time-row {
-    font-size: 13px;
+    font-size: 0.8rem;
+    padding: 3px 0;
   }
   
-  .delivery-days-grid .day-chip {
-    padding: 8px 10px;
-    font-size: 12px;
-    min-height: 36px;
-  }
-}
-
-@media (max-width: 576px) {
   .delivery-days-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-  
-  .delivery-days-grid .day-chip {
-    padding: 6px 8px;
-    font-size: 11px;
-    min-height: 32px;
+    gap: 5px;
+    
+    .day-chip {
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      min-height: 30px;
+    }
   }
   
   .image-gallery .image-grid {
     grid-template-columns: repeat(1, 1fr);
+    gap: 8px;
+    
+    .image-item .gallery-image {
+      height: 180px;
+    }
   }
   
-  .image-gallery .image-item .gallery-image {
-    height: 200px;
+  .btn-maps {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+    
+    i {
+      margin-right: 4px;
+    }
+  }
+  
+  .loading-container, .loading-spinner {
+    padding: 15px 0;
+    
+    .spinner-border {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    
+    p {
+      font-size: 0.8rem;
+    }
+  }
+  
+  .error-message {
+    margin: 8px auto;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    
+    i {
+      margin-right: 6px;
+      font-size: 0.9rem;
+    }
+  }
+  
+  .no-images-message p {
+    font-size: 0.8rem;
   }
 }
 

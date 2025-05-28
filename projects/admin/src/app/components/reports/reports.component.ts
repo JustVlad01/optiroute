@@ -670,9 +670,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
       
       createInfoTable(myVehicleData);
 
+      // Company Contact Details / Insurance
+      createSectionHeader('COMPANY CONTACT DETAILS / INSURANCE');
+      
       // My vehicle contact details
       const myVehicleContactData: [string, string][] = [
-        ['Address:', report.my_vehicle_address || ''],
         ['Transport Contact:', report.my_transport_contact || ''],
         ['Insurance Details:', report.my_insurance_details || ''],
         ['Policy Number:', report.my_policy_number || '']

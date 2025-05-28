@@ -55,10 +55,188 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .navbar {
-    height: 56px;
+    height: 52px;
+    padding: 0 12px;
     
-    .navbar-brand {
+    .nav-title {
       font-size: 1.1rem;
+    }
+    
+    .home-button-flat {
+      width: 36px;
+      height: 36px;
+      
+      i {
+        font-size: 1.2rem;
+      }
+    }
+  }
+  
+  .driver-performance-container {
+    padding: 0 8px;
+  }
+  
+  .nav-bar {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    
+    .title {
+      font-size: 1.3rem;
+    }
+    
+    .home-button {
+      width: 2.2rem;
+      height: 2.2rem;
+      
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+  
+  .section-info {
+    margin-bottom: 1.2rem;
+    
+    h2 {
+      font-size: 1.1rem;
+    }
+    
+    p {
+      font-size: 0.85rem;
+    }
+  }
+  
+  .performance-grid {
+    gap: 1.5rem;
+  }
+  
+  .performance-card {
+    .card-header {
+      padding: 0.75rem 1rem;
+      
+      .image-title {
+        font-size: 0.95rem;
+      }
+      
+      .image-date {
+        font-size: 0.75rem;
+      }
+    }
+    
+    .performance-image {
+      max-height: 250px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    height: 48px;
+    padding: 0 10px;
+    
+    .nav-title {
+      font-size: 1rem;
+    }
+    
+    .home-button-flat {
+      width: 32px;
+      height: 32px;
+      
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+  
+  .driver-performance-container {
+    padding: 0 6px;
+  }
+  
+  .nav-bar {
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    
+    .title {
+      font-size: 1.2rem;
+    }
+    
+    .home-button {
+      width: 2rem;
+      height: 2rem;
+      align-self: flex-end;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .section-info {
+    margin-bottom: 1rem;
+    
+    h2 {
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+    }
+    
+    p {
+      font-size: 0.8rem;
+    }
+  }
+  
+  .performance-grid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  
+  .performance-card {
+    .card-header {
+      padding: 0.6rem 0.8rem;
+      
+      .image-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      
+      .image-date {
+        font-size: 0.7rem;
+      }
+    }
+    
+    .performance-image {
+      max-height: 200px;
+      padding: 0.75rem;
+    }
+  }
+  
+  .loading-container {
+    min-height: 200px;
+    
+    p {
+      font-size: 0.9rem;
+    }
+  }
+  
+  .no-data-container {
+    min-height: 200px;
+    padding: 1.5rem;
+    
+    i {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.4rem;
+    }
+    
+    p {
+      font-size: 0.85rem;
+      max-width: 300px;
     }
   }
 }
