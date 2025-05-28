@@ -1779,6 +1779,11 @@ export class SupabaseService {
     return data.publicUrl;
   }
 
+  // Method to get image URL for accident reports
+  getImageUrl(imagePath: string): string {
+    return this.getPublicUrl('vehicle-crash', imagePath);
+  }
+
   // Method to delete a file from storage
   async deleteFile(bucket: string, fileName: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -1872,6 +1877,62 @@ export class SupabaseService {
     } catch (err) {
       console.error('Exception deleting staff roster:', err);
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Accident Reports Methods
+  async getAccidentReports(): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('accident_reports')
+        .select(`
+          *,
+          accident_report_images (
+            id,
+            image_path,
+            filename,
+            uploaded_at
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching accident reports:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Exception fetching accident reports:', err);
+      return [];
+    }
+  }
+
+  async getAccidentReportById(reportId: string): Promise<any | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('accident_reports')
+        .select(`
+          *,
+          accident_report_images (
+            id,
+            image_path,
+            filename,
+            uploaded_at
+          )
+        `)
+        .eq('id', reportId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching accident report:', error);
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Exception fetching accident report:', err);
+      return null;
     }
   }
 }

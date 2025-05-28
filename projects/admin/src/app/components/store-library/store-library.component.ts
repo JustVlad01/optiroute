@@ -115,6 +115,14 @@ export class StoreLibraryComponent implements OnInit {
   // 24-hour filter properties
   show24HourFilter: boolean = false;
 
+  // CSV Export/Import functionality
+  exportingCSV: boolean = false;
+  importingCSV: boolean = false;
+  exportProgress: number = 0;
+  exportProgressMessage: string = '';
+  importProgress: number = 0;
+  importProgressMessage: string = '';
+
   constructor(
     private supabaseService: SupabaseService,
     private ngZone: NgZone
@@ -876,11 +884,156 @@ export class StoreLibraryComponent implements OnInit {
     if (!this.selectedStore) return;
     
     try {
-      const images = await this.supabaseService.getStoreImages(this.selectedStore.id);
-      this.storeImages = images || [];
+      // Load images from store_images table (actual uploaded images)
+      const uploadedImages = await this.supabaseService.getStoreImages(this.selectedStore.id);
+      
+      // Start with uploaded images
+      this.storeImages = uploadedImages || [];
+      
+      // Also check if there are image codes in the store's images column
+      if (this.selectedStore.images) {
+        try {
+          let imageData: any[] = [];
+          
+          // Parse the images column (could be enhanced format or legacy format)
+          if (typeof this.selectedStore.images === 'string') {
+            try {
+              imageData = JSON.parse(this.selectedStore.images);
+            } catch (e) {
+              // If it's not valid JSON, treat as a single image code (legacy)
+              imageData = [{ code: this.selectedStore.images, url: '', is_storefront: false, instructions: '' }];
+            }
+          } else if (Array.isArray(this.selectedStore.images)) {
+            imageData = this.selectedStore.images;
+          }
+          
+          // Process each image data entry
+          if (imageData.length > 0) {
+            const additionalImages: any[] = [];
+            
+            for (const imgData of imageData) {
+              let code: string;
+              let url: string = '';
+              let isStorefront: boolean = false;
+              let instructions: string = '';
+              
+              // Handle both enhanced format (objects) and legacy format (strings)
+              if (typeof imgData === 'object' && imgData.code) {
+                // Enhanced format
+                code = imgData.code;
+                url = imgData.url || '';
+                isStorefront = imgData.is_storefront || false;
+                instructions = imgData.instructions || '';
+              } else if (typeof imgData === 'string') {
+                // Legacy format - just a code
+                code = imgData;
+              } else {
+                continue; // Skip invalid entries
+              }
+              
+              // Try to find this image in the uploaded images
+              const matchingImage = this.storeImages.find(img => 
+                img.file_name && (img.file_name.includes(code) || img.file_name === code)
+              );
+              
+              if (matchingImage) {
+                // Image found in store_images table - it's already in this.storeImages
+                // Update any missing information from the CSV data
+                if (url && !matchingImage.url) {
+                  matchingImage.url = url;
+                }
+                if (instructions && !matchingImage.instructions) {
+                  matchingImage.instructions = instructions;
+                }
+                continue;
+              } else if (url) {
+                // We have a URL from CSV but no matching uploaded image
+                // Create a virtual image entry that points to the URL
+                additionalImages.push({
+                  id: `csv_${code}`,
+                  store_id: this.selectedStore.id,
+                  file_path: '',
+                  url: url,
+                  file_name: code,
+                  is_storefront: isStorefront ? 'true' : 'false',
+                  instructions: instructions || 'Image from CSV import',
+                  uploaded_at: new Date().toISOString(),
+                  isFromCSV: true // Flag to identify CSV-imported images
+                });
+              } else {
+                // Image code exists but no URL and no corresponding uploaded image
+                // Create a placeholder
+                additionalImages.push({
+                  id: `placeholder_${code}`,
+                  store_id: this.selectedStore.id,
+                  file_path: '',
+                  url: '', // Empty URL indicates this is a placeholder
+                  file_name: code,
+                  is_storefront: 'false',
+                  instructions: instructions || 'Image code from CSV import - actual image file not found',
+                  uploaded_at: new Date().toISOString(),
+                  isPlaceholder: true // Flag to identify placeholder entries
+                });
+              }
+            }
+            
+            // Add additional images to the list
+            this.storeImages = [...this.storeImages, ...additionalImages];
+          }
+        } catch (error) {
+          console.warn('Error parsing images column:', error);
+        }
+      }
+      
+      // If we have no images at all, check if there are any orphaned images in store_images
+      // that might not be properly linked to the store's images column
+      if (this.storeImages.length === 0) {
+        // Try to get any images for this store that might exist
+        const orphanedImages = await this.supabaseService.getStoreImages(this.selectedStore.id);
+        if (orphanedImages && orphanedImages.length > 0) {
+          this.storeImages = orphanedImages;
+          
+          // Update the store's images column to include these image codes
+          await this.syncImageCodesToStore(orphanedImages);
+        }
+      }
     } catch (error) {
       console.error('Error loading store images:', error);
       this.showStatusMessage('error', 'Failed to load store images. Please try again later.');
+    }
+  }
+  
+  // Helper method to sync image codes back to the store's images column
+  private async syncImageCodesToStore(images: any[]) {
+    if (!this.selectedStore || !images || images.length === 0) return;
+    
+    try {
+      // Generate image codes for existing images that might not have them
+      const imageCodes = images.map(img => {
+        // Try to extract or generate an image code
+        if (img.file_name) {
+          // Use the filename as the image code
+          return img.file_name;
+        } else {
+          // Generate a new code
+          return `IMG_${this.selectedStore.id.substring(0, 8)}_${Date.now().toString(36)}`;
+        }
+      });
+      
+      // Update the store's images column
+      const { error } = await this.supabaseService.getSupabase()
+        .from('stores')
+        .update({ images: JSON.stringify(imageCodes) })
+        .eq('id', this.selectedStore.id);
+      
+      if (error) {
+        console.error('Error syncing image codes to store:', error);
+      } else {
+        // Update the local store data
+        this.selectedStore.images = JSON.stringify(imageCodes);
+      }
+    } catch (error) {
+      console.error('Error syncing image codes:', error);
     }
   }
 
@@ -1317,5 +1470,397 @@ export class StoreLibraryComponent implements OnInit {
     setTimeout(() => {
       this.statusMessage.show = false;
     }, 4000);
+  }
+
+  // --- CSV Export/Import Methods ---
+  
+  async exportToCSV() {
+    console.log('Export CSV started'); // Debug log
+    this.exportingCSV = true;
+    this.exportProgress = 0;
+    this.exportProgressMessage = 'Initializing export...';
+    console.log('Export state set:', { exportingCSV: this.exportingCSV, exportProgress: this.exportProgress }); // Debug log
+    
+    try {
+      // Step 1: Get all stores (10%)
+      this.exportProgressMessage = 'Loading store data...';
+      this.exportProgress = 10;
+      
+      const allStores = await this.supabaseService.getStoreInformation();
+      
+      if (!allStores || allStores.length === 0) {
+        this.showStatusMessage('error', 'No stores found to export.');
+        return;
+      }
+
+      // Step 2: Get ALL store images in one batch query (30%)
+      this.exportProgressMessage = `Loading images for ${allStores.length} stores...`;
+      this.exportProgress = 30;
+      
+      // Get all store images in one query instead of individual queries
+      const { data: allStoreImages, error: imagesError } = await this.supabaseService.getSupabase()
+        .from('store_images')
+        .select('*');
+      
+      if (imagesError) {
+        console.warn('Error loading store images:', imagesError);
+      }
+      
+      // Group images by store_id for quick lookup
+      const imagesByStoreId: { [key: string]: any[] } = {};
+      if (allStoreImages) {
+        allStoreImages.forEach(img => {
+          if (!imagesByStoreId[img.store_id]) {
+            imagesByStoreId[img.store_id] = [];
+          }
+          imagesByStoreId[img.store_id].push(img);
+        });
+      }
+
+      // Step 3: Process all stores efficiently (60%)
+      this.exportProgressMessage = 'Processing store data...';
+      this.exportProgress = 60;
+
+      // Prepare CSV headers
+      const headers = [
+        'id', 'store_code', 'dispatch_code', 'dispatch_store_name', 'site_id',
+        'store_company', 'store_name', 'address_line', 'city', 'county', 'eircode',
+        'latitude', 'longitude', 'route', 'alarm_code', 'fridge_code',
+        'keys_available', 'key_code', 'prior_registration_required', 'hour_access_24',
+        'deliver_monday', 'deliver_tuesday', 'deliver_wednesday', 'deliver_thursday',
+        'deliver_friday', 'deliver_saturday', 'opening_time_weekdays', 'opening_time_sat',
+        'opening_time_sun', 'openining_time_bankholiday', 'email', 'phone',
+        'images'
+      ];
+
+      // Process all stores in batches for better performance
+      const csvData = [];
+      const batchSize = 100; // Process 100 stores at a time
+      
+      for (let i = 0; i < allStores.length; i += batchSize) {
+        const batch = allStores.slice(i, i + batchSize);
+        const batchProgress = Math.floor((i / allStores.length) * 30); // 30% of progress for processing
+        this.exportProgress = 60 + batchProgress;
+        this.exportProgressMessage = `Processing stores ${i + 1} to ${Math.min(i + batchSize, allStores.length)} of ${allStores.length}...`;
+        
+        // Process batch
+        for (const store of batch) {
+          const row: any = {};
+          
+          // Fill in all the regular fields
+          headers.forEach(header => {
+            if (header !== 'images') {
+              row[header] = store[header] || '';
+            }
+          });
+          
+          // Handle images efficiently using pre-loaded data
+          const storeImages = imagesByStoreId[store.id] || [];
+          
+          if (storeImages.length > 0) {
+            // Create enhanced image data with both codes and URLs
+            const imageData = storeImages.map(img => ({
+              code: img.file_name || `IMG_${store.id.substring(0, 8)}_${Date.now().toString(36)}`,
+              url: img.url,
+              is_storefront: img.is_storefront === 'true',
+              instructions: img.instructions || ''
+            }));
+            
+            row.images = JSON.stringify(imageData);
+          } else {
+            // Check if there are image codes in the store's images column
+            if (store.images) {
+              try {
+                let imageCodes = [];
+                if (typeof store.images === 'string') {
+                  imageCodes = JSON.parse(store.images);
+                } else if (Array.isArray(store.images)) {
+                  imageCodes = store.images;
+                }
+                
+                // Convert simple codes to enhanced format
+                const imageData = imageCodes.map((code: string) => ({
+                  code: code,
+                  url: '',
+                  is_storefront: false,
+                  instructions: 'Image code only - actual image file not found'
+                }));
+                
+                row.images = JSON.stringify(imageData);
+              } catch (e) {
+                row.images = '[]';
+              }
+            } else {
+              row.images = '[]';
+            }
+          }
+          
+          csvData.push(row);
+        }
+        
+        // Small delay to allow UI updates (much smaller than before)
+        if (i % (batchSize * 5) === 0) { // Only delay every 500 stores
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+
+      // Step 4: Convert to CSV (95%)
+      this.exportProgressMessage = 'Converting to CSV format...';
+      this.exportProgress = 95;
+      
+      const csvContent = this.convertToCSV(csvData, headers);
+      
+      // Step 5: Download (100%)
+      this.exportProgressMessage = 'Preparing download...';
+      this.exportProgress = 98;
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      const today = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `stores-export-${today}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      this.exportProgressMessage = 'Export completed!';
+      this.exportProgress = 100;
+      
+      // Show completion message
+      setTimeout(() => {
+        this.showStatusMessage('success', `Successfully exported ${allStores.length} stores to CSV with image data.`);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      this.showStatusMessage('error', 'Failed to export CSV. Please try again.');
+    } finally {
+      // Reset progress after a delay
+      setTimeout(() => {
+        this.exportingCSV = false;
+        this.exportProgress = 0;
+        this.exportProgressMessage = '';
+      }, 1500);
+    }
+  }
+
+  onCSVFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file && file.type === 'text/csv') {
+      this.importFromCSV(file);
+    } else {
+      this.showStatusMessage('error', 'Please select a valid CSV file.');
+    }
+    // Reset the input
+    event.target.value = '';
+  }
+
+  async importFromCSV(file: File) {
+    this.importingCSV = true;
+    this.importProgress = 0;
+    this.importProgressMessage = 'Reading CSV file...';
+    
+    try {
+      this.importProgress = 10;
+      const csvText = await this.readFileAsText(file);
+      
+      this.importProgressMessage = 'Parsing CSV data...';
+      this.importProgress = 20;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const parsedData = this.parseCSV(csvText);
+      
+      if (!parsedData || parsedData.length === 0) {
+        this.showStatusMessage('error', 'No valid data found in CSV file.');
+        return;
+      }
+
+      this.importProgressMessage = `Processing ${parsedData.length} stores...`;
+      this.importProgress = 30;
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Validate and process the images column
+      const validatedData = parsedData.map((row, index) => {
+        // Update progress for validation
+        if (index % 10 === 0) {
+          const validationProgress = Math.floor((index / parsedData.length) * 30); // 30% for validation
+          this.importProgress = 30 + validationProgress;
+          this.importProgressMessage = `Validating store ${index + 1} of ${parsedData.length}...`;
+        }
+        
+        if (row.images) {
+          try {
+            // Parse the images data
+            const imageData = JSON.parse(row.images);
+            
+            if (Array.isArray(imageData)) {
+              // Check if it's the new enhanced format (objects with code, url, etc.)
+              // or the old format (simple array of strings)
+              const isEnhancedFormat = imageData.length > 0 && 
+                typeof imageData[0] === 'object' && 
+                imageData[0].hasOwnProperty('code');
+              
+              if (isEnhancedFormat) {
+                // New enhanced format - validate structure
+                const validImageData = imageData.filter(img => 
+                  img && typeof img === 'object' && img.code
+                );
+                row.images = JSON.stringify(validImageData);
+                
+                // Store the enhanced data for potential image recreation
+                row._imageData = validImageData;
+              } else {
+                // Old format - array of strings (image codes)
+                // Convert to enhanced format for consistency
+                const enhancedImageData = imageData.map((code: string) => ({
+                  code: code,
+                  url: '', // No URL in old format
+                  is_storefront: false,
+                  instructions: 'Imported from legacy CSV format'
+                }));
+                row.images = JSON.stringify(enhancedImageData);
+                row._imageData = enhancedImageData;
+              }
+            } else {
+              console.warn(`Invalid images format for store ${row.store_name || row.id}: not an array`);
+              row.images = '[]';
+              row._imageData = [];
+            }
+          } catch (e) {
+            console.warn(`Invalid images JSON for store ${row.store_name || row.id}: ${row.images}`);
+            row.images = '[]';
+            row._imageData = [];
+          }
+        } else {
+          row.images = '[]';
+          row._imageData = [];
+        }
+        return row;
+      });
+
+      this.importProgressMessage = 'Updating store information in database...';
+      this.importProgress = 70;
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Update stores using the existing method
+      const results = await this.supabaseService.updateStoreInformation(validatedData);
+      
+      this.importProgressMessage = 'Finalizing import...';
+      this.importProgress = 90;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const successCount = results.filter(r => r.success).length;
+      const errorCount = results.filter(r => !r.success).length;
+      
+      if (successCount > 0) {
+        this.importProgressMessage = 'Import completed successfully!';
+        this.importProgress = 100;
+        
+        setTimeout(() => {
+          this.showStatusMessage('success', 
+            `Successfully imported ${successCount} stores with image data. ${errorCount > 0 ? `${errorCount} failed.` : ''}`);
+        }, 500);
+        
+        // Reload the stores data
+        await this.loadStoresForSpreadsheet();
+        
+        // If there's a selected store, reload its images to reflect any changes
+        if (this.selectedStore) {
+          await this.loadStoreImages();
+        }
+      } else {
+        this.showStatusMessage('error', 'Failed to import any stores. Please check the CSV format.');
+      }
+      
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      this.showStatusMessage('error', 'Failed to import CSV. Please check the file format.');
+    } finally {
+      // Reset progress after a delay
+      setTimeout(() => {
+        this.importingCSV = false;
+        this.importProgress = 0;
+        this.importProgressMessage = '';
+      }, 1500);
+    }
+  }
+
+  private convertToCSV(data: any[], headers: string[]): string {
+    const csvRows = [];
+    
+    // Add headers
+    csvRows.push(headers.map(header => `"${header}"`).join(','));
+    
+    // Add data rows
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header] || '';
+        // Escape quotes and wrap in quotes
+        return `"${String(value).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(values.join(','));
+    }
+    
+    return csvRows.join('\n');
+  }
+
+  private parseCSV(csvText: string): any[] {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(header => header.replace(/"/g, '').trim());
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = this.parseCSVLine(lines[i]);
+      if (values.length === headers.length) {
+        const row: any = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index];
+        });
+        data.push(row);
+      }
+    }
+    
+    return data;
+  }
+
+  private parseCSVLine(line: string): string[] {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current);
+    return result;
+  }
+
+  private readFileAsText(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsText(file);
+    });
   }
 }

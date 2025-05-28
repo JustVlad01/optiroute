@@ -1,0 +1,1078 @@
+<div class="reports-container">
+  <!-- Professional Navbar -->
+  <div class="navbar">
+    <div class="logo">OPTIROUTE</div>
+    <div class="nav-links">
+      <a class="nav-pill" (click)="navigateToDashboard()">
+        <i class="bi bi-house-fill"></i> Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs-container">
+    <div class="nav-tabs">
+      <button 
+        [class.active]="activeTab === 'accident-reports'"
+        (click)="setActiveTab('accident-reports')"
+      >
+        <i class="bi bi-file-text"></i> Vehicle Accident Reports
+      </button>
+      <button 
+        [class.active]="activeTab === 'driver-updates'"
+        (click)="setActiveTab('driver-updates')"
+      >
+        <i class="bi bi-truck"></i> Driver Delivery Updates
+      </button>
+      <button 
+        [class.active]="activeTab === 'van-issues'"
+        (click)="setActiveTab('van-issues')"
+      >
+        <i class="bi bi-exclamation-triangle"></i> Van Issues Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Date Range Selector - Only show for Driver Updates tab -->
+  <div *ngIf="activeTab === 'driver-updates'" class="date-range-selector">
+    <div class="date-range-header">
+      <h4><i class="bi bi-calendar-range"></i> Export Date Range</h4>
+      <p>Select a custom date range to export driver updates</p>
+    </div>
+    <div class="date-range-controls">
+      <div class="date-input-group">
+        <label for="exportStartDate">From Date:</label>
+        <input 
+          type="date" 
+          id="exportStartDate" 
+          [(ngModel)]="exportStartDate"
+          class="date-input"
+        >
+      </div>
+      <div class="date-input-group">
+        <label for="exportEndDate">To Date:</label>
+        <input 
+          type="date" 
+          id="exportEndDate" 
+          [(ngModel)]="exportEndDate"
+          class="date-input"
+        >
+      </div>
+      <div class="export-actions">
+        <button 
+          class="btn-export-range" 
+          (click)="exportDateRange()"
+          [disabled]="!exportStartDate || !exportEndDate"
+        >
+          <i class="bi bi-file-earmark-pdf"></i>
+          Export Range
+        </button>
+        <button 
+          class="btn-quick-range" 
+          (click)="setQuickRange('week')"
+        >
+          Last Week
+        </button>
+        <button 
+          class="btn-quick-range" 
+          (click)="setQuickRange('month')"
+        >
+          Last Month
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Accident Reports Tab Content -->
+    <div *ngIf="activeTab === 'accident-reports'" class="tab-content">
+      <!-- List View -->
+      <div *ngIf="viewMode === 'list'">
+        <!-- Filters Section -->
+        <div class="filters-section">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="searchTerm">Search Reports</label>
+              <input
+                type="text"
+                id="searchTerm"
+                [(ngModel)]="searchTerm"
+                (input)="onFilterChange()"
+                placeholder="Search by driver name or vehicle registration..."
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-group">
+              <label for="dateFilter">Filter by Date</label>
+              <input
+                type="date"
+                id="dateFilter"
+                [(ngModel)]="dateFilter"
+                (change)="onFilterChange()"
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-actions">
+              <button class="btn-refresh" (click)="refreshReports()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+              <button class="btn-export" (click)="exportReports()">
+                <i class="bi bi-download"></i>
+                Export CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading accident reports...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="error" class="error-state">
+          <i class="bi bi-exclamation-triangle"></i>
+          <p>{{ error }}</p>
+          <button class="btn-retry" (click)="loadReports()">
+            <i class="bi bi-arrow-clockwise"></i>
+            Try Again
+          </button>
+        </div>
+
+        
+
+        <!-- Reports Table -->
+        <div *ngIf="!isLoading && !error && filteredReports.length > 0" class="reports-table-container">
+          <table class="reports-table">
+            <thead>
+              <tr>
+                <th>Report ID</th>
+                <th>Date Submitted</th>
+                <th>Collision Date</th>
+                <th>Driver Name</th>
+                <th>Vehicle Details</th>
+                <th>Other Vehicle</th>
+                <th>Location</th>
+                <th>Images</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let report of paginatedReports">
+                <td class="report-id">#{{ report.id }}</td>
+                <td>{{ formatDate(report.created_at) }}</td>
+                <td>{{ report.date_of_collision }}</td>
+                <td>{{ report.my_driver_name || 'Not provided' }}</td>
+                <td>
+                  <div class="vehicle-info">
+                    <div>{{ report.my_vehicle_make || 'N/A' }}</div>
+                    <small>{{ report.my_vehicle_registration || 'N/A' }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="vehicle-info">
+                    <div>{{ report.other_vehicle_make || 'N/A' }}</div>
+                    <small>{{ report.other_vehicle_registration || 'N/A' }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="location-info">
+                    <span>{{ formatLocation(report.location_of_collision) }}</span>
+                    <button 
+                      *ngIf="report.location_of_collision" 
+                      class="btn-map" 
+                      (click)="openInGoogleMaps(report.location_of_collision)"
+                      title="Open in Google Maps"
+                    >
+                      <i class="bi bi-geo-alt"></i>
+                      Maps
+                    </button>
+                  </div>
+                </td>
+                <td class="images-cell">
+                  <div class="images-info">
+                    <i class="bi bi-camera"></i>
+                    {{ report.images?.length || 0 }}
+                  </div>
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button 
+                      class="btn-view" 
+                      (click)="viewReportDetails(report)"
+                      title="View Details"
+                    >
+                      <i class="bi bi-eye"></i>
+                      View
+                    </button>
+                    <button 
+                      class="btn-pdf" 
+                      (click)="downloadPDF(report)"
+                      title="Download PDF"
+                    >
+                      <i class="bi bi-file-pdf"></i>
+                      PDF
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && !error && filteredReports.length === 0" class="empty-state">
+          <i class="bi bi-file-text"></i>
+          <h3>No accident reports found</h3>
+          <p *ngIf="searchTerm || dateFilter">Try adjusting your search criteria.</p>
+          <p *ngIf="!searchTerm && !dateFilter">No accident reports have been submitted yet.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="!isLoading && !error && filteredReports.length > 0" class="pagination">
+          <button 
+            class="btn-page" 
+            [disabled]="currentPage === 1"
+            (click)="onPageChange(currentPage - 1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+            Previous
+          </button>
+          
+          <span class="page-info">
+            Page {{ currentPage }} of {{ totalPages }}
+          </span>
+          
+          <button 
+            class="btn-page" 
+            [disabled]="currentPage === totalPages"
+            (click)="onPageChange(currentPage + 1)"
+          >
+            Next
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Detail View -->
+      <div *ngIf="viewMode === 'detail' && selectedReport" class="detail-view">
+        <div class="detail-header">
+          <h2>Accident Report #{{ selectedReport.id }}</h2>
+          <div class="report-meta">
+            <div class="report-date">
+              Submitted: {{ selectedReport.created_at | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-secondary btn-sm" (click)="backToList()">
+                <i class="bi bi-arrow-left"></i> Back to List
+              </button>
+              <button 
+                class="btn btn-primary btn-sm" 
+                (click)="downloadPDF(selectedReport)"
+                title="Download PDF Report">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-content">
+          <!-- Basic Information -->
+          <div class="detail-section">
+            <h3><i class="bi bi-info-circle"></i> Basic Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Report ID:</label>
+                <span>#{{ selectedReport.id }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Date Created:</label>
+                <span>{{ formatDate(selectedReport.created_at) }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Collision Date:</label>
+                <span>{{ selectedReport.date_of_collision | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Location:</label>
+                <span>{{ formatLocation(selectedReport.location_of_collision) }}</span>
+                <div *ngIf="selectedReport.location_of_collision" class="location-actions mt-1">
+                  <button 
+                    class="btn btn-outline-info btn-sm" 
+                    (click)="openInGoogleMaps(selectedReport.location_of_collision)"
+                    title="Open in Google Maps">
+                    <i class="bi bi-geo-alt"></i> View on Google Maps
+                  </button>
+                </div>
+              </div>
+              <div class="detail-item">
+                <label>Session ID:</label>
+                <span>{{ selectedReport.session_id }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Vehicle Information -->
+          <div class="detail-section">
+            <h3><i class="bi bi-car-front"></i> My Vehicle Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Driver Name:</label>
+                <span>{{ selectedReport.my_driver_name || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Vehicle Make:</label>
+                <span>{{ selectedReport.my_vehicle_make || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Registration:</label>
+                <span>{{ selectedReport.my_vehicle_registration || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Colour:</label>
+                <span>{{ selectedReport.my_vehicle_colour || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other Vehicle Information -->
+          <div class="detail-section">
+            <h3><i class="bi bi-car-front-fill"></i> Other Vehicle Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Driver Name:</label>
+                <span>{{ selectedReport.other_driver_name || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Vehicle Make:</label>
+                <span>{{ selectedReport.other_vehicle_make || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Registration:</label>
+                <span>{{ selectedReport.other_vehicle_registration || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Colour:</label>
+                <span>{{ selectedReport.other_vehicle_colour || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Damage and Injuries -->
+          <div class="detail-section">
+            <h3><i class="bi bi-exclamation-triangle"></i> Damage and Injuries</h3>
+            <div class="detail-grid">
+              <div class="detail-item full-width">
+                <label>Other Vehicle Damage:</label>
+                <span>{{ selectedReport.other_damage_description || 'No damage description provided' }}</span>
+              </div>
+              <div class="detail-item full-width">
+                <label>My Injuries:</label>
+                <span>{{ selectedReport.my_injuries || 'No injuries reported' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Images -->
+          <div *ngIf="selectedReport.images && selectedReport.images.length > 0" class="detail-section">
+            <h3><i class="bi bi-images"></i> Accident Images ({{ selectedReport.images.length }})</h3>
+            <div class="images-grid">
+              <div *ngFor="let image of selectedReport.images" class="image-item">
+                <img [src]="image.storage_bucket_url" 
+                     [alt]="image.original_filename"
+                     class="accident-image"
+                     (click)="openImageModal(image.storage_bucket_url)">
+                <div class="image-info">
+                  <span class="image-filename">{{ image.original_filename }}</span>
+                  <span class="image-date">{{ formatDate(image.uploaded_at) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!selectedReport.images || selectedReport.images.length === 0" class="detail-section">
+            <h3><i class="bi bi-images"></i> Accident Images</h3>
+            <div class="empty-images">
+              <i class="bi bi-image"></i>
+              <p>No images were uploaded with this report.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver Updates Tab Content -->
+    <div *ngIf="activeTab === 'driver-updates'" class="tab-content">
+      <div class="driver-updates-container">
+        <div class="section-header">
+          <i class="bi bi-truck"></i> <h2>Drivers Updates</h2>
+          <p class="subtitle">Driver delivery updates grouped by day (Last {{ dateRange }} days)</p>
+        </div>
+
+        <!-- Day-Grouped View Mode -->
+        <div *ngIf="driverViewMode === 'list'" class="day-grouped-view">
+          <div *ngIf="driverLoading" class="loading-indicator">
+            <i class="bi bi-hourglass-split spin"></i> Loading updates...
+          </div>
+
+          <div *ngIf="!driverLoading && dayGroups.length === 0" class="no-data">
+            <i class="bi bi-info-circle"></i>
+            <p>No delivery updates found for the last {{ dateRange }} days</p>
+          </div>
+
+          <div *ngIf="!driverLoading && dayGroups.length > 0" class="day-groups-container">
+            <!-- Global Actions -->
+            <div class="global-actions">
+              <button *ngIf="getSelectedUpdatesFromAllDays().length > 0" class="export-selected-btn" (click)="exportSelectedDays()">
+                <i class="bi bi-file-earmark-pdf"></i> Export Selected ({{ getSelectedUpdatesFromAllDays().length }})
+              </button>
+            </div>
+
+            <!-- Day Groups -->
+            <div class="day-group" *ngFor="let dayGroup of dayGroups">
+              <div class="day-header" (click)="toggleDayExpansion(dayGroup)">
+                <div class="day-info">
+                  <i class="bi" [class.bi-chevron-down]="dayGroup.isExpanded" [class.bi-chevron-right]="!dayGroup.isExpanded"></i>
+                  <h3>{{ dayGroup.displayDate }}</h3>
+                </div>
+                <div class="day-actions" (click)="$event.stopPropagation()">
+                  <div class="day-stats">
+                    <span class="stat-box outstanding">
+                      <i class="bi bi-box-seam"></i>
+                      {{ getOutstandingDeliveriesForDay(dayGroup) }} Outstanding
+                    </span>
+                    <span class="stat-box notifications">
+                      <i class="bi bi-bell"></i>
+                      {{ getAdvancedNotificationsForDay(dayGroup) }} Advanced Notifications
+                    </span>
+                  </div>
+                  <div class="day-selection">
+                    <input 
+                      type="checkbox" 
+                      [id]="'day-' + dayGroup.date" 
+                      [checked]="isDayFullySelected(dayGroup)"
+                      [indeterminate]="isDayPartiallySelected(dayGroup)"
+                      (change)="toggleDaySelection(dayGroup)"
+                      class="day-checkbox"
+                    >
+                    <label [for]="'day-' + dayGroup.date" class="day-select-label">
+                      {{ isDayFullySelected(dayGroup) ? 'Deselect All' : 'Select All' }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expanded Day Content -->
+              <div class="day-content" *ngIf="dayGroup.isExpanded">
+                <div class="updates-grid">
+                  <div class="update-card" *ngFor="let update of dayGroup.updates">
+                    <div class="update-header">
+                      <div class="update-selection">
+                        <input 
+                          type="checkbox" 
+                          [id]="'update-' + dayGroup.date + '-' + update.id" 
+                          [checked]="isUpdateSelectedInDay(dayGroup, update.id)"
+                          (change)="toggleUpdateInDay(dayGroup, update.id)"
+                          class="update-checkbox"
+                        >
+                      </div>
+                      <div class="update-info">
+                        <div class="update-time">{{ formatDate(update.created_at) }}</div>
+                        <div class="update-driver">{{ update.drivers?.name || 'Unknown' }}</div>
+                        <div class="update-route">{{ update.route_name || 'N/A' }}</div>
+                      </div>
+                      <div class="update-stats">
+                       
+                      </div>
+                      <div class="update-actions">
+                        <button class="view-btn" (click)="viewUpdateDetails(update)">
+                          <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="export-btn-card" (click)="exportFullUpdate(update)">
+                          <i class="bi bi-file-earmark-pdf"></i> Export
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Quick Preview of Stores -->
+                    <div class="update-preview" *ngIf="getStoreCount(update) > 0 || (update.comments && update.comments.trim().length > 0)">
+                      <div class="preview-section">
+                        <div class="summary-info">
+                          <span class="total-outstanding" *ngIf="getStoreCount(update) > 0">
+                            <i class="bi bi-box-seam"></i>
+                            {{ getStoreCount(update) }} Outstanding Stores
+                          </span>
+                          <span class="has-notification" *ngIf="update.comments && update.comments.trim().length > 0">
+                            <i class="bi bi-bell-fill"></i>
+                            Has Advanced Notification
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div *ngIf="driverViewMode === 'list' && !driverLoading && dayGroups.length > 0" class="analytics-section">
+          <div class="analytics-header">
+            <div class="analytics-title">
+              <i class="bi bi-graph-up-arrow"></i>
+              <h2>Route Performance Analytics</h2>
+              <span class="analytics-subtitle">Weekly insights and delivery metrics</span>
+            </div>
+            <button class="toggle-analytics-btn" (click)="toggleAnalytics()">
+              <i class="bi" [class.bi-chevron-up]="showAnalytics" [class.bi-chevron-down]="!showAnalytics"></i>
+              {{ showAnalytics ? 'Hide Analytics' : 'Show Analytics' }}
+            </button>
+          </div>
+
+          <div *ngIf="showAnalytics" class="analytics-content">
+            <!-- Charts Section -->
+            <div class="charts-container">
+              <!-- Delivery Times Chart -->
+              <div class="chart-section">
+                <div class="chart-header">
+                  <h3>
+                    <i class="bi bi-clock-history"></i>
+                    Weekly Average Delivery Times by Route
+                  </h3>
+                  <p class="chart-description">Weekly comparison of Circle K vs Starbucks delivery times across routes</p>
+                </div>
+                <div class="chart-container">
+                  <canvas id="deliveryTimeChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail View Mode -->
+        <div *ngIf="driverViewMode === 'detail' && selectedDriverUpdate" class="update-detail">
+          <div class="detail-header">
+            <button class="back-btn" (click)="backToDriverList()">
+              <i class="bi bi-arrow-left"></i> Back to List
+            </button>
+            <h3>Update Details - {{ formatDate(selectedDriverUpdate.created_at) }}</h3>
+            <button *ngIf="hasSelectedStores()" class="export-btn" (click)="exportSelectedStores()">
+              <i class="bi bi-file-earmark-pdf"></i> Export Selected
+            </button>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-section">
+              <div class="section-title">
+                <i class="bi bi-info-circle"></i>
+                <h4>General Information</h4>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Driver:</div>
+                <div class="detail-value">{{ selectedDriverUpdate.drivers?.name || 'Unknown' }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Route:</div>
+                <div class="detail-value">{{ selectedDriverUpdate.route_name || 'N/A' }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Submitted:</div>
+                <div class="detail-value">{{ formatDate(selectedDriverUpdate.created_at) }}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Last Updated:</div>
+                <div class="detail-value">{{ formatDate(selectedDriverUpdate.updated_at) }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedDriverUpdate.comments">
+              <div class="section-title">
+                <i class="bi bi-chat-left-text"></i>
+                <h4>Advanced Notification Comments</h4>
+              </div>
+              <div class="comments-box">
+                {{ selectedDriverUpdate.comments || 'No comments provided' }}
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedDriverUpdate.delivery_data?.length > 0">
+              <div class="section-title">
+                <i class="bi bi-box-seam"></i>
+                <h4>Delivery Update - Outstanding Deliveries</h4>
+              </div>
+              <div class="select-actions" *ngIf="getAllStoresFromDeliveries().length > 0">
+                <button class="select-btn" (click)="selectAllStores()">
+                  <i class="bi bi-check-all"></i> Select All
+                </button>
+                <button class="select-btn" (click)="deselectAllStores()">
+                  <i class="bi bi-x"></i> Deselect All
+                </button>
+              </div>
+              <div class="delivery-list">
+                <div class="delivery-item" *ngFor="let delivery of selectedDriverUpdate.delivery_data; let deliveryIndex = index">
+                  <div class="delivery-header">
+                    <span class="delivery-name">{{ delivery.shop_name }}</span>
+                    <span class="delivery-time">{{ delivery.delivery_time }}</span>
+                  </div>
+                  
+                  <div class="store-list" *ngIf="delivery.stores?.length > 0">
+                    <div class="store-item" *ngFor="let store of delivery.stores; let storeIndex = index">
+                      <div class="store-selector">
+                        <input 
+                          type="checkbox" 
+                          [id]="'store-' + deliveryIndex + '-' + storeIndex" 
+                          [checked]="isStoreSelected(deliveryIndex, storeIndex)" 
+                          (change)="toggleStoreSelection(deliveryIndex, storeIndex)"
+                        >
+                        <label [for]="'store-' + deliveryIndex + '-' + storeIndex">{{ store.store_name }}</label>
+                      </div>
+                      <span class="store-code">{{ store.store_code || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="no-stores" *ngIf="!delivery.stores || delivery.stores.length === 0">
+                    No stores added for this shop
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedDriverUpdate.last_delivery_times">
+              <div class="section-title">
+                <i class="bi bi-clock-history"></i>
+                <h4>Last Delivery Times</h4>
+              </div>
+              <div class="last-delivery-list">
+                <div class="last-delivery-item" *ngFor="let time of selectedDriverUpdate.last_delivery_times | keyvalue">
+                  <span class="shop-name">{{ time.key }}:</span>
+                  <span class="delivery-time">{{ time.value }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Van Issues Tab Content -->
+    <div *ngIf="activeTab === 'van-issues'" class="tab-content">
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="vanIssuesLoading">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading van issues...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div class="no-issues-container" *ngIf="!vanIssuesLoading && vanIssues.length === 0">
+        <i class="bi bi-shield-check"></i>
+        <h3>No Issues Reported</h3>
+        <p>All vehicles are currently operating without reported issues.</p>
+      </div>
+
+      <!-- PDF Report Section -->
+      <div class="report-section" *ngIf="!vanIssuesLoading && vanIssues.length > 0">
+        <div class="report-header">
+          <h3>
+            <i class="bi bi-file-earmark-pdf"></i>
+            Generate Reports
+          </h3>
+          <p>Create PDF reports for van issues with customizable filters</p>
+        </div>
+        
+        <div class="report-actions">
+          <!-- Quick Report Buttons -->
+          <div class="quick-reports">
+            <button 
+              class="report-btn quick-btn"
+              (click)="generateVanIssuesQuickReport('all')"
+              [disabled]="isGeneratingReport"
+              title="Generate report for all issues"
+            >
+              <i class="bi bi-file-earmark-pdf"></i>
+              All Issues ({{ vanIssues.length }})
+            </button>
+            
+            <button 
+              class="report-btn quick-btn verified"
+              (click)="generateVanIssuesQuickReport('verified')"
+              [disabled]="isGeneratingReport"
+              title="Generate report for verified issues only"
+            >
+              <i class="bi bi-check-circle"></i>
+              Verified ({{ getVanIssuesVerifiedCount() }})
+            </button>
+            
+            <button 
+              class="report-btn quick-btn pending"
+              (click)="generateVanIssuesQuickReport('pending')"
+              [disabled]="isGeneratingReport"
+              title="Generate report for pending issues only"
+            >
+              <i class="bi bi-clock"></i>
+              Pending ({{ getVanIssuesPendingCount() }})
+            </button>
+          </div>
+          
+          <!-- Custom Report Button -->
+          <div class="custom-report">
+            <button 
+              class="report-btn custom-btn"
+              (click)="openVanIssuesReportModal()"
+              [disabled]="isGeneratingReport"
+              title="Create custom report with filters"
+            >
+              <i class="bi bi-sliders"></i>
+              Custom Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issues Table -->
+      <div class="issues-table-container" *ngIf="!vanIssuesLoading && vanIssues.length > 0">
+        <table class="issues-table">
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Driver</th>
+              <th>Issue Report</th>
+              <th>Images</th>
+              <th>Date</th>
+              <th>Fixed Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let issue of vanIssues; trackBy: trackByIssueId" class="issue-row" [class.verified]="issue.verified">
+              <td class="vehicle-cell">
+                <div class="vehicle-info">
+                  <span class="van-reg">{{ issue.van_registration }}</span>
+                </div>
+              </td>
+              
+              <td class="driver-cell">
+                <div class="driver-info">
+                  <span class="driver-name">{{ issue.driver_name }}</span>
+                  <span class="driver-id">ID: {{ issue.driver_custom_id }}</span>
+                </div>
+              </td>
+              
+              <td class="issue-cell">
+                <div class="issue-content">
+                  <p class="issue-text">{{ issue.driver_comments }}</p>
+                </div>
+              </td>
+              
+              <td class="images-cell">
+                <div class="images-info" *ngIf="issue.image_urls && issue.image_urls.length > 0">
+                  <span class="image-count">{{ issue.image_urls.length }} image(s)</span>
+                  <div class="image-thumbnails">
+                    <img 
+                      *ngFor="let imagePath of issue.image_urls.slice(0, 3); trackBy: trackByImagePath"
+                      [src]="getImageUrl(imagePath)" 
+                      [alt]="'Issue documentation'"
+                      (click)="openVanIssueImageModal(getImageUrl(imagePath), issue)"
+                      (error)="onImageError($event)"
+                      class="thumbnail-img"
+                      loading="lazy"
+                    >
+                    <span *ngIf="issue.image_urls.length > 3" class="more-images">
+                      +{{ issue.image_urls.length - 3 }}
+                    </span>
+                  </div>
+                </div>
+                <span *ngIf="!issue.image_urls || issue.image_urls.length === 0" class="no-images-text">
+                  No images
+                </span>
+              </td>
+              
+              <td class="date-cell">
+                <span class="issue-date">{{ formatVanIssueDate(issue.created_at) }}</span>
+              </td>
+              
+              <td class="fixed-date-cell">
+                <div class="fixed-date-info">
+                  <span *ngIf="issue.date_fixed" class="fixed-date">{{ formatVanIssueDate(issue.date_fixed) }}</span>
+                  <span *ngIf="!issue.date_fixed" class="no-fixed-date">Not fixed yet</span>
+                </div>
+              </td>
+              
+              <td class="status-cell">
+                <div class="status-info">
+                  <span class="status-badge" [class.verified]="issue.verified" [class.pending]="!issue.verified">
+                    <i class="bi" [class.bi-check-circle-fill]="issue.verified" [class.bi-clock]="!issue.verified"></i>
+                    {{ issue.verified ? 'Verified' : 'Pending' }}
+                  </span>
+                  <div *ngIf="issue.verified && issue.verified_at" class="verification-details">
+                    <small class="verified-date">Verified: {{ formatVanIssueDate(issue.verified_at) }}</small>
+                    <small *ngIf="issue.verified_by" class="verified-by">by {{ issue.verified_by }}</small>
+                  </div>
+                </div>
+              </td>
+              
+              <td class="actions-cell">
+                <div class="action-buttons">
+                  <!-- View Images Button -->
+                  <button 
+                    *ngIf="issue.image_urls && issue.image_urls.length > 0"
+                    class="view-btn"
+                    (click)="openVanIssueImageModal(getImageUrl(issue.image_urls[0]), issue)"
+                    title="View Images"
+                  >
+                    <i class="bi bi-eye"></i>
+                    View
+                  </button>
+                  
+                  <!-- Simple Verification Button -->
+                  <button 
+                    *ngIf="!issue.verified"
+                    class="verify-btn"
+                    (click)="verifyIssue(issue.id)"
+                    [disabled]="isVerifying[issue.id]"
+                    title="Mark as Seen"
+                  >
+                    <i class="bi bi-check-circle" *ngIf="!isVerifying[issue.id]"></i>
+                    <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[issue.id]"></i>
+                    {{ isVerifying[issue.id] ? 'Processing...' : 'Mark as Seen' }}
+                  </button>
+                  
+                  <!-- Verified Status -->
+                  <span *ngIf="issue.verified" class="verified-label">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Seen
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Van Issue Image Viewer Modal -->
+      <div class="modal-overlay" *ngIf="selectedImage" (click)="closeVanIssueImageModal()" role="dialog" aria-modal="true">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Issue Documentation</h3>
+            <button class="close-btn" (click)="closeVanIssueImageModal()" aria-label="Close modal">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="image-container">
+              <img [src]="selectedImage" [alt]="'Issue documentation'" class="modal-image" loading="lazy">
+            </div>
+            
+            <div class="issue-details" *ngIf="selectedIssue">
+              <div class="detail-row">
+                <span class="label">Vehicle:</span>
+                <span class="value">{{ selectedIssue.van_registration }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Driver:</span>
+                <span class="value">{{ selectedIssue.driver_name }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Reported:</span>
+                <span class="value">{{ formatVanIssueDate(selectedIssue.created_at) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Issue:</span>
+                <span class="value">{{ selectedIssue.driver_comments }}</span>
+              </div>
+            </div>
+            
+            <div class="image-navigation" *ngIf="selectedIssue && selectedIssue.image_urls && selectedIssue.image_urls.length > 1">
+              <div class="thumbnail-strip">
+                <img 
+                  *ngFor="let imagePath of selectedIssue.image_urls; trackBy: trackByImagePath; let i = index"
+                  [src]="getImageUrl(imagePath)" 
+                  [alt]="'Issue documentation ' + (i + 1)"
+                  (click)="selectedImage = getImageUrl(imagePath)"
+                  [class.active]="selectedImage === getImageUrl(imagePath)"
+                  class="thumbnail"
+                  loading="lazy"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Picker Modal for Verification -->
+      <div class="modal-overlay" *ngIf="showDateModal" (click)="closeDateModal()" role="dialog" aria-modal="true">
+        <div class="modal-content date-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Mark Issue as Seen</h3>
+            <button class="close-btn" (click)="closeDateModal()" aria-label="Close modal">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="fixedDate">Date Fixed:</label>
+              <input 
+                type="date" 
+                id="fixedDate" 
+                [(ngModel)]="fixedDate" 
+                [max]="getTodayDate()"
+                class="date-input"
+                required
+              >
+            </div>
+            
+            <div class="issue-summary" *ngIf="selectedIssueForVerification">
+              <h4>Issue Summary</h4>
+              <div class="summary-details">
+                <div class="detail-row">
+                  <span class="label">Vehicle:</span>
+                  <span class="value">{{ selectedIssueForVerification.van_registration }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Driver:</span>
+                  <span class="value">{{ selectedIssueForVerification.driver_name }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Issue:</span>
+                  <span class="value">{{ selectedIssueForVerification.driver_comments }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="btn-cancel" (click)="closeDateModal()">
+              <i class="bi bi-x"></i>
+              Cancel
+            </button>
+            <button 
+              class="btn-confirm" 
+              (click)="confirmVerification()" 
+              [disabled]="!fixedDate || isVerifying[selectedIssueForVerification?.id || '']"
+            >
+              <i class="bi bi-check-circle" *ngIf="!isVerifying[selectedIssueForVerification?.id || '']"></i>
+              <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[selectedIssueForVerification?.id || '']"></i>
+              {{ isVerifying[selectedIssueForVerification?.id || ''] ? 'Processing...' : 'Confirm' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Report Modal -->
+      <div class="modal-overlay" *ngIf="showReportModal" (click)="closeVanIssuesReportModal()" role="dialog" aria-modal="true">
+        <div class="modal-content report-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Generate Custom Report</h3>
+            <button class="close-btn" (click)="closeVanIssuesReportModal()" aria-label="Close modal">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="filter-section">
+              <h4>Report Filters</h4>
+              
+              <!-- Status Filter -->
+              <div class="form-group">
+                <label>Status:</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" [(ngModel)]="reportFilters.status" value="all" name="status">
+                    <span>All Issues</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" [(ngModel)]="reportFilters.status" value="verified" name="status">
+                    <span>Verified Only</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" [(ngModel)]="reportFilters.status" value="pending" name="status">
+                    <span>Pending Only</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Date Range Filter -->
+              <div class="form-group">
+                <label>Date Range:</label>
+                <div class="date-range">
+                  <input 
+                    type="date" 
+                    [(ngModel)]="reportFilters.dateRange.start" 
+                    placeholder="Start Date"
+                    class="date-input"
+                  >
+                  <span class="date-separator">to</span>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="reportFilters.dateRange.end" 
+                    placeholder="End Date"
+                    class="date-input"
+                  >
+                </div>
+              </div>
+              
+              <!-- Vehicle Filter -->
+              <div class="form-group" *ngIf="availableVehicles.length > 0">
+                <label>Vehicles:</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-option" *ngFor="let vehicle of availableVehicles">
+                    <input 
+                      type="checkbox" 
+                      [checked]="reportFilters.vehicles.includes(vehicle)"
+                      (change)="onVanIssuesVehicleSelectionChange(vehicle, $event)"
+                    >
+                    <span>{{ vehicle }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button class="btn-cancel" (click)="closeVanIssuesReportModal()">
+              <i class="bi bi-x"></i>
+              Cancel
+            </button>
+            <button 
+              class="btn-generate" 
+              (click)="generateVanIssuesPdfReport()" 
+              [disabled]="isGeneratingReport"
+            >
+              <i class="bi bi-file-earmark-pdf" *ngIf="!isGeneratingReport"></i>
+              <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
+              {{ isGeneratingReport ? 'Generating...' : 'Generate Report' }}
+            </button>
+            <button 
+              class="btn-generate detailed" 
+              (click)="generateVanIssuesDetailedPdfReport()" 
+              [disabled]="isGeneratingReport"
+            >
+              <i class="bi bi-file-earmark-text" *ngIf="!isGeneratingReport"></i>
+              <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
+              {{ isGeneratingReport ? 'Generating...' : 'Detailed Report' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div *ngIf="showImageModal" class="image-modal" (click)="closeImageModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeImageModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <img [src]="selectedImageUrl" alt="Accident Image" class="modal-image">
+    </div>
+  </div>
+</div> 

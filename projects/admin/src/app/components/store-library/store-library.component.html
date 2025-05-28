@@ -74,6 +74,26 @@
             <!-- Compact Mode Toggle -->
             
             
+            <!-- CSV Export/Import Controls -->
+            <button class="btn-export-csv" 
+                    (click)="exportToCSV()" 
+                    [disabled]="loading || exportingCSV">
+              <i class="bi bi-download"></i> 
+              <span *ngIf="!exportingCSV">Export CSV</span>
+              <span *ngIf="exportingCSV">Exporting...</span>
+            </button>
+            
+            <label class="btn-import-csv" [class.disabled]="loading || importingCSV">
+              <i class="bi bi-upload"></i> 
+              <span *ngIf="!importingCSV">Import CSV</span>
+              <span *ngIf="importingCSV">Importing...</span>
+              <input type="file" 
+                     accept=".csv" 
+                     (change)="onCSVFileSelected($event)" 
+                     [disabled]="loading || importingCSV"
+                     style="display: none;">
+            </label>
+            
             <!-- 24-Hour Filter Button -->
             <button class="btn-24hour-filter" 
                     [class.active]="show24HourFilter" 
@@ -86,6 +106,36 @@
               <i class="bi bi-plus-circle"></i> Add New Store
             </button>
           </div>
+        </div>
+
+        <!-- CSV Export Progress Bar -->
+        <div class="export-progress-container" *ngIf="exportingCSV">
+          <div class="progress-header">
+            <div class="progress-title">
+              <i class="bi bi-download"></i>
+              <span>Exporting CSV</span>
+            </div>
+            <div class="progress-percentage">{{ exportProgress }}%</div>
+          </div>
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar" [style.width.%]="exportProgress"></div>
+          </div>
+          <div class="progress-message">{{ exportProgressMessage }}</div>
+        </div>
+
+        <!-- CSV Import Progress Bar -->
+        <div class="import-progress-container" *ngIf="importingCSV">
+          <div class="progress-header">
+            <div class="progress-title">
+              <i class="bi bi-upload"></i>
+              <span>Importing CSV</span>
+            </div>
+            <div class="progress-percentage">{{ importProgress }}%</div>
+          </div>
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar import-progress-bar" [style.width.%]="importProgress"></div>
+          </div>
+          <div class="progress-message">{{ importProgressMessage }}</div>
         </div>
 
         <!-- Error Message -->
@@ -1015,24 +1065,64 @@
               <div class="image-grid" *ngIf="storeImages && storeImages.length > 0">
                 <div class="image-card" 
                      *ngFor="let image of storeImages; let i = index"
-                     [attr.data-image-id]="image.id">
-                  <div class="image-wrapper">
+                     [attr.data-image-id]="image.id"
+                     [class.placeholder-image]="image.isPlaceholder"
+                     [class.csv-image]="image.isFromCSV">
+                  
+                  <!-- Regular Image Display (uploaded or from CSV with URL) -->
+                  <div class="image-wrapper" *ngIf="!image.isPlaceholder && image.url">
                     <img [src]="image.url" alt="Store image">
                     <span class="storefront-badge" *ngIf="image.is_storefront === 'true'">Storefront</span>
+                    <span class="csv-badge" *ngIf="image.isFromCSV">From CSV</span>
                   </div>
+                  
+                  <!-- Placeholder Image Display (from CSV import without URL) -->
+                  <div class="placeholder-wrapper" *ngIf="image.isPlaceholder">
+                    <div class="placeholder-icon">
+                      <i class="bi bi-file-earmark-image"></i>
+                    </div>
+                    <div class="placeholder-info">
+                      <div class="placeholder-title">Image Code from CSV</div>
+                      <div class="placeholder-code">{{ image.file_name }}</div>
+                    </div>
+                    <div class="placeholder-note">
+                      Image code from CSV import - actual image file not found
+                    </div>
+                  </div>
+                  
                   <div class="image-details">
                     <div class="image-annotation" *ngIf="image.instructions">{{ image.instructions }}</div>
                     <div class="image-controls">
                       <div class="image-actions">
-                        <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
-                          <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
-                          <i class="bi bi-shop"></i>
-                        </button>
-                        <button class="action-btn delete-btn" (click)="deleteImage(image)">
-                          <i class="bi bi-trash"></i>
-                        </button>
+                        <!-- Regular image actions (uploaded images) -->
+                        <ng-container *ngIf="!image.isPlaceholder && !image.isFromCSV">
+                          <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="action-btn storefront-btn" *ngIf="image.is_storefront !== 'true'" (click)="setAsStorefront(image)">
+                            <i class="bi bi-shop"></i>
+                          </button>
+                          <button class="action-btn delete-btn" (click)="deleteImage(image)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </ng-container>
+                        
+                        <!-- CSV image actions (limited functionality) -->
+                        <ng-container *ngIf="!image.isPlaceholder && image.isFromCSV">
+                          <button class="action-btn info-btn" title="This image was imported from CSV. Limited editing available.">
+                            <i class="bi bi-info-circle"></i>
+                          </button>
+                          <button class="action-btn edit-btn" (click)="editImageAnnotation(image)">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                        </ng-container>
+                        
+                        <!-- Placeholder image actions -->
+                        <ng-container *ngIf="image.isPlaceholder">
+                          <button class="action-btn info-btn" title="This is an image code from CSV import. The actual image file was not found.">
+                            <i class="bi bi-info-circle"></i>
+                          </button>
+                        </ng-container>
                       </div>
                     </div>
                   </div>

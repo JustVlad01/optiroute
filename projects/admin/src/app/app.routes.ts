@@ -13,6 +13,7 @@ import { StoreLibraryComponent } from './components/store-library/store-library.
 import { DriverUpdatesComponent } from './components/driver-updates/driver-updates.component';
 import { DriverVanIssuesComponent } from './components/driver-van-issues/driver-van-issues.component';
 import { StaffRosterManagementComponent } from './components/staff-roster-management/staff-roster-management.component';
+import { ReportsComponent } from './components/reports/reports.component';
 
 export const routes: Routes = [
     // Admin routes
@@ -49,6 +50,10 @@ export const routes: Routes = [
     {
         path: 'vehicle-crate-tracking',
         component: VehicleCrateTrackingComponent
+    },
+    {
+        path: 'reports',
+        component: ReportsComponent
     },
     {
         path: 'driver-forms',

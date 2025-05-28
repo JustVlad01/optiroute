@@ -150,6 +150,28 @@ $font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 }
 
+@mixin button-icon {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius;
+  transition: background-color 0.2s, transform 0.1s;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 @mixin input-style {
   width: 100%;
   padding: 0.4rem 0.5rem;
@@ -2334,6 +2356,28 @@ a {
     box-shadow: $shadow-lg;
   }
   
+  // Placeholder image styling
+  &.placeholder-image {
+    border: 2px dashed #e0e0e0;
+    background: #f8f9fa;
+    
+    &:hover {
+      border-color: #007bff;
+      background: #f0f8ff;
+    }
+  }
+  
+  // CSV imported image styling
+  &.csv-image {
+    border: 2px solid #28a745;
+    background: #f8fff9;
+    
+    &:hover {
+      border-color: #20c997;
+      background: #e8f5e8;
+    }
+  }
+  
   .image-wrapper {
     position: relative;
     
@@ -2349,31 +2393,40 @@ a {
       top: 0.3rem;
       right: 0.3rem;
       background: linear-gradient(135deg, $accent-color, $accent-dark);
-      color: $text-light;
-      padding: 0.15rem 0.3rem;
-      border-radius: $border-radius;
-      font-size: 0.65rem;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
-      box-shadow: $shadow;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .csv-badge {
+      position: absolute;
+      top: 0.3rem;
+      left: 0.3rem;
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
   }
   
   .image-details {
-    padding: 0.5rem;
+    padding: 0.75rem;
     
     .image-annotation {
-      font-size: 0.75rem;
-      color: $text-dark;
+      font-size: 0.8rem;
+      color: $text-muted;
       margin-bottom: 0.5rem;
       line-height: 1.3;
-      min-height: 1rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
     
     .image-controls {
@@ -2383,48 +2436,31 @@ a {
       
       .image-actions {
         display: flex;
-        gap: 0.2rem;
+        gap: 0.25rem;
         
         .action-btn {
-          @include button-reset;
+          @include button-icon;
           padding: 0.25rem;
-          border-radius: $border-radius;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-          
-          i {
-            font-size: 0.7rem;
-          }
+          font-size: 0.8rem;
           
           &.edit-btn {
-            background-color: $secondary-color;
-            color: $text-light;
-            
-            &:hover {
-              background-color: color.adjust($secondary-color, $lightness: -10%);
-            }
+            color: $primary-color;
+            &:hover { background: rgba($primary-color, 0.1); }
           }
           
           &.storefront-btn {
-            background-color: $accent-color;
-            color: $text-light;
-            
-            &:hover {
-              background-color: $accent-dark;
-            }
+            color: $accent-color;
+            &:hover { background: rgba($accent-color, 0.1); }
           }
           
           &.delete-btn {
-            background-color: $error-color;
-            color: $text-light;
-            
-            &:hover {
-              background-color: color.adjust($error-color, $lightness: -10%);
-            }
+            color: $error-color;
+            &:hover { background: rgba($error-color, 0.1); }
+          }
+          
+          &.info-btn {
+            color: #17a2b8;
+            &:hover { background: rgba(#17a2b8, 0.1); }
           }
         }
       }
@@ -2432,569 +2468,250 @@ a {
   }
 }
 
-// Responsive adjustments for images
-@media (max-width: 768px) {
-  .upload-sections {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-  
-  .image-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
-  
-  .image-card {
-    .image-wrapper img {
-      height: 100px;
-    }
-    
-    .image-details {
-      padding: 0.4rem;
-      
-      .image-annotation {
-        font-size: 0.7rem;
-        margin-bottom: 0.3rem;
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-      }
-      
-      .image-actions {
-        .action-btn {
-          width: 20px;
-          height: 20px;
-          
-          i {
-            font-size: 0.6rem;
-          }
-        }
-      }
-    }
-  }
-  
-  .paste-area {
-    padding: 0.8rem;
-    
-    i {
-      font-size: 1rem;
-    }
-    
-    .paste-text {
-      font-size: 0.7rem;
-    }
-  }
-  
-  .image-preview {
-    max-width: 150px !important;
-  }
-  
-  .shop-image-upload-container,
-  .image-upload-container {
-    margin-bottom: 0.5rem;
-    
-    .upload-form {
-      padding: 0.5rem;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .image-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.4rem;
-    padding: 0.4rem;
-  }
-  
-  .image-card {
-    .image-wrapper img {
-      height: 80px;
-    }
-    
-    .image-details {
-      padding: 0.3rem;
-    }
-  }
-  
-  .upload-actions {
-    flex-direction: column;
-    gap: 0.3rem;
-    
-    .cancel-btn, .upload-btn {
-      width: 100%;
-      padding: 0.4rem;
-      font-size: 0.7rem;
-    }
-  }
-  
-  .paste-area {
-    padding: 0.6rem;
-    
-    i {
-      font-size: 0.9rem;
-    }
-    
-    .paste-text {
-      font-size: 0.65rem;
-    }
-  }
-}
-
-// Route Filter Styles
-.route-filter-container {
-  position: relative;
-  margin-top: 1rem;
-  
-  .route-filter-toggle {
-    @include button-secondary;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    justify-content: space-between;
-    padding: 0.6rem 0.8rem;
-    font-size: 0.85rem;
-    
-    &.active {
-      background-color: $primary-light;
-      border-color: $primary-color;
-      color: $primary-color;
-    }
-    
-    .filter-count {
-      background-color: $primary-color;
-      color: $text-light;
-      border-radius: 50%;
-      padding: 0.1rem 0.4rem;
-      font-size: 0.7rem;
-      font-weight: 600;
-      min-width: 1.2rem;
-      text-align: center;
-    }
-  }
-  
-  .route-filter-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: $text-light;
-    border: 1px solid $border-color;
-    border-radius: $border-radius;
-    box-shadow: $shadow-lg;
-    z-index: 1000;
-    margin-top: 0.2rem;
-    max-height: 300px;
-    overflow-y: auto;
-    animation: fadeIn 0.2s ease-out;
-    
-    .filter-header {
-      padding: 0.6rem;
-      border-bottom: 1px solid $border-color;
-      background-color: $grey-light;
-      
-      .filter-actions {
-        display: flex;
-        gap: 0.5rem;
-        
-        .filter-action-btn {
-          @include button-reset;
-          padding: 0.3rem 0.5rem;
-          font-size: 0.75rem;
-          color: $primary-color;
-          border-radius: $border-radius;
-          transition: background-color 0.2s;
-          
-          &:hover {
-            background-color: $primary-light;
-          }
-          
-          i {
-            margin-right: 0.3rem;
-          }
-        }
-      }
-    }
-    
-    .route-checkboxes {
-      padding: 0.5rem;
-      
-      .route-checkbox {
-        display: flex;
-        align-items: center;
-        padding: 0.4rem 0.5rem;
-        cursor: pointer;
-        border-radius: $border-radius;
-        transition: background-color 0.2s;
-        
-        &:hover {
-          background-color: $grey-light;
-        }
-        
-        input[type="checkbox"] {
-          display: none;
-        }
-        
-        .checkbox-custom {
-          width: 16px;
-          height: 16px;
-          border: 2px solid $border-color;
-          border-radius: 3px;
-          margin-right: 0.6rem;
-          position: relative;
-          transition: all 0.2s;
-          flex-shrink: 0;
-          
-          &::after {
-            content: '';
-            position: absolute;
-            left: 4px;
-            top: 1px;
-            width: 4px;
-            height: 8px;
-            border: solid $text-light;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-            opacity: 0;
-            transition: opacity 0.2s;
-          }
-        }
-        
-        input[type="checkbox"]:checked + .checkbox-custom {
-          background-color: $primary-color;
-          border-color: $primary-color;
-          
-          &::after {
-            opacity: 1;
-          }
-        }
-        
-        .route-name {
-          font-size: 0.8rem;
-          color: $text-dark;
-          font-weight: 500;
-        }
-      }
-      
-      .no-routes {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        color: $grey-dark;
-        font-size: 0.8rem;
-        
-        i {
-          margin-right: 0.5rem;
-          opacity: 0.6;
-        }
-      }
-    }
-  }
-}
-
-// Responsive adjustments for route filter
-@media (max-width: 768px) {
-  .route-filter-container {
-    .route-filter-dropdown {
-      position: fixed;
-      top: auto;
-      left: 1rem;
-      right: 1rem;
-      bottom: 1rem;
-      max-height: 50vh;
-    }
-  }
-}
-
-// Column Header with Filter Styles
-.column-header-with-filter {
+.placeholder-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  
-  span {
-    flex: 1;
-  }
-  
-  .route-filter-container {
-    position: relative;
-    margin-top: 0;
-    
-    .route-filter-icon {
-      @include button-reset;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      border-radius: $border-radius;
-      background-color: transparent;
-      color: $primary-color;
-      transition: all 0.2s;
-      position: relative;
-      
-      &:hover {
-        background-color: $primary-light;
-      }
-      
-      &.active {
-        background-color: $primary-color;
-        color: $text-light;
-      }
-      
-      i {
-        font-size: 0.7rem;
-      }
-      
-      .filter-count {
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        background-color: $error-color;
-        color: $text-light;
-        border-radius: 50%;
-        padding: 0.1rem 0.3rem;
-        font-size: 0.6rem;
-        font-weight: 600;
-        min-width: 14px;
-        height: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-      }
-    }
-    
-    .route-filter-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      left: auto;
-      width: 250px;
-      background-color: $text-light;
-      border: 1px solid $border-color;
-      border-radius: $border-radius;
-      box-shadow: $shadow-lg;
-      z-index: 1001;
-      margin-top: 0.2rem;
-      max-height: 300px;
-      overflow-y: auto;
-      animation: fadeIn 0.2s ease-out;
-      
-      .filter-header {
-        padding: 0.6rem;
-        border-bottom: 1px solid $border-color;
-        background-color: $grey-light;
-        
-        .filter-actions {
-          display: flex;
-          gap: 0.5rem;
-          
-          .filter-action-btn {
-            @include button-reset;
-            padding: 0.3rem 0.5rem;
-            font-size: 0.75rem;
-            color: $primary-color;
-            border-radius: $border-radius;
-            transition: background-color 0.2s;
-            
-            &:hover {
-              background-color: $primary-light;
-            }
-            
-            i {
-              margin-right: 0.3rem;
-            }
-          }
-        }
-      }
-      
-      .route-checkboxes {
-        padding: 0.5rem;
-        
-        .route-checkbox {
-          display: flex;
-          align-items: center;
-          padding: 0.4rem 0.5rem;
-          cursor: pointer;
-          border-radius: $border-radius;
-          transition: background-color 0.2s;
-          
-          &:hover {
-            background-color: $grey-light;
-          }
-          
-          input[type="checkbox"] {
-            display: none;
-          }
-          
-          .checkbox-custom {
-            width: 16px;
-            height: 16px;
-            border: 2px solid $border-color;
-            border-radius: 3px;
-            margin-right: 0.6rem;
-            position: relative;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            
-            &::after {
-              content: '';
-              position: absolute;
-              left: 4px;
-              top: 1px;
-              width: 4px;
-              height: 8px;
-              border: solid $text-light;
-              border-width: 0 2px 2px 0;
-              transform: rotate(45deg);
-              opacity: 0;
-              transition: opacity 0.2s;
-            }
-          }
-          
-          input[type="checkbox"]:checked + .checkbox-custom {
-            background-color: $primary-color;
-            border-color: $primary-color;
-            
-            &::after {
-              opacity: 1;
-            }
-          }
-          
-          .route-name {
-            font-size: 0.8rem;
-            color: $text-dark;
-            font-weight: 500;
-          }
-        }
-        
-        .no-routes {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1rem;
-          color: $grey-dark;
-          font-size: 0.8rem;
-          
-          i {
-            margin-right: 0.5rem;
-            opacity: 0.6;
-          }
-        }
-      }
-    }
-  }
-}
-
-// Responsive adjustments for column header filter
-@media (max-width: 768px) {
-  .column-header-with-filter {
-    .route-filter-container {
-      .route-filter-dropdown {
-        position: fixed;
-        top: auto;
-        left: 1rem;
-        right: 1rem;
-        bottom: 1rem;
-        width: auto;
-        max-height: 50vh;
-      }
-    }
-  }
-}
-
-// Filtered Results Info Styles
-.filtered-results-info {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: $border-radius;
-  border: 1px solid $border-color;
-  box-shadow: $shadow-sm;
-  
-  .filter-info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    
-    i {
-      color: $primary-color;
-      margin-right: 0.5rem;
-    }
-    
-    span {
-      flex: 1;
-      font-size: 0.875rem;
-      color: $text-dark;
-      font-weight: 500;
-    }
-    
-    .filter-actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-shrink: 0;
-    }
-    
-    .clear-filter-btn {
-      @include button-secondary;
-      padding: 0.4rem 0.8rem;
-      font-size: 0.8rem;
-      color: $error-color;
-      border-color: $error-color;
-      
-      &:hover {
-        background-color: $error-color;
-        color: $text-light;
-      }
-      
-      i {
-        margin-right: 0.3rem;
-        color: inherit;
-      }
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .filtered-results-info {
-    .filter-info {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.5rem;
-      text-align: center;
-      
-      .filter-actions {
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      
-      .clear-filter-btn {
-        align-self: center;
-      }
-    }
-  }
-}
-
-.btn-view {
-  background: linear-gradient(135deg, $accent-color, $accent-dark);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.2s ease;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
+  padding: 2rem;
+  min-height: 200px;
+  text-align: center;
+  
+  .placeholder-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  .placeholder-info {
+    .placeholder-title {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.5rem;
+    }
+    
+    .placeholder-code {
+      font-family: 'Courier New', monospace;
+      background: #e9ecef;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #6c757d;
+      word-break: break-all;
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  .placeholder-note {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 0.5rem;
+  }
 }
 
-.btn-view:hover:not(:disabled) {
-  background: linear-gradient(135deg, $accent-dark, color.adjust($accent-dark, $lightness: -10%));
+// CSV Export/Import button styles
+.btn-export-csv {
+  @include button-primary;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  
+  i {
+    font-size: 0.9rem;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-import-csv {
+  @include button-secondary;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  
+  i {
+    font-size: 0.9rem;
+  }
+  
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// Export Progress Bar Styles
+.export-progress-container {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    
+    .progress-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: #495057;
+      
+      i {
+        color: $primary-color;
+        font-size: 1.1rem;
+      }
+    }
+    
+    .progress-percentage {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: $primary-color;
+      background: rgba($primary-color, 0.1);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+  }
+  
+  .progress-bar-wrapper {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, $primary-color, lighten($primary-color, 10%));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+    }
+  }
+  
+  .progress-message {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    min-height: 1.2rem;
+  }
+}
+
+// Import Progress Bar Styles (similar but with different colors)
+.import-progress-container {
+  background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+  border: 1px solid #b3d9ff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+  
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    
+    .progress-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: #495057;
+      
+      i {
+        color: #28a745;
+        font-size: 1.1rem;
+      }
+    }
+    
+    .progress-percentage {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #28a745;
+      background: rgba(#28a745, 0.1);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+  }
+  
+  .progress-bar-wrapper {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    
+    .import-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #28a745, lighten(#28a745, 10%));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+    }
+  }
+  
+  .progress-message {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    min-height: 1.2rem;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }

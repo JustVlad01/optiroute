@@ -10,6 +10,7 @@ import { DriverPerformanceComponent } from './components/driver-performance/driv
 import { StoreLibraryComponent } from './components/store-library/store-library.component';
 import { DriverDeliveryUpdateComponent } from './components/driver-delivery-update/driver-delivery-update.component';
 import { ReportVanIssuesComponent } from './components/report-van-issues/report-van-issues.component';
+import { ReportAccidentsComponent } from './components/report-accidents/report-accidents.component';
 import { StaffRosterComponent } from './components/staff-roster/staff-roster.component';
 
 export const routes: Routes = [
@@ -45,6 +46,10 @@ export const routes: Routes = [
     {
         path: 'report-van-issues',
         component: ReportVanIssuesComponent
+    },
+    {
+        path: 'report-accidents',
+        component: ReportAccidentsComponent
     },
     {
         path: 'staff-roster',
