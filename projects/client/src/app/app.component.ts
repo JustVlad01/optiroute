@@ -16,6 +16,7 @@ export class AppComponent implements OnInit {
   title = 'Around Noon';
   updateAvailable = false;
   private currentVersion: string | null = null;
+  private initialVersion: string | null = null;
 
   constructor(
     private swUpdate: SwUpdate,
@@ -23,8 +24,10 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Store the initial app version
+    // Store the initial app version - only set once to prevent constant changes
     this.currentVersion = this.getAppVersion();
+    this.initialVersion = this.currentVersion;
+    console.log('App initialized with version:', this.currentVersion);
     
     // Check for service worker updates
     if (this.swUpdate.isEnabled) {
@@ -55,7 +58,7 @@ export class AppComponent implements OnInit {
       });
     }
 
-    // Also check server version periodically
+    // Also check server version periodically - but less frequently to avoid issues
     this.checkServerVersion();
     interval(60000).subscribe(() => this.checkServerVersion());
   }
@@ -63,16 +66,44 @@ export class AppComponent implements OnInit {
   private getAppVersion(): string {
     // Try to get version from meta tag added by server
     const metaTag = document.querySelector('meta[name="build-timestamp"]');
-    return metaTag?.getAttribute('content') || Date.now().toString();
+    const metaVersion = metaTag?.getAttribute('content');
+    
+    if (metaVersion) {
+      console.log('Found meta version:', metaVersion);
+      return metaVersion;
+    }
+    
+    // If no meta tag, use a consistent fallback (app startup time)
+    // This prevents the version from changing every time the method is called
+    if (!this.initialVersion) {
+      const fallbackVersion = Date.now().toString();
+      console.log('No meta version found, using fallback:', fallbackVersion);
+      return fallbackVersion;
+    }
+    
+    return this.initialVersion;
   }
 
   private checkServerVersion() {
+    console.log('Checking server version...');
     this.http.get<any>('/api/version').subscribe({
       next: (versionInfo) => {
         const serverVersion = versionInfo.version?.toString();
+        console.log('Server version:', serverVersion, 'Current version:', this.currentVersion);
+        
+        // Only update if we have a valid server version and it's significantly different
         if (serverVersion && this.currentVersion && serverVersion !== this.currentVersion) {
-          console.log('Server version changed, forcing update...');
-          this.updateApp();
+          // Add additional check to prevent constant updates due to minor differences
+          const serverNum = parseInt(serverVersion, 10);
+          const currentNum = parseInt(this.currentVersion, 10);
+          
+          // Only update if versions are substantially different (more than 1 minute apart)
+          if (isNaN(serverNum) || isNaN(currentNum) || Math.abs(serverNum - currentNum) > 60000) {
+            console.log('Significant server version change detected, forcing update...');
+            this.updateApp();
+          } else {
+            console.log('Minor version difference ignored');
+          }
         }
       },
       error: (err) => {
