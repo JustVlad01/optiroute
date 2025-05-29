@@ -4,6 +4,9 @@ const fs = require('fs');
 const { Pool } = require('pg'); // Add PostgreSQL
 const app = express();
 
+// Track server start time for cache busting
+const serverStartTime = Date.now();
+
 // JSON body parser middleware
 app.use(express.json({ limit: '10mb' })); // Limit file size to 10MB
 
@@ -470,6 +473,8 @@ if (fs.existsSync(clientBrowserPath)) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
+        res.setHeader('Last-Modified', new Date().toUTCString());
+        res.setHeader('ETag', `"${Date.now()}"`);
       } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
@@ -486,6 +491,8 @@ if (fs.existsSync(clientBrowserPath)) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
+        res.setHeader('Last-Modified', new Date().toUTCString());
+        res.setHeader('ETag', `"${Date.now()}"`);
       } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
@@ -497,6 +504,11 @@ if (fs.existsSync(clientBrowserPath)) {
 
 // Add a test endpoint
 app.get('/test', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
   res.send({
     message: 'Server is running',
     time: new Date().toISOString(),
@@ -514,14 +526,17 @@ app.get('/api/version', (req, res) => {
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
     'Pragma': 'no-cache',
-    'Expires': '0'
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': `"${Date.now()}"`
   });
   
   // Try to read version from generated file
   let versionInfo = {
     version: Date.now(),
     deployTime: new Date().toISOString(),
-    buildHash: process.env.RENDER_GIT_COMMIT || 'local-dev'
+    buildHash: process.env.RENDER_GIT_COMMIT || 'local-dev',
+    serverStartTime: serverStartTime
   };
   
   try {
@@ -531,7 +546,8 @@ app.get('/api/version', (req, res) => {
       versionInfo = {
         version: versionData.buildTime || Date.now(),
         deployTime: versionData.deployTime,
-        buildHash: versionData.gitHash || process.env.RENDER_GIT_COMMIT || 'local-dev'
+        buildHash: versionData.gitHash || process.env.RENDER_GIT_COMMIT || 'local-dev',
+        serverStartTime: serverStartTime
       };
     }
   } catch (error) {

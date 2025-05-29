@@ -33,13 +33,14 @@
       "name": "api-freshness",
       "urls": [
         "/**/*.json",
-        "/api/**"
+        "/api/**",
+        "/version.json"
       ],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 50,
-        "maxAge": "10m",
-        "timeout": "3s"
+        "maxAge": "1m",
+        "timeout": "2s"
       }
     },
     {
@@ -51,7 +52,7 @@
       "cacheConfig": {
         "strategy": "performance",
         "maxSize": 50,
-        "maxAge": "6h"
+        "maxAge": "30m"
       }
     }
   ],

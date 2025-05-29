@@ -134,6 +134,36 @@ interface VanIssue {
   driver_location?: string;
 }
 
+// Rejected Orders interface
+interface RejectedOrder {
+  id: string;
+  driver_id: string;
+  driver_name: string;
+  date: string;
+  route_number: string;
+  van_registration: string;
+  store_id: string;
+  store_name: string;
+  arrival_time_at_store: string;
+  wait_time_in_store: number;
+  driving_start_time: string;
+  site_keys: string;
+  drop_number_on_route: number;
+  number_of_crates_into_store: number;
+  van_temp_by_display: number;
+  order_damaged_before_loading: string;
+  all_products_damaged: string;
+  marked_shortages_on_docket: string;
+  know_how_product_damaged: string;
+  comments_vehicle_issues?: string;
+  comments_delivery_issues?: string;
+  comments_complaints?: string;
+  comments_returns?: string;
+  comments_accidents?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 @Component({
   selector: 'app-reports',
   standalone: true,
@@ -143,7 +173,7 @@ interface VanIssue {
 })
 export class ReportsComponent implements OnInit, OnDestroy {
   // Tab management
-  activeTab: 'accident-reports' | 'driver-updates' | 'van-issues' = 'accident-reports';
+  activeTab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders' = 'accident-reports';
 
   // Accident Reports properties
   reports: AccidentReport[] = [];
@@ -205,23 +235,30 @@ export class ReportsComponent implements OnInit, OnDestroy {
   verificationNotes: { [key: string]: string } = {};
   isVerifying: { [key: string]: boolean } = {};
   
-  // Date picker modal properties
+  // Van issue verification and date modals
   showDateModal = false;
   selectedIssueForVerification: VanIssue | null = null;
   fixedDate: string = '';
 
-  // PDF Report properties
+  // Van Issues Report Modal properties
   showReportModal = false;
   reportFilters = {
-    status: 'all' as 'all' | 'verified' | 'pending',
-    dateRange: {
-      start: '',
-      end: ''
-    },
+    startDate: '',
+    endDate: '',
+    verified: null as boolean | null,
     vehicles: [] as string[]
   };
   availableVehicles: string[] = [];
   isGeneratingReport = false;
+
+  // Rejected Orders properties
+  rejectedOrders: RejectedOrder[] = [];
+  rejectedOrdersLoading = true;
+  selectedRejectedOrder: RejectedOrder | null = null;
+  rejectedOrdersViewMode: 'list' | 'detail' = 'list';
+  rejectedOrdersSearchTerm: string = '';
+  rejectedOrdersDateFilter: string = '';
+  filteredRejectedOrders: RejectedOrder[] = [];
 
   constructor(
     private router: Router,
@@ -256,12 +293,14 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   // Tab management methods
-  setActiveTab(tab: 'accident-reports' | 'driver-updates' | 'van-issues'): void {
+  setActiveTab(tab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders'): void {
     this.activeTab = tab;
     if (tab === 'driver-updates' && this.dayGroups.length === 0) {
       this.loadUpdatesGroupedByDay();
     } else if (tab === 'van-issues' && this.vanIssues.length === 0) {
       this.loadVanIssues();
+    } else if (tab === 'rejected-orders' && this.rejectedOrders.length === 0) {
+      this.loadRejectedOrders();
     }
   }
 
@@ -2462,8 +2501,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
     
-    this.reportFilters.dateRange.start = startDate.toISOString().split('T')[0];
-    this.reportFilters.dateRange.end = endDate.toISOString().split('T')[0];
+    this.reportFilters.startDate = startDate.toISOString().split('T')[0];
+    this.reportFilters.endDate = endDate.toISOString().split('T')[0];
     
     // Get unique vehicles from current issues
     this.availableVehicles = [...new Set(this.vanIssues.map(issue => issue.van_registration))].sort();
@@ -2471,8 +2510,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   private resetVanIssuesReportFilters(): void {
     this.reportFilters = {
-      status: 'all',
-      dateRange: { start: '', end: '' },
+      startDate: '',
+      endDate: '',
+      verified: null,
       vehicles: []
     };
   }
@@ -2493,21 +2533,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
     try {
       // Prepare filters for the PDF service
       const filters: any = {
-        status: this.reportFilters.status
+        startDate: this.reportFilters.startDate,
+        endDate: this.reportFilters.endDate,
+        verified: this.reportFilters.verified,
+        vehicles: this.reportFilters.vehicles
       };
-
-      // Add date range if specified
-      if (this.reportFilters.dateRange.start && this.reportFilters.dateRange.end) {
-        filters.dateRange = {
-          start: this.reportFilters.dateRange.start,
-          end: this.reportFilters.dateRange.end
-        };
-      }
-
-      // Add vehicle filter if any vehicles are selected
-      if (this.reportFilters.vehicles.length > 0) {
-        filters.vehicles = this.reportFilters.vehicles;
-      }
 
       // Generate the report
       this.pdfReportService.generateFilteredReport(this.vanIssues, filters);
@@ -2528,21 +2558,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
     try {
       // Prepare filters for the PDF service
       const filters: any = {
-        status: this.reportFilters.status
+        startDate: this.reportFilters.startDate,
+        endDate: this.reportFilters.endDate,
+        verified: this.reportFilters.verified,
+        vehicles: this.reportFilters.vehicles
       };
-
-      // Add date range if specified
-      if (this.reportFilters.dateRange.start && this.reportFilters.dateRange.end) {
-        filters.dateRange = {
-          start: this.reportFilters.dateRange.start,
-          end: this.reportFilters.dateRange.end
-        };
-      }
-
-      // Add vehicle filter if any vehicles are selected
-      if (this.reportFilters.vehicles.length > 0) {
-        filters.vehicles = this.reportFilters.vehicles;
-      }
 
       // Generate the detailed report
       this.pdfReportService.generateDetailedReport(this.vanIssues, filters);
@@ -2576,5 +2596,358 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   getVanIssuesPendingCount(): number {
     return this.vanIssues.filter(issue => !issue.verified).length;
+  }
+
+  getCommentsCount(order: RejectedOrder): number {
+    let count = 0;
+    if (order.comments_vehicle_issues) count++;
+    if (order.comments_delivery_issues) count++;
+    if (order.comments_complaints) count++;
+    if (order.comments_returns) count++;
+    if (order.comments_accidents) count++;
+    return count;
+  }
+
+  // Rejected Orders Methods
+  async loadRejectedOrders(): Promise<void> {
+    this.rejectedOrdersLoading = true;
+    try {
+      const data = await this.supabaseService.getAllRejectedOrders();
+      
+      this.rejectedOrders = data?.map((order: any) => ({
+        ...order,
+        driver_name: order.drivers?.name || order.driver_name || 'Unknown Driver',
+        driver_custom_id: order.drivers?.custom_id || ''
+      })) || [];
+
+      // Initialize filtered orders
+      this.filteredRejectedOrders = [...this.rejectedOrders];
+
+    } catch (error) {
+      console.error('Error loading rejected orders:', error);
+    } finally {
+      this.rejectedOrdersLoading = false;
+    }
+  }
+
+  viewRejectedOrderDetails(order: RejectedOrder): void {
+    this.selectedRejectedOrder = order;
+    this.rejectedOrdersViewMode = 'detail';
+  }
+
+  backToRejectedOrdersList(): void {
+    this.selectedRejectedOrder = null;
+    this.rejectedOrdersViewMode = 'list';
+  }
+
+  getRejectedOrderCount(order: RejectedOrder): number {
+    // Return number of crates delivered as a simple count metric
+    return order.number_of_crates_into_store || 0;
+  }
+
+  getAllStoresFromRejectedOrders(): any[] {
+    if (!this.selectedRejectedOrder) return [];
+    
+    // For rejected orders, we just have one store per order
+    return [{
+      storeData: {
+        name: this.selectedRejectedOrder.store_name,
+        id: this.selectedRejectedOrder.store_id,
+        drop_number: this.selectedRejectedOrder.drop_number_on_route
+      }
+    }];
+  }
+
+  toggleStoreSelectionForRejectedOrder(deliveryIndex: number, storeIndex: number): void {
+    // Simplified for single store per rejected order
+    console.log('Store selection toggled for rejected order');
+  }
+
+  isStoreSelectedForRejectedOrder(deliveryIndex: number, storeIndex: number): boolean {
+    // Simplified for single store per rejected order
+    return false;
+  }
+
+  hasSelectedStoresForRejectedOrder(): boolean {
+    // Simplified for single store per rejected order
+    return false;
+  }
+
+  selectAllStoresForRejectedOrder(): void {
+    // Simplified for single store per rejected order
+    console.log('All stores selected for rejected order');
+  }
+
+  deselectAllStoresForRejectedOrder(): void {
+    // Simplified for single store per rejected order
+    console.log('All stores deselected for rejected order');
+  }
+
+  exportSelectedStoresForRejectedOrder(): void {
+    // Implementation for exporting selected stores
+    console.log('Exporting selected stores:', this.selectedRejectedOrder?.store_name);
+  }
+
+  exportFullUpdateForRejectedOrder(order: RejectedOrder): void {
+    // Implementation for exporting full rejected order
+    console.log('Exporting full rejected order:', order);
+  }
+
+  filterRejectedOrders(): void {
+    this.filteredRejectedOrders = this.rejectedOrders.filter(order => {
+      const searchTerm = this.rejectedOrdersSearchTerm.toLowerCase();
+      const dateFilter = this.rejectedOrdersDateFilter;
+
+      return (
+        order.driver_name?.toLowerCase().includes(searchTerm) ||
+        order.van_registration?.toLowerCase().includes(searchTerm) ||
+        order.store_name?.toLowerCase().includes(searchTerm) ||
+        order.route_number?.toLowerCase().includes(searchTerm) ||
+        (dateFilter && order.date === dateFilter)
+      );
+    });
+  }
+
+  async downloadRejectedOrderPDF(order: RejectedOrder): Promise<void> {
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15; // Reduced margin
+      let yPosition = margin;
+
+      // Enhanced professional header section with full document titles
+      pdf.setFillColor(211, 47, 47); // Changed from blue to red #D32F2F
+      pdf.rect(0, 0, pageWidth, 35, 'F'); // Larger header for more content
+      
+      // Company name
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('AROUND NOON', margin, 12);
+      
+      // Document title line 1
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Document Title: Daily Driver Checklist Report Form, Issue 6', margin, 20);
+      
+      // Document title line 2
+      pdf.text('Approved by Jean Hart, Docu: VM02, Date 19.07.23', margin, 26);
+      
+      // Report type
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      
+
+      yPosition = 45; // Adjusted for larger header
+
+      // Compact report header information
+      pdf.setFillColor(245, 245, 245);
+      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 18, 'F'); // Smaller box
+      pdf.setDrawColor(200, 200, 200);
+      pdf.rect(margin, yPosition, pageWidth - 2 * margin, 18, 'S');
+
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(10); // Smaller font
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Driver: ${order.driver_name}`, margin + 3, yPosition + 7);
+      
+      const submissionDate = new Date(order.created_at).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      pdf.text(`Submitted: ${submissionDate}`, pageWidth - margin - 80, yPosition + 10);
+
+      pdf.setFontSize(8); // Smaller font
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Date: ${order.date}`, margin + 3, yPosition + 11); // Moved higher
+
+      yPosition += 25; // Smaller gap
+
+      // Compact section header function
+      const createSectionHeader = (title: string) => {
+        pdf.setFillColor(211, 47, 47); // Changed from blue to red #D32F2F
+        pdf.rect(margin, yPosition, pageWidth - 2 * margin, 6, 'F'); // Much smaller header
+        
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(9); // Smaller font
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(title, margin + 3, yPosition + 4);
+        
+        yPosition += 8; // Smaller gap
+      };
+
+      // Compact info table function - two columns layout
+      const createCompactInfoTable = (data: [string, string][], columns: number = 2, rightAlign: boolean = false) => {
+        const startY = yPosition;
+        const rowHeight = 5; // Much smaller rows
+        const columnWidth = (pageWidth - 2 * margin - 5) / columns;
+        
+        let currentColumn = 0;
+        let currentY = yPosition;
+        
+        data.forEach(([label, value], index) => {
+          const xPosition = margin + (currentColumn * columnWidth);
+          
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(211, 47, 47); // Changed from blue to red #D32F2F
+          pdf.setFontSize(8); // Smaller font
+          pdf.text(label, xPosition + 2, currentY + 3);
+          
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFontSize(8); // Smaller font
+          
+          const displayValue = value || 'N/A';
+          
+          // Adjust answer position based on column layout and alignment preference
+          let answerXPosition;
+          if (columns === 1) {
+            if (rightAlign) {
+              // Single column with right alignment: position answer on the right side of the page
+              answerXPosition = pageWidth - margin - 25; // Position near right edge
+            } else {
+              // Single column with normal alignment: position answer closer to label
+              answerXPosition = margin + 60; // Closer to the label
+            }
+          } else {
+            // Multi-column: use existing logic
+            const maxWidth = columnWidth - 40;
+            const truncatedValue = displayValue.length > 25 ? displayValue.substring(0, 22) + '...' : displayValue;
+            answerXPosition = xPosition + 35;
+          }
+          
+          // For single column, don't truncate the answer
+          const finalValue = columns === 1 ? displayValue : (displayValue.length > 25 ? displayValue.substring(0, 22) + '...' : displayValue);
+          pdf.text(finalValue, answerXPosition, currentY + 3);
+          
+          currentColumn++;
+          if (currentColumn >= columns) {
+            currentColumn = 0;
+            currentY += rowHeight;
+          }
+        });
+        
+        if (currentColumn > 0) {
+          currentY += rowHeight;
+        }
+        
+        yPosition = currentY + 3;
+      };
+
+      // DRIVER & ROUTE INFORMATION (2 columns)
+      createSectionHeader('DRIVER & ROUTE');
+      
+      const driverRouteData: [string, string][] = [
+        ['Driver Name:', order.driver_name || ''],
+        ['Route Number:', order.route_number || ''],
+        ['Vehicle Registration:', order.van_registration || ''],
+        ['Date:', order.date || '']
+      ];
+      
+      createCompactInfoTable(driverRouteData, 2);
+
+      // STORE & DELIVERY INFORMATION - Store name gets its own row first
+      createSectionHeader('STORE & DELIVERY');
+      
+      // Store name in its own single-column row (full width)
+      const storeNameData: [string, string][] = [
+        ['Store Name:', order.store_name || '']
+      ];
+      createCompactInfoTable(storeNameData, 1); // Single column for store name
+      
+      // Rest of delivery data in 2 columns
+      const deliveryData: [string, string][] = [
+        ['Drop No. on Route:', order.drop_number_on_route?.toString() || ''],
+        ['Arrival Time at Store:', order.arrival_time_at_store || ''],
+        ['Wait Time in Store:', `${order.wait_time_in_store || 0}min`],
+        ['Driving Start Time:', order.driving_start_time || ''],
+        ['Total Crates in Store:', order.number_of_crates_into_store?.toString() || ''],
+        ['Van Temp by Display:', `${order.van_temp_by_display || 0}°C`],
+        ['Site Keys:', order.site_keys === 'yes' ? 'Yes' : 'No']
+      ];
+      
+      createCompactInfoTable(deliveryData, 2);
+
+      // DAMAGE ASSESSMENT (single column for full question text)
+      createSectionHeader('DAMAGE ASSESSMENT');
+      
+      const damageData: [string, string][] = [
+        ['Was the order damaged before loading into your vehicle?', order.order_damaged_before_loading === 'yes' ? 'Yes' : 'No'],
+        ['Are all products in the order damaged?', order.all_products_damaged === 'yes' ? 'Yes' : 'No'],
+        ['Have you marked shortages on the delivery docket?', order.marked_shortages_on_docket === 'yes' ? 'Yes' : 'No'],
+        ['Do you know how the product was damaged?', order.know_how_product_damaged === 'yes' ? 'Yes' : 'No']
+      ];
+      
+      createCompactInfoTable(damageData, 1, true); // Single column with right-aligned answers
+
+      // ADDITIONAL COMMENTS (if any)
+      const commentsData: [string, string | undefined][] = [
+        ['Vehicle Issues:', order.comments_vehicle_issues],
+        ['Delivery Issues:', order.comments_delivery_issues],
+        ['Complaints:', order.comments_complaints],
+        ['Returns:', order.comments_returns],
+        ['Accidents:', order.comments_accidents]
+      ];
+
+      const comments: [string, string][] = commentsData
+        .filter(([label, comment]) => comment && comment.trim())
+        .map(([label, comment]) => [label, comment!]);
+
+      if (comments.length > 0) {
+        createSectionHeader('COMMENTS');
+        
+        // Single column for comments with increased spacing between sections
+        comments.forEach(([label, comment], index) => {
+          // Add extra spacing before each comment section (except the first one)
+          if (index > 0) {
+            yPosition += 6; // Additional gap between comment sections
+          }
+          
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(211, 47, 47); // Changed from blue to red #D32F2F
+          pdf.setFontSize(8);
+          pdf.text(label, margin + 2, yPosition + 3);
+          
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFontSize(7);
+          
+          // Truncate long comments
+          const maxLength = 80;
+          const truncatedComment = comment.length > maxLength ? comment.substring(0, maxLength) + '...' : comment;
+          const lines = pdf.splitTextToSize(truncatedComment, pageWidth - 2 * margin - 4);
+          
+          lines.forEach((line: string, index: number) => {
+            pdf.text(line, margin + 2, yPosition + 8 + (index * 3));
+          });
+          
+          yPosition += Math.max(8, lines.length * 3 + 5);
+        });
+      }
+
+      // Footer
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(`Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')}`, 
+               margin, pageHeight - 10);
+
+      // Download the PDF
+      // Extract store code from store name (e.g., "COMP135 - D1328..." -> "COMP135")
+      const storeCode = order.store_name?.split(' ')[0] || 'UNKNOWN';
+      
+      // Format date for filename (e.g., "2025-05-29" -> "2025-05-29")
+      const reportDate = order.date?.replace(/\//g, '-') || 'unknown-date';
+      
+      pdf.save(`${storeCode}-${reportDate}-rejected-order.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Show a simple alert since NotificationService doesn't have showError method
+      alert('Failed to generate PDF report. Please try again.');
+    }
   }
 }

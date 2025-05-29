@@ -1,6 +1,19 @@
-<div *ngIf="updateAvailable" class="update-banner">
-  A new version is available. 
-  <button (click)="updateApp()" class="update-button">Update Now</button>
+<div *ngIf="showUpdatePrompt" class="update-banner">
+  <div class="update-content">
+    <div class="update-icon">🔄</div>
+    <div class="update-text">
+      <strong>New version available!</strong>
+      <span>App will update automatically in 10 seconds</span>
+    </div>
+  </div>
+  <div class="update-actions">
+    <button (click)="updateApp()" class="update-button update-now">
+      Update Now
+    </button>
+    <button (click)="dismissUpdate()" class="update-button update-dismiss">
+      Dismiss
+    </button>
+  </div>
 </div>
 
 <router-outlet></router-outlet>

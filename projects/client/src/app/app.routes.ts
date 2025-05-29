@@ -3,6 +3,7 @@ import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { DriverFormsComponent } from './components/driver-forms/driver-forms.component';
 import { FormDetailsComponent } from './components/form-details/form-details.component';
+import { RejectedOrderFormComponent } from './components/rejected-order-form/rejected-order-form.component';
 import { AdminFormsComponent } from './components/admin/admin-forms/admin-forms.component';
 import { FormTemplatesComponent } from './components/admin/form-templates/form-templates.component';
 import { ViewOrdersComponent } from './components/view-orders/view-orders.component';
@@ -58,6 +59,14 @@ export const routes: Routes = [
     {
         path: 'form-details/:id',
         component: FormDetailsComponent
+    },
+    {
+        path: 'rejected-order-form/:id',
+        component: RejectedOrderFormComponent
+    },
+    {
+        path: 'rejected-order-form',
+        component: RejectedOrderFormComponent
     },
     {
         path: 'view-orders',

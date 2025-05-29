@@ -969,4 +969,103 @@ export class SupabaseService {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }
+
+  // Rejected Order Methods (Standalone - not tied to form assignments)
+  
+  // Method to submit rejected order form directly
+  async submitRejectedOrder(formData: any) {
+    console.log('Submitting rejected order directly to rejected_orders table:', formData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .insert([formData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error submitting rejected order:', error);
+        throw error;
+      }
+
+      console.log('Rejected order submitted successfully:', data);
+      return data;
+    } catch (err) {
+      console.error('Exception during rejected order submission:', err);
+      throw err;
+    }
+  }
+
+  // Method to get rejected orders by driver
+  async getRejectedOrdersByDriver(driverId: string) {
+    console.log(`Getting rejected orders for driver: ${driverId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .select('*')
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching rejected orders:', error);
+        throw error;
+      }
+
+      console.log(`Retrieved ${data?.length || 0} rejected orders`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception fetching rejected orders:', err);
+      throw err;
+    }
+  }
+
+  // Method to get a single rejected order by ID
+  async getRejectedOrderById(orderId: string) {
+    console.log(`Getting rejected order by ID: ${orderId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching rejected order:', error);
+        throw error;
+      }
+
+      console.log('Retrieved rejected order');
+      return data;
+    } catch (err) {
+      console.error('Exception fetching rejected order:', err);
+      throw err;
+    }
+  }
+
+  // Method to update a rejected order
+  async updateRejectedOrder(orderId: string, updateData: any) {
+    console.log(`Updating rejected order ${orderId}:`, updateData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .update(updateData)
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating rejected order:', error);
+        throw error;
+      }
+
+      console.log('Rejected order updated successfully');
+      return data;
+    } catch (err) {
+      console.error('Exception updating rejected order:', err);
+      throw err;
+    }
+  }
 }

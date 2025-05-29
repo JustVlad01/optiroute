@@ -1935,4 +1935,97 @@ export class SupabaseService {
       return null;
     }
   }
+
+  // Method to get all rejected orders for admin reports
+  async getAllRejectedOrders() {
+    console.log('Fetching all rejected orders for admin');
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .select(`
+          *,
+          drivers (
+            name,
+            custom_id,
+            phone_number
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching rejected orders:', error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} rejected orders`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during rejected orders fetch:', err);
+      throw err;
+    }
+  }
+
+  // Method to get rejected orders by date range
+  async getRejectedOrdersByDateRange(startDate: string, endDate: string) {
+    console.log(`Fetching rejected orders from ${startDate} to ${endDate}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .select(`
+          *,
+          drivers (
+            name,
+            custom_id,
+            phone_number
+          )
+        `)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching rejected orders by date range:', error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} rejected orders for date range`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during rejected orders date range fetch:', err);
+      throw err;
+    }
+  }
+
+  // Method to get rejected orders by driver
+  async getRejectedOrdersByDriver(driverId: string) {
+    console.log(`Fetching rejected orders for driver: ${driverId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_orders')
+        .select(`
+          *,
+          drivers (
+            name,
+            custom_id,
+            phone_number
+          )
+        `)
+        .eq('driver_id', driverId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching rejected orders by driver:', error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} rejected orders for driver`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during rejected orders driver fetch:', err);
+      throw err;
+    }
+  }
 }

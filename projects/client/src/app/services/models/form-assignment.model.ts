@@ -14,4 +14,5 @@ export interface FormAssignment {
   partial_form_data?: any;
   partially_completed?: boolean;
   recurring?: boolean; // For recurring forms
+  form_type?: string; // Type of form (e.g., 'daily_driver', 'rejected_order_checklist')
 } 

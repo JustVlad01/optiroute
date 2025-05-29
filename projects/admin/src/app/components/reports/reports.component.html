@@ -1,7 +1,10 @@
 <div class="reports-container">
   <!-- Professional Navbar -->
   <div class="navbar">
-    <div class="logo">OPTIROUTE</div>
+    <div class="logo">
+      <div class="main-title">OPTIROUTE</div>
+      
+    </div>
     <div class="nav-links">
       <a class="nav-pill" (click)="navigateToDashboard()">
         <i class="bi bi-house-fill"></i> Back to Dashboard
@@ -29,6 +32,12 @@
         (click)="setActiveTab('van-issues')"
       >
         <i class="bi bi-exclamation-triangle"></i> Van Issues Report
+      </button>
+      <button 
+        [class.active]="activeTab === 'rejected-orders'"
+        (click)="setActiveTab('rejected-orders')"
+      >
+        <i class="bi bi-x-circle"></i> Rejected Orders
       </button>
     </div>
   </div>
@@ -986,15 +995,15 @@
                 <label>Status:</label>
                 <div class="radio-group">
                   <label class="radio-option">
-                    <input type="radio" [(ngModel)]="reportFilters.status" value="all" name="status">
+                    <input type="radio" [(ngModel)]="reportFilters.verified" [value]="null" name="status">
                     <span>All Issues</span>
                   </label>
                   <label class="radio-option">
-                    <input type="radio" [(ngModel)]="reportFilters.status" value="verified" name="status">
+                    <input type="radio" [(ngModel)]="reportFilters.verified" [value]="true" name="status">
                     <span>Verified Only</span>
                   </label>
                   <label class="radio-option">
-                    <input type="radio" [(ngModel)]="reportFilters.status" value="pending" name="status">
+                    <input type="radio" [(ngModel)]="reportFilters.verified" [value]="false" name="status">
                     <span>Pending Only</span>
                   </label>
                 </div>
@@ -1006,14 +1015,14 @@
                 <div class="date-range">
                   <input 
                     type="date" 
-                    [(ngModel)]="reportFilters.dateRange.start" 
+                    [(ngModel)]="reportFilters.startDate" 
                     placeholder="Start Date"
                     class="date-input"
                   >
                   <span class="date-separator">to</span>
                   <input 
                     type="date" 
-                    [(ngModel)]="reportFilters.dateRange.end" 
+                    [(ngModel)]="reportFilters.endDate" 
                     placeholder="End Date"
                     class="date-input"
                   >
@@ -1060,6 +1069,242 @@
               <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
               {{ isGeneratingReport ? 'Generating...' : 'Detailed Report' }}
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rejected Orders Tab Content -->
+    <div *ngIf="activeTab === 'rejected-orders'" class="tab-content">
+      <!-- List View -->
+      <div *ngIf="rejectedOrdersViewMode === 'list'">
+        <!-- Filters Section -->
+        <div class="filters-section">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="rejectedOrdersSearchTerm">Search Orders</label>
+              <input
+                type="text"
+                id="rejectedOrdersSearchTerm"
+                [(ngModel)]="rejectedOrdersSearchTerm"
+                (input)="filterRejectedOrders()"
+                placeholder="Search by driver, route, store, or vehicle..."
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-group">
+              <label for="rejectedOrdersDateFilter">Filter by Date</label>
+              <input
+                type="date"
+                id="rejectedOrdersDateFilter"
+                [(ngModel)]="rejectedOrdersDateFilter"
+                (change)="filterRejectedOrders()"
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-actions">
+              <button class="btn-refresh" (click)="loadRejectedOrders()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="rejectedOrdersLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading rejected orders...</p>
+        </div>
+
+        <!-- No Data State -->
+        <div *ngIf="!rejectedOrdersLoading && rejectedOrders.length === 0" class="no-data-state">
+          <i class="bi bi-x-circle"></i>
+          <h3>No Rejected Orders Found</h3>
+          <p>No damaged product reports have been submitted yet.</p>
+        </div>
+
+        <!-- Rejected Orders Table -->
+        <div *ngIf="!rejectedOrdersLoading && rejectedOrders.length > 0" class="reports-table-container">
+          <table class="reports-table">
+            <thead>
+              <tr>
+                <th>Submitted</th>
+                <th>Date</th>
+                <th>Driver</th>
+                <th>Route</th>
+                <th>Vehicle</th>
+                <th>Store</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of (rejectedOrdersSearchTerm || rejectedOrdersDateFilter ? filteredRejectedOrders : rejectedOrders)">
+                <td>{{ formatDate(order.created_at) }}</td>
+                <td>{{ order.date }}</td>
+                <td>{{ order.driver_name }}</td>
+                <td>{{ order.route_number }}</td>
+                <td>{{ order.van_registration }}</td>
+                <td>
+                  <div class="store-info">
+                    <div>{{ order.store_name }}</div>
+                    <small>Drop #{{ order.drop_number_on_route }}</small>
+                  </div>
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button class="btn-view" (click)="viewRejectedOrderDetails(order)">
+                      <i class="bi bi-eye"></i>
+                      View
+                    </button>
+                    <button class="btn-pdf" (click)="downloadRejectedOrderPDF(order)">
+                      <i class="bi bi-file-pdf"></i>
+                      PDF
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detail View -->
+      <div *ngIf="rejectedOrdersViewMode === 'detail' && selectedRejectedOrder" class="rejected-order-detail-view">
+        <!-- Clean Header -->
+        <div class="detail-header">
+          <button class="back-btn" (click)="backToRejectedOrdersList()">
+            <i class="bi bi-arrow-left"></i>
+            Back to List
+          </button>
+          <h1>Rejected Order Report</h1>
+          <span class="report-date">{{ formatDate(selectedRejectedOrder.created_at) }}</span>
+          <button class="pdf-download-btn" (click)="downloadRejectedOrderPDF(selectedRejectedOrder)">
+            <i class="bi bi-file-earmark-pdf"></i>
+            Download PDF
+          </button>
+        </div>
+
+        <!-- Content Sections -->
+        <div class="detail-content">
+          <!-- Driver & Route Section -->
+          <div class="info-section">
+            <h3>Driver & Route Information</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Driver Name</label>
+                <span class="driver-name">{{ selectedRejectedOrder.driver_name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Date</label>
+                <span>{{ selectedRejectedOrder.date }}</span>
+              </div>
+              <div class="info-item">
+                <label>Route Number</label>
+                <span class="route-number">{{ selectedRejectedOrder.route_number }}</span>
+              </div>
+              <div class="info-item">
+                <label>Vehicle Registration</label>
+                <span class="vehicle-reg">{{ selectedRejectedOrder.van_registration }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Store & Delivery Section -->
+          <div class="info-section">
+            <h3>Store & Delivery Information</h3>
+            <div class="store-header">
+              <span class="store-name">{{ selectedRejectedOrder.store_name }}</span>
+              <span class="drop-number">Drop #{{ selectedRejectedOrder.drop_number_on_route }}</span>
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Arrival Time</label>
+                <span>{{ selectedRejectedOrder.arrival_time_at_store }}</span>
+              </div>
+              <div class="info-item">
+                <label>Wait Time</label>
+                <span>{{ selectedRejectedOrder.wait_time_in_store }} minutes</span>
+              </div>
+              <div class="info-item">
+                <label>Driving Start Time</label>
+                <span>{{ selectedRejectedOrder.driving_start_time }}</span>
+              </div>
+              <div class="info-item">
+                <label>Crates Delivered</label>
+                <span>{{ selectedRejectedOrder.number_of_crates_into_store }}</span>
+              </div>
+              <div class="info-item">
+                <label>Van Temperature</label>
+                <span>{{ selectedRejectedOrder.van_temp_by_display }}°C</span>
+              </div>
+              <div class="info-item">
+                <label>Site Keys Available</label>
+                <span class="yes-no" [class.yes]="selectedRejectedOrder.site_keys === 'yes'" [class.no]="selectedRejectedOrder.site_keys === 'no'">
+                  {{ selectedRejectedOrder.site_keys === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Damage Assessment Section -->
+          <div class="info-section damage-section">
+            <h3>Damage Assessment</h3>
+            <div class="damage-grid">
+              <div class="damage-question">
+                <span class="question">Order damaged before loading?</span>
+                <span class="answer" [class.yes]="selectedRejectedOrder.order_damaged_before_loading === 'yes'" [class.no]="selectedRejectedOrder.order_damaged_before_loading === 'no'">
+                  {{ selectedRejectedOrder.order_damaged_before_loading === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="damage-question">
+                <span class="question">All products damaged?</span>
+                <span class="answer" [class.severe]="selectedRejectedOrder.all_products_damaged === 'yes'" [class.partial]="selectedRejectedOrder.all_products_damaged === 'no'">
+                  {{ selectedRejectedOrder.all_products_damaged === 'yes' ? 'Yes - All Damaged' : 'No - Partial' }}
+                </span>
+              </div>
+              <div class="damage-question">
+                <span class="question">Shortages marked on docket?</span>
+                <span class="answer" [class.yes]="selectedRejectedOrder.marked_shortages_on_docket === 'yes'" [class.no]="selectedRejectedOrder.marked_shortages_on_docket === 'no'">
+                  {{ selectedRejectedOrder.marked_shortages_on_docket === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="damage-question">
+                <span class="question">Know how product was damaged?</span>
+                <span class="answer" [class.yes]="selectedRejectedOrder.know_how_product_damaged === 'yes'" [class.no]="selectedRejectedOrder.know_how_product_damaged === 'no'">
+                  {{ selectedRejectedOrder.know_how_product_damaged === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="info-section" *ngIf="selectedRejectedOrder.comments_vehicle_issues || selectedRejectedOrder.comments_delivery_issues || selectedRejectedOrder.comments_complaints || selectedRejectedOrder.comments_returns || selectedRejectedOrder.comments_accidents">
+            <h3>Additional Comments</h3>
+            <div class="comments-list">
+              <div class="comment" *ngIf="selectedRejectedOrder.comments_vehicle_issues">
+                <strong>Vehicle Issues:</strong>
+                <p>{{ selectedRejectedOrder.comments_vehicle_issues }}</p>
+              </div>
+              <div class="comment" *ngIf="selectedRejectedOrder.comments_delivery_issues">
+                <strong>Delivery Issues:</strong>
+                <p>{{ selectedRejectedOrder.comments_delivery_issues }}</p>
+              </div>
+              <div class="comment" *ngIf="selectedRejectedOrder.comments_complaints">
+                <strong>Complaints:</strong>
+                <p>{{ selectedRejectedOrder.comments_complaints }}</p>
+              </div>
+              <div class="comment" *ngIf="selectedRejectedOrder.comments_returns">
+                <strong>Returns:</strong>
+                <p>{{ selectedRejectedOrder.comments_returns }}</p>
+              </div>
+              <div class="comment" *ngIf="selectedRejectedOrder.comments_accidents">
+                <strong>Accidents:</strong>
+                <p>{{ selectedRejectedOrder.comments_accidents }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
