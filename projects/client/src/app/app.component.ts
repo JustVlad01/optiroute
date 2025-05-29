@@ -104,11 +104,17 @@ export class AppComponent implements OnInit {
         });
       }).finally(() => {
         // Force a hard reload to bypass all caches
-        window.location.href = window.location.href + '?v=' + Date.now();
+        this.forceReload();
       });
     } else {
       // Fallback if Cache API is not available
-      window.location.href = window.location.href + '?v=' + Date.now();
+      this.forceReload();
     }
+  }
+
+  private forceReload() {
+    const currentUrl = window.location.href;
+    const separator = currentUrl.includes('?') ? '&' : '?';
+    window.location.href = currentUrl + separator + 'v=' + Date.now();
   }
 }
