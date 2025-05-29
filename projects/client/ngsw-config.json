@@ -5,6 +5,7 @@
     {
       "name": "app",
       "installMode": "prefetch",
+      "updateMode": "prefetch",
       "resources": {
         "files": [
           "/favicon.ico",
@@ -31,13 +32,14 @@
     {
       "name": "api-freshness",
       "urls": [
-        "/**/*.json"
+        "/**/*.json",
+        "/api/**"
       ],
       "cacheConfig": {
         "strategy": "freshness",
-        "maxSize": 100,
-        "maxAge": "1h",
-        "timeout": "5s"
+        "maxSize": 50,
+        "maxAge": "10m",
+        "timeout": "3s"
       }
     },
     {
@@ -48,8 +50,8 @@
       ],
       "cacheConfig": {
         "strategy": "performance",
-        "maxSize": 100,
-        "maxAge": "1d"
+        "maxSize": 50,
+        "maxAge": "6h"
       }
     }
   ],

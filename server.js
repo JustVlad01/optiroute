@@ -429,7 +429,7 @@ if (fs.existsSync(adminBrowserPath)) {
     lastModified: true,
     setHeaders: (res, path) => {
       // Don't cache index.html and service worker files
-      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json') || path.endsWith('ngsw-worker.js') || path.endsWith('safety-worker.js')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -446,7 +446,7 @@ if (fs.existsSync(adminBrowserPath)) {
     etag: true,
     lastModified: true,
     setHeaders: (res, path) => {
-      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json') || path.endsWith('ngsw-worker.js') || path.endsWith('safety-worker.js')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -466,7 +466,7 @@ if (fs.existsSync(clientBrowserPath)) {
     etag: true,
     lastModified: true,
     setHeaders: (res, path) => {
-      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json') || path.endsWith('ngsw-worker.js') || path.endsWith('safety-worker.js')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -482,7 +482,7 @@ if (fs.existsSync(clientBrowserPath)) {
     etag: true,
     lastModified: true,
     setHeaders: (res, path) => {
-      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json') || path.endsWith('ngsw-worker.js') || path.endsWith('safety-worker.js')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -539,6 +539,22 @@ app.get('/api/version', (req, res) => {
   }
   
   res.json(versionInfo);
+});
+
+// Add force update endpoint
+app.post('/api/force-update', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
+  // Send a message to trigger service worker update
+  res.json({
+    message: 'Force update requested',
+    timestamp: Date.now(),
+    action: 'reload'
+  });
 });
 
 // Modify the index.html's base href for Render.com environment
