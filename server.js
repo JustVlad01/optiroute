@@ -403,20 +403,64 @@ app.get('/api/routes', async (req, res) => {
 // Set up static file serving
 if (fs.existsSync(adminBrowserPath)) {
   console.log(`Setting up admin static files from: ${adminBrowserPath}`);
-  app.use('/admin', express.static(adminBrowserPath));
+  app.use('/admin', express.static(adminBrowserPath, {
+    setHeaders: (res, path) => {
+      // Don't cache HTML files
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // Cache static assets for 1 hour but allow revalidation
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      }
+    }
+  }));
 } else if (fs.existsSync(adminBuildPath)) {
   console.log(`Setting up admin static files from: ${adminBuildPath}`);
-  app.use('/admin', express.static(adminBuildPath));
+  app.use('/admin', express.static(adminBuildPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      }
+    }
+  }));
 } else {
   console.error('Admin build directory not found');
 }
 
 if (fs.existsSync(clientBrowserPath)) {
   console.log(`Setting up client static files from: ${clientBrowserPath}`);
-  app.use(express.static(clientBrowserPath));
+  app.use(express.static(clientBrowserPath, {
+    setHeaders: (res, path) => {
+      // Don't cache HTML files
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // Cache static assets for 1 hour but allow revalidation
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      }
+    }
+  }));
 } else if (fs.existsSync(clientBuildPath)) {
   console.log(`Setting up client static files from: ${clientBuildPath}`);
-  app.use(express.static(clientBuildPath));
+  app.use(express.static(clientBuildPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      }
+    }
+  }));
 } else {
   console.error('Client build directory not found');
 }

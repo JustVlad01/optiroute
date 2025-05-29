@@ -5,6 +5,7 @@
     {
       "name": "app",
       "installMode": "prefetch",
+      "updateMode": "prefetch",
       "resources": {
         "files": [
           "/favicon.ico",
@@ -35,9 +36,9 @@
       ],
       "cacheConfig": {
         "strategy": "freshness",
-        "maxSize": 100,
-        "maxAge": "1h",
-        "timeout": "5s"
+        "maxSize": 50,
+        "maxAge": "5m",
+        "timeout": "3s"
       }
     },
     {
@@ -48,8 +49,8 @@
       ],
       "cacheConfig": {
         "strategy": "performance",
-        "maxSize": 100,
-        "maxAge": "1d"
+        "maxSize": 50,
+        "maxAge": "30m"
       }
     }
   ],
