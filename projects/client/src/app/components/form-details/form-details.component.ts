@@ -65,7 +65,9 @@ export class FormDetailsComponent implements OnInit {
       number_of_crates_in: [''],
       recycled_all_returns: [false],
       van_fridge_working: [false],
-      returned_van_probe: [false]
+      returned_van_probe: [false],
+      has_van_issues: [false],
+      van_issues: ['']
     });
   }
 
@@ -227,7 +229,9 @@ export class FormDetailsComponent implements OnInit {
         number_of_crates_in: completedForm.number_of_crates_in,
         recycled_all_returns: completedForm.recycled_all_returns,
         van_fridge_working: completedForm.van_fridge_working,
-        returned_van_probe: completedForm.returned_van_probe
+        returned_van_probe: completedForm.returned_van_probe,
+        has_van_issues: completedForm.has_van_issues || completedForm.has_repairs_needed || !!completedForm.van_issues || !!completedForm.repairs_needed,
+        van_issues: completedForm.van_issues || completedForm.repairs_needed
       });
       
       // Disable the form when in view mode
@@ -254,7 +258,8 @@ export class FormDetailsComponent implements OnInit {
       (formValues.orders_products_issues && formValues.orders_products_issues_reason?.trim()) || 
       (formValues.site_issues && formValues.site_issues_reason?.trim()) || 
       (formValues.customer_complaints && formValues.customer_complaints_reason?.trim()) || 
-      (formValues.product_complaints && formValues.product_complaints_reason?.trim()) ||
+      (formValues.product_complaints && formValues.product_complaints_reason?.trim()) || 
+      formValues.has_van_issues || 
       !formValues.van_fridge_working
     );
   }
@@ -314,6 +319,10 @@ export class FormDetailsComponent implements OnInit {
     return errors;
   }
 
+  shouldRedirectToVanReport(formValues: any): boolean {
+    return formValues.has_van_issues;
+  }
+
   async submitForm(): Promise<void> {
     console.log('Form validation state:', this.driverForm.valid);
     console.log('Form values:', this.driverForm.value);
@@ -337,6 +346,9 @@ export class FormDetailsComponent implements OnInit {
       
       // Check if form needs review (has issues that admin should check)
       const needsReview = this.checkIfNeedsReview(formValues);
+      
+      // Check if we need to redirect to van issues report
+      const needsVanReport = this.shouldRedirectToVanReport(formValues);
       
       // Create the final form data with default values for required fields
       const formData = {
@@ -372,6 +384,8 @@ export class FormDetailsComponent implements OnInit {
         recycled_all_returns: formValues.recycled_all_returns || false,
         van_fridge_working: formValues.van_fridge_working || false,
         returned_van_probe: formValues.returned_van_probe || false,
+        has_van_issues: formValues.has_van_issues || false,
+        van_issues: null,
         needs_review: needsReview
       };
       
@@ -387,9 +401,15 @@ export class FormDetailsComponent implements OnInit {
           await this.supabaseService.updateFormAssignmentStatus(this.formId, 'completed', submittedForm[0].id);
           
           this.submitting = false;
-          this.router.navigate(['/driver-forms'], { 
-            queryParams: { success: true } 
-          });
+          
+          // Redirect based on whether van issues report is needed
+          if (needsVanReport) {
+            this.router.navigate(['/report-van-issues']);
+          } else {
+            this.router.navigate(['/driver-forms'], { 
+              queryParams: { success: true } 
+            });
+          }
         } else {
           throw new Error('Form submission failed');
         }
@@ -444,6 +464,9 @@ export class FormDetailsComponent implements OnInit {
     // Check if form needs review (has issues that admin should check)
     const needsReview = this.checkIfNeedsReview(formValues);
     
+    // Check if we need to redirect to van issues report
+    const needsVanReport = this.shouldRedirectToVanReport(formValues);
+    
     // Create the final form data with default values for required fields
     const formData = {
       driver_name: this.driverName,
@@ -478,6 +501,8 @@ export class FormDetailsComponent implements OnInit {
       recycled_all_returns: formValues.recycled_all_returns || false,
       van_fridge_working: formValues.van_fridge_working || false,
       returned_van_probe: formValues.returned_van_probe || false,
+      has_van_issues: formValues.has_van_issues || false,
+      van_issues: null,
       needs_review: needsReview
     };
     
@@ -493,9 +518,15 @@ export class FormDetailsComponent implements OnInit {
         await this.supabaseService.updateFormAssignmentStatus(this.formId, 'completed', submittedForm[0].id);
         
         this.submitting = false;
-        this.router.navigate(['/driver-forms'], { 
-          queryParams: { success: true } 
-        });
+        
+        // Redirect based on whether van issues report is needed
+        if (needsVanReport) {
+          this.router.navigate(['/report-van-issues']);
+        } else {
+          this.router.navigate(['/driver-forms'], { 
+            queryParams: { success: true } 
+          });
+        }
       } else {
         throw new Error('Form submission failed');
       }

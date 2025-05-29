@@ -349,6 +349,26 @@
           </div>
         </div>
 
+        <!-- Vehicle Issues and Maintenance Section -->
+        <div class="section mb-4">
+          <h4 class="h6 text-muted mb-3">Vehicle Issues and Maintenance</h4>
+          
+          <div class="issue-row">
+            <div class="d-flex align-items-center py-2">
+              <i class="bi bi-tools me-2 text-primary"></i>
+              <span class="flex-grow-1">Issues/repairs/maintenance required</span>
+              <div class="form-check form-switch ms-2 mb-0">
+                <input class="form-check-input" type="checkbox" id="has_van_issues" formControlName="has_van_issues">
+                <label class="form-check-label small" for="has_van_issues">Yes</label>
+              </div>
+            </div>
+            <div *ngIf="driverForm.get('has_van_issues')?.value" class="alert alert-info mt-2 mb-2 ms-4">
+              <i class="bi bi-arrow-right-circle me-2"></i>
+              <strong>Redirecting to Van Issues Report after submission</strong>
+            </div>
+          </div>
+        </div>
+
         <!-- Section Validation Errors -->
         <div *ngIf="showSectionErrors && sectionErrors.length > 0" class="alert alert-danger mt-4">
           <h6 class="mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Please complete the following sections:</h6>
