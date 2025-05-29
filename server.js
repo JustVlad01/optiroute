@@ -7,6 +7,25 @@ const app = express();
 // JSON body parser middleware
 app.use(express.json({ limit: '10mb' })); // Limit file size to 10MB
 
+// Add security and cache-control headers
+app.use((req, res, next) => {
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // For HTML files and API endpoints, prevent caching
+  if (req.url.endsWith('.html') || req.url.startsWith('/api/') || req.url === '/' || req.url.includes('index.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store'); // For CDNs
+    res.setHeader('CDN-Cache-Control', 'no-store'); // For Cloudflare and other CDNs
+  }
+  
+  next();
+});
+
 // Setup PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/optiroute',
@@ -403,29 +422,36 @@ app.get('/api/routes', async (req, res) => {
 // Set up static file serving
 if (fs.existsSync(adminBrowserPath)) {
   console.log(`Setting up admin static files from: ${adminBrowserPath}`);
+  // Set cache headers for static files
   app.use('/admin', express.static(adminBrowserPath, {
+    maxAge: '1y', // Cache static assets for 1 year
+    etag: true,
+    lastModified: true,
     setHeaders: (res, path) => {
-      // Don't cache HTML files
-      if (path.endsWith('.html')) {
+      // Don't cache index.html and service worker files
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-      } else {
-        // Cache static assets for 1 hour but allow revalidation
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        // Cache static assets with hash for 1 year
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
   }));
 } else if (fs.existsSync(adminBuildPath)) {
   console.log(`Setting up admin static files from: ${adminBuildPath}`);
   app.use('/admin', express.static(adminBuildPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
     setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
   }));
@@ -436,28 +462,32 @@ if (fs.existsSync(adminBrowserPath)) {
 if (fs.existsSync(clientBrowserPath)) {
   console.log(`Setting up client static files from: ${clientBrowserPath}`);
   app.use(express.static(clientBrowserPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
     setHeaders: (res, path) => {
-      // Don't cache HTML files
-      if (path.endsWith('.html')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-      } else {
-        // Cache static assets for 1 hour but allow revalidation
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
   }));
 } else if (fs.existsSync(clientBuildPath)) {
   console.log(`Setting up client static files from: ${clientBuildPath}`);
   app.use(express.static(clientBuildPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
     setHeaders: (res, path) => {
-      if (path.endsWith('.html')) {
+      if (path.endsWith('index.html') || path.endsWith('service-worker.js') || path.endsWith('ngsw.json')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      } else if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
   }));
@@ -479,6 +509,38 @@ app.get('/test', (req, res) => {
   });
 });
 
+// Add version endpoint for cache busting
+app.get('/api/version', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
+  // Try to read version from generated file
+  let versionInfo = {
+    version: Date.now(),
+    deployTime: new Date().toISOString(),
+    buildHash: process.env.RENDER_GIT_COMMIT || 'local-dev'
+  };
+  
+  try {
+    const versionPath = path.join(__dirname, 'dist', 'version.json');
+    if (fs.existsSync(versionPath)) {
+      const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+      versionInfo = {
+        version: versionData.buildTime || Date.now(),
+        deployTime: versionData.deployTime,
+        buildHash: versionData.gitHash || process.env.RENDER_GIT_COMMIT || 'local-dev'
+      };
+    }
+  } catch (error) {
+    console.warn('Could not read version file:', error.message);
+  }
+  
+  res.json(versionInfo);
+});
+
 // Modify the index.html's base href for Render.com environment
 app.use((req, res, next) => {
   res.sendIndexWithBaseHref = (indexPath, baseHref = '/') => {
@@ -487,7 +549,28 @@ app.use((req, res, next) => {
         let html = fs.readFileSync(indexPath, 'utf8');
         // Replace base href with the correct value
         html = html.replace(/<base href=".*">/, `<base href="${baseHref}">`);
-        res.set('Content-Type', 'text/html');
+        
+        // Add cache-busting meta tags and build timestamp
+        const timestamp = Date.now();
+        const cacheMetaTags = `
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="build-timestamp" content="${timestamp}">`;
+        
+        // Insert cache meta tags after the existing meta tags
+        html = html.replace('</head>', `${cacheMetaTags}\n</head>`);
+        
+        // Set headers to prevent caching of index.html
+        res.set({
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Last-Modified': new Date().toUTCString(),
+          'ETag': `"${timestamp}"`
+        });
+        
         res.send(html);
       } catch (error) {
         console.error(`Error reading/modifying index.html: ${error}`);

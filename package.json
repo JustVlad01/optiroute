@@ -6,13 +6,13 @@
     "start": "node server.js",
     "start:prod": "npm run build:all && node server.js",
     "build": "ng build",
-    "build:all": "echo 'Build started at:' && date && ng build admin --configuration production && ng build client --configuration production && echo 'Build completed at:' && date",
+    "build:all": "npm run build:admin && npm run build:client && npm run generate-version",
     "build:client": "ng build client --configuration production",
     "build:admin": "ng build admin --configuration production",
+    "generate-version": "node -e \"console.log('Build completed at:', new Date().toISOString()); const fs = require('fs'); const version = { buildTime: Date.now(), deployTime: new Date().toISOString(), gitHash: process.env.RENDER_GIT_COMMIT || 'local' }; fs.writeFileSync('./dist/version.json', JSON.stringify(version, null, 2));\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint",
-    "clear-cache": "echo 'To clear browser cache: 1. Open DevTools (F12) 2. Right-click refresh button 3. Select \"Hard Reload\" or press Ctrl+Shift+R'"
+    "lint": "ng lint"
   },
   "private": true,
   "dependencies": {

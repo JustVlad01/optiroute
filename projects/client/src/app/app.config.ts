@@ -15,11 +15,9 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(
       FormsModule,
       ReactiveFormsModule
-    )
-    // Temporarily disabled service worker to prevent caching issues
-    // , provideServiceWorker('ngsw-worker.js', {
-    //         enabled: !isDevMode(),
-    //         registrationStrategy: 'registerImmediately'
-    //       })
+    ), provideServiceWorker('ngsw-worker.js', {
+            enabled: !isDevMode(),
+            registrationStrategy: 'registerWhenStable:30000'
+          })
   ]
 };

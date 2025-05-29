@@ -16,6 +16,7 @@
   flex-direction: column;
   font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background-color: #ffffff;
+  justify-content: center;
 }
 
 .login-header {
@@ -51,6 +52,29 @@
   }
 }
 
+/* Reduce animation on smaller screens for better performance */
+@media (max-width: 480px) {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .delivery-van-image {
+    animation-duration: 4s; /* Slower animation */
+  }
+}
+
+/* Disable animation on very small screens to save battery */
+@media (max-width: 320px) {
+  .delivery-van-image {
+    animation: none;
+  }
+}
+
 .logo {
   margin: 0 auto 1rem auto;
   text-align: center;
@@ -73,9 +97,9 @@
   margin: 0;
   padding: 0;
   text-align: center;
-  margin-left:100px;
-  
-}.logo-line-1 {
+}
+
+.logo-line-1 {
   font-weight: 700;
   font-size: 2.4rem;
   letter-spacing: 2px;
@@ -87,11 +111,7 @@
   margin: 0;
   padding: 0;
   text-align: center;
-  margin-left:55px;
-  
 }
-
-
 
 .badge span {
   padding: 0.35rem 1.25rem;
@@ -105,11 +125,15 @@
 }
 
 .login-form-container {
-  padding: 3rem 1.5rem;
+  padding: 2rem 1.5rem;
   flex: 1;
-  max-width: 480px;
+  max-width: 90vw;
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60vh;
 }
 
 .login-title {
@@ -138,12 +162,16 @@
 
 .form-control {
   border: 1px solid var(--border-color);
-  padding: 1rem 1.25rem;
-  height: 3.5rem;
-  font-size: 1.1rem;
+  padding: 0.8rem 1rem;
+  height: 2.8rem;
+  font-size: 1rem;
   border-radius: 8px;
   transition: all 0.2s ease;
   background-color: #f9fafc;
+  width: 100%;
+  max-width: min(400px, 85vw);
+  margin: 0 auto;
+  display: block;
 }
 
 .form-control:focus {
@@ -172,9 +200,10 @@
 
 .login-btn {
   width: 100%;
-  padding: 1rem;
+  max-width: min(400px, 85vw);
+  padding: 0.8rem;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: 0.5px;
   border-radius: 8px;
   background: linear-gradient(135deg, #FF5252, #D32F2F);
@@ -183,7 +212,8 @@
   transition: all 0.3s ease;
   color: white;
   cursor: pointer;
-  margin-top: 1rem;
+  margin: 1rem auto 0 auto;
+  display: block;
 }
 
 .login-btn:hover:not(:disabled) {
@@ -199,9 +229,10 @@
 
 .reset-btn {
   width: 100%;
-  padding: 1rem;
+  max-width: min(400px, 85vw);
+  padding: 0.8rem;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: 0.5px;
   border-radius: 8px;
   background: linear-gradient(135deg, #6c757d, #495057);
@@ -210,7 +241,8 @@
   transition: all 0.3s ease;
   color: white;
   cursor: pointer;
-  margin-top: 1rem;
+  margin: 1rem auto 0 auto;
+  display: block;
 }
 
 .reset-btn:hover:not(:disabled) {
@@ -239,15 +271,237 @@
   padding: 1rem;
 }
 
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
 /* Responsive design for mobile devices */
 @media (max-width: 768px) {
-  .delivery-van-image {
-    width: 180px;
-    height: 180px;
+  .login-header {
+    padding: 1.5rem 1rem;
   }
   
   .logo-line {
-    font-size: 2.4rem;
-    letter-spacing: 2px;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+  }
+  
+  .logo-line-1 {
+    font-size: 2rem;
+    letter-spacing: 1.5px;
+  }
+  
+  .delivery-van-image {
+    width: min(200px, 50vw);
+    height: min(200px, 50vw);
+    margin: 1rem auto 0.5rem auto;
+  }
+  
+  .login-form-container {
+    padding: 1.5rem 1rem;
+    min-height: 50vh;
+  }
+  
+  .login-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .login-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-control {
+    height: 2.8rem;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    max-width: min(350px, 90vw);
+  }
+  
+  .login-btn, .reset-btn {
+    padding: 0.8rem;
+    font-size: 1rem;
+    max-width: min(350px, 90vw);
+  }
+}
+
+/* Styles for very small screens (phones in portrait) */
+@media (max-width: 480px) {
+  .login-container {
+    min-height: 100vh;
+  }
+  
+  .login-header {
+    padding: 1rem 0.75rem;
+  }
+  
+  .logo-line {
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+  }
+  
+  .logo-line-1 {
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+  
+  .delivery-van-image {
+    width: min(160px, 45vw);
+    height: min(160px, 45vw);
+    margin: 0.5rem auto 0.5rem auto;
+  }
+  
+  .login-form-container {
+    padding: 1rem 0.75rem;
+    max-width: 95vw;
+    min-height: 45vh;
+  }
+  
+  .login-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .login-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1.2rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem !important;
+  }
+  
+  .form-control {
+    height: 2.6rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    max-width: min(300px, 85vw);
+  }
+  
+  .login-btn, .reset-btn {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+    margin-top: 0.8rem;
+    border-radius: 6px;
+    max-width: min(300px, 85vw);
+  }
+  
+  .alert {
+    font-size: 0.85rem;
+    padding: 0.8rem;
+    margin-top: 0.8rem !important;
+    max-width: min(300px, 85vw);
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .login-header {
+    padding: 0.8rem 0.5rem;
+  }
+  
+  .logo-line {
+    font-size: 0.7rem;
+  }
+  
+  .logo-line-1 {
+    font-size: 1.4rem;
+  }
+  
+  .delivery-van-image {
+    width: min(140px, 40vw);
+    height: min(140px, 40vw);
+    margin: 0.25rem auto 0.5rem auto;
+  }
+  
+  .login-form-container {
+    padding: 0.8rem 0.5rem;
+    min-height: 40vh;
+  }
+  
+  .login-title {
+    font-size: 1.2rem;
+  }
+  
+  .form-control {
+    height: 2.4rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+    max-width: min(280px, 80vw);
+  }
+  
+  .login-btn, .reset-btn {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    max-width: min(280px, 80vw);
+  }
+}
+
+/* Landscape orientation adjustments for small screens */
+@media (max-height: 640px) and (orientation: landscape) {
+  .login-container {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  
+  .login-header {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .delivery-van-image {
+    width: 100px;
+    height: 100px;
+    margin: 0.5rem auto;
+  }
+  
+  .logo-line {
+    font-size: 0.7rem;
+  }
+  
+  .logo-line-1 {
+    font-size: 1.2rem;
+  }
+  
+  .login-form-container {
+    flex: 1;
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: none;
+  }
+  
+  .login-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .login-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.8rem !important;
+  }
+  
+  .form-control {
+    height: 2.5rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .login-btn, .reset-btn {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
   }
 }

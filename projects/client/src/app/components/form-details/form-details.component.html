@@ -85,31 +85,6 @@
               </div>
             </div>
           </div>
-          
-          <div class="row align-items-center mb-2">
-            <div class="col-md-4">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="fuel_added" formControlName="fuel_added">
-                <label class="form-check-label" for="fuel_added">Fuel Added</label>
-              </div>
-            </div>
-            
-            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
-              <label for="litres_added" class="form-label">Litres Added <span class="text-danger">*</span></label>
-              <input type="number" class="form-control form-control-sm" id="litres_added" formControlName="litres_added" step="0.01">
-              <div *ngIf="driverForm.get('litres_added')?.invalid && driverForm.get('litres_added')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
-            </div>
-            
-            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
-              <label for="fuel_card_reg" class="form-label">Fuel Card Registration <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-sm" id="fuel_card_reg" formControlName="fuel_card_reg">
-              <div *ngIf="driverForm.get('fuel_card_reg')?.invalid && driverForm.get('fuel_card_reg')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Equipment & Safety Checks Section -->
@@ -305,7 +280,7 @@
           
           <div class="row">
             <div class="col-md-6 mb-2">
-              <label for="shift_end_time" class="form-label">Shift End Time</label>
+              <label for="shift_end_time" class="form-label">Finish Delivery Time</label>
               <input type="time" class="form-control form-control-sm" id="shift_end_time" formControlName="shift_end_time">
             </div>
           </div>
@@ -328,13 +303,6 @@
           <div class="row mb-3">
             <div class="col-md-6 mb-2">
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="recycled_all_returns" formControlName="recycled_all_returns">
-                <label class="form-check-label" for="recycled_all_returns">Recycled all Returns/Waste/Cardboard</label>
-              </div>
-            </div>
-            
-            <div class="col-md-6 mb-2">
-              <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="van_fridge_working" formControlName="van_fridge_working">
                 <label class="form-check-label" for="van_fridge_working">Van fridge working correctly</label>
               </div>
@@ -349,46 +317,44 @@
               </div>
             </div>
           </div>
-          
-          <h4 class="h6 text-muted mb-3">Vehicle Issues and Maintenance</h4>
-          
-          <div class="issue-row">
-            <div class="d-flex align-items-center py-2">
-              <i class="bi bi-exclamation-circle me-2 text-primary"></i>
-              <span class="flex-grow-1">Issues with Van</span>
-              <div class="form-check form-switch ms-2 mb-0">
-                <input class="form-check-input" type="checkbox" id="has_van_issues" formControlName="has_van_issues">
-                <label class="form-check-label small" for="has_van_issues">Yes</label>
-              </div>
-            </div>
-            <div *ngIf="driverForm.get('has_van_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
-              <textarea class="form-control form-control-sm" id="van_issues" 
-                       formControlName="van_issues" rows="2" 
-                       placeholder="Please describe any issues/incidents/accidents"></textarea>
-              <div *ngIf="driverForm.get('van_issues')?.invalid && driverForm.get('van_issues')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
-            </div>
-          </div>
+        </div>
 
-          <div class="issue-row">
-            <div class="d-flex align-items-center py-2">
-              <i class="bi bi-tools me-2 text-primary"></i>
-              <span class="flex-grow-1">Repairs/Maintenance Required</span>
-              <div class="form-check form-switch ms-2 mb-0">
-                <input class="form-check-input" type="checkbox" id="has_repairs_needed" formControlName="has_repairs_needed">
-                <label class="form-check-label small" for="has_repairs_needed">Yes</label>
+        <!-- Fuel Added Section -->
+        <div class="section mb-4">
+          <h3 class="section-title"><i class="bi bi-fuel-pump me-2"></i>Fuel Information</h3>
+          
+          <div class="row align-items-center mb-2">
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="fuel_added" formControlName="fuel_added">
+                <label class="form-check-label" for="fuel_added">Fuel Added</label>
               </div>
             </div>
-            <div *ngIf="driverForm.get('has_repairs_needed')?.value" class="issue-details mt-1 mb-2 ms-4">
-              <textarea class="form-control form-control-sm" id="repairs_needed" 
-                       formControlName="repairs_needed" rows="2" 
-                       placeholder="Please describe required repairs/maintenance"></textarea>
-              <div *ngIf="driverForm.get('repairs_needed')?.invalid && driverForm.get('repairs_needed')?.touched" class="text-danger small mt-1">
+            
+            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
+              <label for="litres_added" class="form-label">Litres Added <span class="text-danger">*</span></label>
+              <input type="number" class="form-control form-control-sm" id="litres_added" formControlName="litres_added" step="0.01">
+              <div *ngIf="driverForm.get('litres_added')?.invalid && driverForm.get('litres_added')?.touched" class="text-danger small mt-1">
+                Required
+              </div>
+            </div>
+            
+            <div class="col-md-4" *ngIf="driverForm.get('fuel_added')?.value">
+              <label for="fuel_card_reg" class="form-label">Fuel Card Registration <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="fuel_card_reg" formControlName="fuel_card_reg">
+              <div *ngIf="driverForm.get('fuel_card_reg')?.invalid && driverForm.get('fuel_card_reg')?.touched" class="text-danger small mt-1">
                 Required
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Section Validation Errors -->
+        <div *ngIf="showSectionErrors && sectionErrors.length > 0" class="alert alert-danger mt-4">
+          <h6 class="mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Please complete the following sections:</h6>
+          <ul class="mb-0">
+            <li *ngFor="let error of sectionErrors">{{ error }}</li>
+          </ul>
         </div>
 
         <div class="form-actions d-flex justify-content-between mt-4">

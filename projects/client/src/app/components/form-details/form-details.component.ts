@@ -24,6 +24,8 @@ export class FormDetailsComponent implements OnInit {
   completedFormData: any = null;
   completedDate: string | null = null;
   progressSaved = false;
+  sectionErrors: string[] = [];
+  showSectionErrors = false;
   
   constructor(
     private route: ActivatedRoute,
@@ -63,11 +65,7 @@ export class FormDetailsComponent implements OnInit {
       number_of_crates_in: [''],
       recycled_all_returns: [false],
       van_fridge_working: [false],
-      returned_van_probe: [false],
-      has_van_issues: [false],
-      van_issues: [''],
-      has_repairs_needed: [false],
-      repairs_needed: ['']
+      returned_van_probe: [false]
     });
   }
 
@@ -156,24 +154,12 @@ export class FormDetailsComponent implements OnInit {
       this.driverForm.get('product_complaints_reason')?.updateValueAndValidity();
     });
     
-    // Add validation for van issues when has_van_issues is true
-    this.driverForm.get('has_van_issues')?.valueChanges.subscribe(value => {
-      if (value) {
-        this.driverForm.get('van_issues')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('van_issues')?.clearValidators();
+    // Clear section errors when form values change
+    this.driverForm.valueChanges.subscribe(() => {
+      if (this.showSectionErrors) {
+        this.showSectionErrors = false;
+        this.sectionErrors = [];
       }
-      this.driverForm.get('van_issues')?.updateValueAndValidity();
-    });
-    
-    // Add validation for repairs needed when has_repairs_needed is true
-    this.driverForm.get('has_repairs_needed')?.valueChanges.subscribe(value => {
-      if (value) {
-        this.driverForm.get('repairs_needed')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('repairs_needed')?.clearValidators();
-      }
-      this.driverForm.get('repairs_needed')?.updateValueAndValidity();
     });
   }
 
@@ -241,11 +227,7 @@ export class FormDetailsComponent implements OnInit {
         number_of_crates_in: completedForm.number_of_crates_in,
         recycled_all_returns: completedForm.recycled_all_returns,
         van_fridge_working: completedForm.van_fridge_working,
-        returned_van_probe: completedForm.returned_van_probe,
-        has_van_issues: completedForm.has_van_issues || !!completedForm.van_issues,
-        van_issues: completedForm.van_issues,
-        has_repairs_needed: completedForm.has_repairs_needed || !!completedForm.repairs_needed,
-        repairs_needed: completedForm.repairs_needed
+        returned_van_probe: completedForm.returned_van_probe
       });
       
       // Disable the form when in view mode
@@ -267,17 +249,69 @@ export class FormDetailsComponent implements OnInit {
   }
 
   checkIfNeedsReview(formValues: any): boolean {
-    // Form needs review if any of these fields have content
-    return !!(
+    return (
       (formValues.paperwork_issues && formValues.paperwork_issues_reason?.trim()) || 
       (formValues.orders_products_issues && formValues.orders_products_issues_reason?.trim()) || 
       (formValues.site_issues && formValues.site_issues_reason?.trim()) || 
       (formValues.customer_complaints && formValues.customer_complaints_reason?.trim()) || 
-      (formValues.product_complaints && formValues.product_complaints_reason?.trim()) || 
-      (formValues.has_van_issues && formValues.van_issues?.trim()) || 
-      (formValues.has_repairs_needed && formValues.repairs_needed?.trim()) ||
+      (formValues.product_complaints && formValues.product_complaints_reason?.trim()) ||
       !formValues.van_fridge_working
     );
+  }
+
+  validateSections(): string[] {
+    const errors: string[] = [];
+    
+    // Basic Information validation
+    if (!this.driverForm.get('date')?.valid || 
+        !this.driverForm.get('time')?.valid || 
+        !this.driverForm.get('work_start_time')?.valid) {
+      errors.push('Basic Information');
+    }
+    
+    // Vehicle Information validation
+    if (!this.driverForm.get('van_registration')?.valid || 
+        !this.driverForm.get('starting_mileage')?.valid) {
+      errors.push('Vehicle Information');
+    }
+    
+    // Equipment & Safety Checks validation
+    if (!this.driverForm.get('full_uniform')?.value || 
+        !this.driverForm.get('all_site_keys')?.value || 
+        !this.driverForm.get('auxiliary_products')?.value) {
+      errors.push('Equipment & Safety Checks');
+    }
+    
+    // Temperature & Logistics validation
+    if (!this.driverForm.get('number_of_crates_out')?.valid) {
+      errors.push('Temperature & Logistics');
+    }
+    
+    // Fuel Information validation
+    if (this.driverForm.get('fuel_added')?.value && 
+        (!this.driverForm.get('litres_added')?.valid || 
+         !this.driverForm.get('fuel_card_reg')?.valid)) {
+      errors.push('Fuel Information');
+    }
+    
+    // Issues validation - check if any issue is marked but reason is missing
+    const issueFields = [
+      { issue: 'paperwork_issues', reason: 'paperwork_issues_reason' },
+      { issue: 'orders_products_issues', reason: 'orders_products_issues_reason' },
+      { issue: 'site_issues', reason: 'site_issues_reason' },
+      { issue: 'customer_complaints', reason: 'customer_complaints_reason' },
+      { issue: 'product_complaints', reason: 'product_complaints_reason' }
+    ];
+    
+    for (const field of issueFields) {
+      if (this.driverForm.get(field.issue)?.value && 
+          !this.driverForm.get(field.reason)?.valid) {
+        errors.push('Issues and Complaints');
+        break;
+      }
+    }
+    
+    return errors;
   }
 
   async submitForm(): Promise<void> {
@@ -294,6 +328,8 @@ export class FormDetailsComponent implements OnInit {
     }));
     
     if (this.driverForm.valid) {
+      this.showSectionErrors = false;
+      this.sectionErrors = [];
       this.submitting = true;
       
       // Get form values
@@ -336,10 +372,6 @@ export class FormDetailsComponent implements OnInit {
         recycled_all_returns: formValues.recycled_all_returns || false,
         van_fridge_working: formValues.van_fridge_working || false,
         returned_van_probe: formValues.returned_van_probe || false,
-        has_van_issues: formValues.has_van_issues || false,
-        van_issues: formValues.has_van_issues ? (formValues.van_issues || '') : null,
-        has_repairs_needed: formValues.has_repairs_needed || false,
-        repairs_needed: formValues.has_repairs_needed ? (formValues.repairs_needed || '') : null,
         needs_review: needsReview
       };
       
@@ -373,6 +405,10 @@ export class FormDetailsComponent implements OnInit {
         const control = this.driverForm.get(key);
         control?.markAsTouched();
       });
+      
+      // Show section-level validation errors
+      this.sectionErrors = this.validateSections();
+      this.showSectionErrors = true;
     }
   }
   
@@ -398,6 +434,8 @@ export class FormDetailsComponent implements OnInit {
   
   // Force submit the form regardless of validation state
   async forceSubmitForm(): Promise<void> {
+    this.showSectionErrors = false;
+    this.sectionErrors = [];
     this.submitting = true;
     
     // Get form values
@@ -440,10 +478,6 @@ export class FormDetailsComponent implements OnInit {
       recycled_all_returns: formValues.recycled_all_returns || false,
       van_fridge_working: formValues.van_fridge_working || false,
       returned_van_probe: formValues.returned_van_probe || false,
-      has_van_issues: formValues.has_van_issues || false,
-      van_issues: formValues.has_van_issues ? (formValues.van_issues || '') : null,
-      has_repairs_needed: formValues.has_repairs_needed || false,
-      repairs_needed: formValues.has_repairs_needed ? (formValues.repairs_needed || '') : null,
       needs_review: needsReview
     };
     
