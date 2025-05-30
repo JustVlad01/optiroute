@@ -185,7 +185,7 @@
             "index": "projects/client/src/index.html",
             "browser": "projects/client/src/main.ts",
             "polyfills": [
-              "zone.js"
+              "projects/client/src/polyfills.ts"
             ],
             "tsConfig": "projects/client/tsconfig.app.json",
             "inlineStyleLanguage": "scss",

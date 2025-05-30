@@ -4006,3 +4006,117 @@ $text-muted: #6c757d;
     }
   }
 } 
+
+// Temperature Reports Specific Styles
+.temperature-value {
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  background: #d1e7dd;
+  color: #0f5132;
+
+  &.high {
+    background: #f8d7da;
+    color: #842029;
+  }
+}
+
+.temperature-section {
+  .temperature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+
+    .temp-item {
+      padding: 1rem;
+      border-right: 1px solid #f1f3f4;
+      border-bottom: 1px solid #f1f3f4;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      &.critical {
+        background: #fff5f5;
+        border-left: 3px solid #dc3545;
+      }
+
+      label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #6c757d;
+        margin: 0;
+      }
+
+      .temp-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #198754;
+
+        &.critical {
+          color: #dc3545;
+        }
+      }
+
+      span:not(.temp-value) {
+        font-size: 0.875rem;
+        color: #212529;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+
+  .photo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #6c757d;
+      margin: 0;
+    }
+
+    img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+.comments-content {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #dee2e6;
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #212529;
+    line-height: 1.5;
+  }
+}

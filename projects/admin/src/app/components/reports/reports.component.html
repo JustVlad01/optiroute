@@ -2,7 +2,7 @@
   <!-- Professional Navbar -->
   <div class="navbar">
     <div class="logo">
-      <div class="main-title">OPTIROUTE</div>
+      <div class="main-title">Around Noon</div>
       
     </div>
     <div class="nav-links">
@@ -38,6 +38,12 @@
         (click)="setActiveTab('rejected-orders')"
       >
         <i class="bi bi-x-circle"></i> Rejected Orders
+      </button>
+      <button 
+        [class.active]="activeTab === 'temperature-reports'"
+        (click)="setActiveTab('temperature-reports')"
+      >
+        <i class="bi bi-thermometer-half"></i> Temperature Issue Report
       </button>
     </div>
   </div>
@@ -544,22 +550,6 @@
           </div>
 
           <div *ngIf="showAnalytics" class="analytics-content">
-            <!-- Charts Section -->
-            <div class="charts-container">
-              <!-- Delivery Times Chart -->
-              <div class="chart-section">
-                <div class="chart-header">
-                  <h3>
-                    <i class="bi bi-clock-history"></i>
-                    Weekly Average Delivery Times by Route
-                  </h3>
-                  <p class="chart-description">Weekly comparison of Circle K vs Starbucks delivery times across routes</p>
-                </div>
-                <div class="chart-container">
-                  <canvas id="deliveryTimeChart"></canvas>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1304,6 +1294,269 @@
                 <strong>Accidents:</strong>
                 <p>{{ selectedRejectedOrder.comments_accidents }}</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Temperature Reports Tab Content -->
+    <div *ngIf="activeTab === 'temperature-reports'" class="tab-content">
+      <!-- List View -->
+      <div *ngIf="temperatureReportsViewMode === 'list'">
+        <!-- Filters Section -->
+        <div class="filters-section">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="temperatureSearchTerm">Search Reports</label>
+              <input
+                type="text"
+                id="temperatureSearchTerm"
+                [(ngModel)]="temperatureReportsSearchTerm"
+                (input)="filterTemperatureReports()"
+                placeholder="Search by driver name, vehicle registration, or store..."
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-group">
+              <label for="temperatureDateFilter">Filter by Date</label>
+              <input
+                type="date"
+                id="temperatureDateFilter"
+                [(ngModel)]="temperatureReportsDateFilter"
+                (change)="filterTemperatureReports()"
+                class="filter-input"
+              >
+            </div>
+            
+            <div class="filter-actions">
+              <button class="btn-refresh" (click)="loadTemperatureReports()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="temperatureReportsLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading temperature reports...</p>
+        </div>
+
+        <!-- No Reports State -->
+        <div *ngIf="!temperatureReportsLoading && temperatureReports.length === 0" class="no-data-state">
+          <i class="bi bi-thermometer-half"></i>
+          <h3>No Temperature Reports Found</h3>
+          <p>No temperature issue reports have been submitted yet.</p>
+        </div>
+
+        <!-- Temperature Reports Table -->
+        <div *ngIf="!temperatureReportsLoading && temperatureReports.length > 0" class="reports-table-container">
+          <table class="reports-table">
+            <thead>
+              <tr>
+                <th>Submitted</th>
+                <th>Date</th>
+                <th>Driver</th>
+                <th>Route</th>
+                <th>Vehicle</th>
+                <th>Store</th>
+                <th>Van Temp</th>
+                <th>Customer Temp</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let report of (temperatureReportsSearchTerm || temperatureReportsDateFilter ? filteredTemperatureReports : temperatureReports)">
+                <td>{{ formatDate(report.created_at) }}</td>
+                <td>{{ report.date }}</td>
+                <td>{{ report.driver_name }}</td>
+                <td>{{ report.route_number }}</td>
+                <td>{{ report.van_registration }}</td>
+                <td>
+                  <div class="store-info">
+                    <div>{{ report.store_name }}</div>
+                    <small>Drop #{{ report.drop_number }}</small>
+                  </div>
+                </td>
+                <td>
+                  <span class="temperature-value" [class.high]="report.van_temp_by_display > 5">
+                    {{ report.van_temp_by_display }}°C
+                  </span>
+                </td>
+                <td>
+                  <span class="temperature-value" [class.high]="report.customer_temperature > 5">
+                    {{ report.customer_temperature }}°C
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button class="btn-view" (click)="viewTemperatureReportDetails(report)">
+                      <i class="bi bi-eye"></i>
+                      View
+                    </button>
+                    <button class="btn-pdf" (click)="downloadTemperatureReportPDF(report)">
+                      <i class="bi bi-file-pdf"></i>
+                      PDF
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detail View -->
+      <div *ngIf="temperatureReportsViewMode === 'detail' && selectedTemperatureReport" class="temperature-report-detail-view">
+        <!-- Clean Header -->
+        <div class="detail-header">
+          <button class="back-btn" (click)="backToTemperatureReportsList()">
+            <i class="bi bi-arrow-left"></i>
+            Back to List
+          </button>
+          <h1>Temperature Issue Report</h1>
+          <span class="report-date">{{ formatDate(selectedTemperatureReport.created_at) }}</span>
+          <button class="pdf-download-btn" (click)="downloadTemperatureReportPDF(selectedTemperatureReport)">
+            <i class="bi bi-file-earmark-pdf"></i>
+            Download PDF
+          </button>
+        </div>
+
+        <!-- Content Sections -->
+        <div class="detail-content">
+          <!-- Driver & Route Section -->
+          <div class="info-section">
+            <h3>Driver & Route Information</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Driver Name</label>
+                <span class="driver-name">{{ selectedTemperatureReport.driver_name }}</span>
+              </div>
+              <div class="info-item">
+                <label>Date</label>
+                <span>{{ selectedTemperatureReport.date }}</span>
+              </div>
+              <div class="info-item">
+                <label>Route Number</label>
+                <span class="route-number">{{ selectedTemperatureReport.route_number }}</span>
+              </div>
+              <div class="info-item">
+                <label>Vehicle Registration</label>
+                <span class="vehicle-reg">{{ selectedTemperatureReport.van_registration }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Store & Delivery Section -->
+          <div class="info-section">
+            <h3>Store & Delivery Information</h3>
+            <div class="store-header">
+              <span class="store-name">{{ selectedTemperatureReport.store_name }}</span>
+              <span class="drop-number">Drop #{{ selectedTemperatureReport.drop_number }}</span>
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Arrival Time</label>
+                <span>{{ selectedTemperatureReport.arrival_time_at_store }}</span>
+              </div>
+              <div class="info-item">
+                <label>Wait Time</label>
+                <span>{{ selectedTemperatureReport.wait_time_in_store }} minutes</span>
+              </div>
+              <div class="info-item">
+                <label>Driving Start Time</label>
+                <span>{{ selectedTemperatureReport.driving_start_time }}</span>
+              </div>
+              <div class="info-item">
+                <label>Total Crates</label>
+                <span>{{ selectedTemperatureReport.total_crates }}</span>
+              </div>
+              <div class="info-item">
+                <label>Site Keys Available</label>
+                <span class="yes-no" [class.yes]="selectedTemperatureReport.site_keys === 'yes'" [class.no]="selectedTemperatureReport.site_keys === 'no'">
+                  {{ selectedTemperatureReport.site_keys === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Temperature Monitoring Section -->
+          <div class="info-section temperature-section">
+            <h3>Temperature Monitoring</h3>
+            <div class="temperature-grid">
+              <div class="temp-item" [class.critical]="selectedTemperatureReport.van_temp_by_display > 5">
+                <label>Van Temperature (Display)</label>
+                <span class="temp-value">{{ selectedTemperatureReport.van_temp_by_display }}°C</span>
+              </div>
+              <div class="temp-item">
+                <label>Probe Serial Number</label>
+                <span>{{ selectedTemperatureReport.probe_serial_number }}</span>
+              </div>
+              <div class="temp-item" [class.critical]="selectedTemperatureReport.probe_temperature > 5">
+                <label>Probe Temperature</label>
+                <span class="temp-value">{{ selectedTemperatureReport.probe_temperature }}°C</span>
+              </div>
+              <div class="temp-item" [class.critical]="selectedTemperatureReport.customer_temperature > 5">
+                <label>Customer Temperature</label>
+                <span class="temp-value">{{ selectedTemperatureReport.customer_temperature }}°C</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testing & Environmental Section -->
+          <div class="info-section">
+            <h3>Testing & Environmental Data</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Destroyed Pack for Testing</label>
+                <span class="yes-no" [class.yes]="selectedTemperatureReport.destroyed_pack_for_testing === 'yes'" [class.no]="selectedTemperatureReport.destroyed_pack_for_testing === 'no'">
+                  {{ selectedTemperatureReport.destroyed_pack_for_testing === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Used Pack in Van for Testing</label>
+                <span class="yes-no" [class.yes]="selectedTemperatureReport.used_pack_in_van_for_testing === 'yes'" [class.no]="selectedTemperatureReport.used_pack_in_van_for_testing === 'no'">
+                  {{ selectedTemperatureReport.used_pack_in_van_for_testing === 'yes' ? 'Yes' : 'No' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Weather Conditions</label>
+                <span>{{ selectedTemperatureReport.weather_conditions }}</span>
+              </div>
+              <div class="info-item">
+                <label>Products Sampled</label>
+                <span>{{ selectedTemperatureReport.full_name_of_products_sampled }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Photo Documentation Section -->
+          <div class="info-section" *ngIf="selectedTemperatureReport.photo_temp_reading_from_customer || selectedTemperatureReport.photo_van_display_temp || selectedTemperatureReport.photo_probe_reading_from_destructive_pack">
+            <h3>Photo Documentation</h3>
+            <div class="photos-grid">
+              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_temp_reading_from_customer">
+                <label>Customer Temperature Reading</label>
+                <img [src]="selectedTemperatureReport.photo_temp_reading_from_customer" alt="Customer Temperature" (click)="openImageModal(selectedTemperatureReport.photo_temp_reading_from_customer)">
+              </div>
+              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_van_display_temp">
+                <label>Van Display Temperature</label>
+                <img [src]="selectedTemperatureReport.photo_van_display_temp" alt="Van Display" (click)="openImageModal(selectedTemperatureReport.photo_van_display_temp)">
+              </div>
+              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_probe_reading_from_destructive_pack">
+                <label>Probe Reading from Destructive Pack</label>
+                <img [src]="selectedTemperatureReport.photo_probe_reading_from_destructive_pack" alt="Probe Reading" (click)="openImageModal(selectedTemperatureReport.photo_probe_reading_from_destructive_pack)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="info-section" *ngIf="selectedTemperatureReport.further_comments">
+            <h3>Additional Comments</h3>
+            <div class="comments-content">
+              <p>{{ selectedTemperatureReport.further_comments }}</p>
             </div>
           </div>
         </div>

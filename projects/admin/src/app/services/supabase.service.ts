@@ -2028,4 +2028,27 @@ export class SupabaseService {
       throw err;
     }
   }
+
+  // Method to get all temperature issue reports for admin
+  async getAllTemperatureReports() {
+    console.log('Fetching all temperature issue reports for admin');
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_order_temp_forms')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching temperature reports:', error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} temperature reports`);
+      return data || [];
+    } catch (err) {
+      console.error('Exception during temperature reports fetch:', err);
+      throw err;
+    }
+  }
 }

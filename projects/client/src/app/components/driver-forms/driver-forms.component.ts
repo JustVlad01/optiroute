@@ -98,30 +98,17 @@ export class DriverFormsComponent implements OnInit {
   }
 
   get sortedForms(): FormAssignment[] {
-    return this.forms.sort((a, b) => {
-      // Daily driver forms first, then rejected order forms
-      if (a.form_type === 'daily_driver' && b.form_type !== 'daily_driver') {
-        return -1;
-      }
-      if (a.form_type !== 'daily_driver' && b.form_type === 'daily_driver') {
-        return 1;
-      }
-      // Within the same type, sort by created date (newest first)
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    return this.forms
+      .filter(form => form.form_type === 'daily_driver') // Only show daily driver forms
+      .sort((a, b) => {
+        // Sort by created date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
   }
 
   viewForm(formId: string): void {
-    // Find the form to get its type
-    const form = this.forms.find(f => f.id === formId);
-    
-    if (form?.form_type === 'rejected_order_checklist') {
-      // Navigate to rejected order form
-      this.router.navigate(['/rejected-order-form', formId]);
-    } else {
-      // Default to daily driver form
-      this.router.navigate(['/form-details', formId]);
-    }
+    // Navigate to daily driver form details
+    this.router.navigate(['/form-details', formId]);
   }
 
   clearSuccessMessage(): void {
@@ -142,12 +129,6 @@ export class DriverFormsComponent implements OnInit {
   }
 
   getFormTitle(form: FormAssignment): string {
-    switch (form.form_type) {
-      case 'rejected_order_checklist':
-        return 'Rejected Order Checklist - Damaged Product';
-      case 'daily_driver':
-      default:
-        return 'Daily Driver Form';
-    }
+    return 'Daily Driver Form';
   }
 } 

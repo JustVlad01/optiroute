@@ -173,7 +173,7 @@ interface RejectedOrder {
 })
 export class ReportsComponent implements OnInit, OnDestroy {
   // Tab management
-  activeTab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders' = 'accident-reports';
+  activeTab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders' | 'temperature-reports' = 'accident-reports';
 
   // Accident Reports properties
   reports: AccidentReport[] = [];
@@ -218,7 +218,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
   // Analytics properties
   routeAnalytics: RouteAnalytics[] = [];
   dailyDeliveryData: DailyDeliveryData[] = [];
-  deliveryTimeChart: Chart | null = null;
   problemRouteChart: Chart | null = null;
   weeklyTrendChart: Chart | null = null;
   showAnalytics: boolean = true;
@@ -260,6 +259,15 @@ export class ReportsComponent implements OnInit, OnDestroy {
   rejectedOrdersDateFilter: string = '';
   filteredRejectedOrders: RejectedOrder[] = [];
 
+  // Temperature Reports properties
+  temperatureReports: any[] = [];
+  temperatureReportsLoading = true;
+  selectedTemperatureReport: any = null;
+  temperatureReportsViewMode: 'list' | 'detail' = 'list';
+  temperatureReportsSearchTerm: string = '';
+  temperatureReportsDateFilter: string = '';
+  filteredTemperatureReports: any[] = [];
+
   constructor(
     private router: Router,
     private supabaseService: SupabaseService,
@@ -293,7 +301,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
 
   // Tab management methods
-  setActiveTab(tab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders'): void {
+  setActiveTab(tab: 'accident-reports' | 'driver-updates' | 'van-issues' | 'rejected-orders' | 'temperature-reports'): void {
     this.activeTab = tab;
     if (tab === 'driver-updates' && this.dayGroups.length === 0) {
       this.loadUpdatesGroupedByDay();
@@ -301,6 +309,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
       this.loadVanIssues();
     } else if (tab === 'rejected-orders' && this.rejectedOrders.length === 0) {
       this.loadRejectedOrders();
+    } else if (tab === 'temperature-reports' && this.temperatureReports.length === 0) {
+      this.loadTemperatureReports();
     }
   }
 
@@ -961,11 +971,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private calculateRouteAnalytics(): void {
     // Process driver updates to calculate analytics
     this.processDeliveryData();
-    
-    // Create the chart after processing data
-    setTimeout(() => {
-      this.createDeliveryTimeChart();
-    }, 100);
   }
 
   private processDeliveryData(): void {
@@ -1044,106 +1049,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
-  private createDeliveryTimeChart(): void {
-    const canvas = document.getElementById('deliveryTimeChart') as HTMLCanvasElement;
-    if (!canvas) {
-      console.warn('Chart canvas not found');
-      return;
-    }
-
-    // Destroy existing chart if it exists
-    if (this.deliveryTimeChart) {
-      this.deliveryTimeChart.destroy();
-    }
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const labels = this.dailyDeliveryData.map(d => d.displayDate);
-    const circleKData = this.dailyDeliveryData.map(d => d.circleKAvgTime ? d.circleKAvgTime / 60 : null); // Convert to hours
-    const starbucksData = this.dailyDeliveryData.map(d => d.starbucksAvgTime ? d.starbucksAvgTime / 60 : null); // Convert to hours
-
-    const config: ChartConfiguration = {
-      type: 'line' as ChartType,
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Circle K Average Time',
-            data: circleKData,
-            borderColor: '#ff6b35',
-            backgroundColor: 'rgba(255, 107, 53, 0.1)',
-            borderWidth: 2,
-            fill: false,
-            tension: 0.1,
-            pointBackgroundColor: '#ff6b35',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4
-          },
-          {
-            label: 'Starbucks Average Time',
-            data: starbucksData,
-            borderColor: '#00704a',
-            backgroundColor: 'rgba(0, 112, 74, 0.1)',
-            borderWidth: 2,
-            fill: false,
-            tension: 0.1,
-            pointBackgroundColor: '#00704a',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 4
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Average Delivery Times Comparison',
-            font: {
-              size: 14,
-              weight: 'bold'
-            }
-          },
-          legend: {
-            display: true,
-            position: 'top'
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Hours'
-            },
-            ticks: {
-              callback: function(value) {
-                return value + 'h';
-              }
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Date'
-            }
-          }
-        },
-        elements: {
-          point: {
-            hoverRadius: 6
-          }
-        }
-      }
-    };
-
-    this.deliveryTimeChart = new Chart(ctx, config);
   }
 
   toggleDayExpansion(dayGroup: DayGroup): void {
@@ -2186,13 +2091,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   toggleAnalytics(): void {
     this.showAnalytics = !this.showAnalytics;
-    
-    // If showing analytics, create the chart after a short delay to ensure DOM is ready
-    if (this.showAnalytics) {
-      setTimeout(() => {
-        this.createDeliveryTimeChart();
-      }, 100);
-    }
   }
 
   getOutstandingDeliveriesForDay(dayGroup: DayGroup): number {
@@ -2302,9 +2200,6 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // Cleanup charts on component destruction
-    if (this.deliveryTimeChart) {
-      this.deliveryTimeChart.destroy();
-    }
   }
 
   // Van Issues Methods
@@ -2949,5 +2844,53 @@ export class ReportsComponent implements OnInit, OnDestroy {
       // Show a simple alert since NotificationService doesn't have showError method
       alert('Failed to generate PDF report. Please try again.');
     }
+  }
+
+  // Temperature Reports Methods
+  async loadTemperatureReports(): Promise<void> {
+    this.temperatureReportsLoading = true;
+    try {
+      const data = await this.supabaseService.getAllTemperatureReports();
+      this.temperatureReports = data || [];
+      this.filteredTemperatureReports = [...this.temperatureReports];
+    } catch (error) {
+      console.error('Error loading temperature reports:', error);
+    } finally {
+      this.temperatureReportsLoading = false;
+    }
+  }
+
+  viewTemperatureReportDetails(report: any): void {
+    this.selectedTemperatureReport = report;
+    this.temperatureReportsViewMode = 'detail';
+  }
+
+  backToTemperatureReportsList(): void {
+    this.selectedTemperatureReport = null;
+    this.temperatureReportsViewMode = 'list';
+  }
+
+  filterTemperatureReports(): void {
+    this.filteredTemperatureReports = this.temperatureReports.filter(report => {
+      const searchTerm = this.temperatureReportsSearchTerm.toLowerCase();
+      const dateFilter = this.temperatureReportsDateFilter;
+
+      return (
+        report.driver_name?.toLowerCase().includes(searchTerm) ||
+        report.van_registration?.toLowerCase().includes(searchTerm) ||
+        report.store_name?.toLowerCase().includes(searchTerm) ||
+        report.route_number?.toLowerCase().includes(searchTerm) ||
+        (dateFilter && report.date === dateFilter)
+      );
+    });
+  }
+
+  async downloadTemperatureReportPDF(report: any): Promise<void> {
+    console.log('Downloading temperature report PDF:', report);
+    // PDF generation implementation will be added later
+  }
+
+  async downloadVanIssueDetailsPDF(issue: VanIssue): Promise<void> {
+    // ... existing code ...
   }
 }

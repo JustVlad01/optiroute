@@ -1068,4 +1068,84 @@ export class SupabaseService {
       throw err;
     }
   }
+
+  // Temperature Form Methods (for rejected_order_temp_checklist)
+  
+  // Method to create a new temperature form
+  async createRejectedOrderTempForm(formData: any) {
+    console.log('Creating rejected order temperature form:', formData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_order_temp_forms')
+        .insert([formData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating temperature form:', error);
+        throw error;
+      }
+
+      console.log('Temperature form created successfully:', data);
+      return data;
+    } catch (err) {
+      console.error('Exception creating temperature form:', err);
+      throw err;
+    }
+  }
+
+  // Method to get temperature form data by form ID
+  async getRejectedOrderTempFormData(formId: string) {
+    console.log(`Getting temperature form data for form ID: ${formId}`);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_order_temp_forms')
+        .select('*')
+        .eq('form_assignment_id', formId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching temperature form data:', error);
+        return null; // Return null instead of throwing for non-critical operations
+      }
+
+      console.log('Retrieved temperature form data');
+      return data;
+    } catch (err) {
+      console.error('Exception fetching temperature form data:', err);
+      return null;
+    }
+  }
+
+  // Method to update temperature form
+  async updateRejectedOrderTempForm(formId: string, formData: any) {
+    console.log(`Updating temperature form ${formId}:`, formData);
+    
+    try {
+      const { data, error } = await this.supabase
+        .from('rejected_order_temp_forms')
+        .update(formData)
+        .eq('form_assignment_id', formId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating temperature form:', error);
+        throw error;
+      }
+
+      console.log('Temperature form updated successfully');
+      return data;
+    } catch (err) {
+      console.error('Exception updating temperature form:', err);
+      throw err;
+    }
+  }
+
+  // Method to get form assignment (fix for the naming issue)
+  async getFormAssignment(assignmentId: string) {
+    return this.getFormAssignmentById(assignmentId);
+  }
 }

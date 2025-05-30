@@ -41,11 +41,11 @@
           <div class="form-card" *ngFor="let form of sortedForms">
             <div class="form-header d-flex justify-content-between align-items-center">
               <h5 class="form-title mb-0">{{ getFormTitle(form) }}</h5>
-              <span *ngIf="form.form_type !== 'rejected_order_checklist'" class="badge" [ngClass]="getStatusBadgeClass(form.status)">{{form.status}}</span>
+              <span *ngIf="form.form_type !== 'rejected_order_checklist' && form.form_type !== 'rejected_order_temp_checklist'" class="badge" [ngClass]="getStatusBadgeClass(form.status)">{{form.status}}</span>
             </div>
             <div class="form-body p-3">
-              <p *ngIf="form.form_type !== 'rejected_order_checklist'" class="mb-2"><strong>Assigned:</strong> {{form.created_at | date:'medium'}}</p>
-              <p *ngIf="form.notes && form.form_type !== 'rejected_order_checklist'" class="mb-2"><strong>Notes:</strong> {{form.notes}}</p>
+              <p *ngIf="form.form_type !== 'rejected_order_checklist' && form.form_type !== 'rejected_order_temp_checklist'" class="mb-2"><strong>Assigned:</strong> {{form.created_at | date:'medium'}}</p>
+              <p *ngIf="form.notes && form.form_type !== 'rejected_order_checklist' && form.form_type !== 'rejected_order_temp_checklist'" class="mb-2"><strong>Notes:</strong> {{form.notes}}</p>
               <p *ngIf="form.completed_at" class="completed-info mb-2">
                 <i class="bi bi-check-circle-fill text-success me-1"></i>
                 <strong>Completed:</strong> {{form.completed_at | date:'medium'}}

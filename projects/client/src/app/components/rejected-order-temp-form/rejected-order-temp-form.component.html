@@ -1,0 +1,420 @@
+<div class="corporate-theme">
+  <nav class="navbar">
+    <div class="nav-left">
+      <span class="nav-title">Rejected Order - Reported Above Temp</span>
+    </div>
+    
+    <a class="home-button-flat" routerLink="/driver-forms">
+      <i class="bi bi-house-fill"></i>
+    </a>
+  </nav>
+
+  <div class="form-container">
+    <div class="content">
+      <!-- Completed Form Message when in view mode -->
+      <div *ngIf="isViewMode" class="completed-info">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-check-circle-fill me-3"></i>
+          <div>
+            <h5 class="mb-1">Form Completed Successfully</h5>
+            <p class="mb-0">This form was completed on {{ completedDate | date:'medium' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="rejectedOrderTempForm" (ngSubmit)="submitForm()">
+        <!-- Basic Information Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-info-circle-fill"></i>Basic Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label for="driver_name" class="form-label">Driver Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="driver_name" formControlName="driver_name" readonly>
+              <div *ngIf="rejectedOrderTempForm.get('driver_name')?.invalid && rejectedOrderTempForm.get('driver_name')?.touched" class="text-danger">
+                Driver name is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="date" formControlName="date" readonly>
+              <div *ngIf="rejectedOrderTempForm.get('date')?.invalid && rejectedOrderTempForm.get('date')?.touched" class="text-danger">
+                Date is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="route_number" class="form-label">Route Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="route_number" formControlName="route_number" placeholder="Enter route number">
+              <div *ngIf="rejectedOrderTempForm.get('route_number')?.invalid && rejectedOrderTempForm.get('route_number')?.touched" class="text-danger">
+                Route number is required
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <label for="van_registration" class="form-label">Van Registration <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="van_registration" formControlName="van_registration" placeholder="Enter van registration">
+              <div *ngIf="rejectedOrderTempForm.get('van_registration')?.invalid && rejectedOrderTempForm.get('van_registration')?.touched" class="text-danger">
+                Van registration is required
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Store Information Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-shop"></i>Store Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <label for="store_search" class="form-label">Store Name <span class="text-danger">*</span></label>
+              <div style="position: relative;">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="store_search" 
+                  [(ngModel)]="storeSearchTerm"
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="onStoreSearchInput()" 
+                  placeholder="Start typing store name or code..."
+                  autocomplete="off">
+                
+                <!-- Store Search Results Dropdown -->
+                <div *ngIf="filteredStores.length > 0" class="search-results-dropdown">
+                  <div 
+                    *ngFor="let store of filteredStores" 
+                    class="search-result-item" 
+                    (click)="selectStore(store)">
+                    <strong>{{ store.code }}</strong> - {{ store.name }}
+                  </div>
+                </div>
+              </div>
+
+              <input type="hidden" formControlName="store_name">
+              <input type="hidden" formControlName="store_id">
+              
+              <div *ngIf="rejectedOrderTempForm.get('store_name')?.invalid && rejectedOrderTempForm.get('store_name')?.touched" class="text-danger">
+                Please select a store from the search results
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Delivery Information Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-truck"></i>Delivery Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label for="arrival_time_at_store" class="form-label">Arrival Time at Store <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="arrival_time_at_store" formControlName="arrival_time_at_store">
+              <div *ngIf="rejectedOrderTempForm.get('arrival_time_at_store')?.invalid && rejectedOrderTempForm.get('arrival_time_at_store')?.touched" class="text-danger">
+                Arrival time is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="wait_time_at_store" class="form-label">Wait Time at Store (minutes) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="wait_time_at_store" formControlName="wait_time_at_store" min="0" placeholder="0">
+              <div *ngIf="rejectedOrderTempForm.get('wait_time_at_store')?.invalid && rejectedOrderTempForm.get('wait_time_at_store')?.touched" class="text-danger">
+                Wait time is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="driving_start_time" class="form-label">Driving Start Time <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="driving_start_time" formControlName="driving_start_time">
+              <div *ngIf="rejectedOrderTempForm.get('driving_start_time')?.invalid && rejectedOrderTempForm.get('driving_start_time')?.touched" class="text-danger">
+                Driving start time is required
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <label for="site_keys" class="form-label">Do you have site keys? <span class="text-danger">*</span></label>
+              <select class="form-control" id="site_keys" formControlName="site_keys">
+                <option value="">Select an option</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+              <div *ngIf="rejectedOrderTempForm.get('site_keys')?.invalid && rejectedOrderTempForm.get('site_keys')?.touched" class="text-danger">
+                Please select an option
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="drop_number_on_route" class="form-label">Drop Number on Route <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="drop_number_on_route" formControlName="drop_number_on_route" min="1" placeholder="1">
+              <div *ngIf="rejectedOrderTempForm.get('drop_number_on_route')?.invalid && rejectedOrderTempForm.get('drop_number_on_route')?.touched" class="text-danger">
+                Drop number is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="total_crates_into_store" class="form-label">Total Crates into Store <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="total_crates_into_store" formControlName="total_crates_into_store" min="0" placeholder="0">
+              <div *ngIf="rejectedOrderTempForm.get('total_crates_into_store')?.invalid && rejectedOrderTempForm.get('total_crates_into_store')?.touched" class="text-danger">
+                Total crates is required
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Temperature Monitoring Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-thermometer-half"></i>Temperature Monitoring
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label for="van_temp_by_display" class="form-label">Van Temperature by Display (°C) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="van_temp_by_display" formControlName="van_temp_by_display" step="0.1" placeholder="0.0">
+              <div *ngIf="rejectedOrderTempForm.get('van_temp_by_display')?.invalid && rejectedOrderTempForm.get('van_temp_by_display')?.touched" class="text-danger">
+                Van temperature is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="probe_serial_number" class="form-label">Probe Serial Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="probe_serial_number" formControlName="probe_serial_number" placeholder="Enter probe serial number">
+              <div *ngIf="rejectedOrderTempForm.get('probe_serial_number')?.invalid && rejectedOrderTempForm.get('probe_serial_number')?.touched" class="text-danger">
+                Probe serial number is required
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <label for="probe_temperature" class="form-label">Probe Temperature (°C) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="probe_temperature" formControlName="probe_temperature" step="0.1" placeholder="0.0">
+              <div *ngIf="rejectedOrderTempForm.get('probe_temperature')?.invalid && rejectedOrderTempForm.get('probe_temperature')?.touched" class="text-danger">
+                Probe temperature is required
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <label for="customer_temperature" class="form-label">Customer's Temperature (°C) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="customer_temperature" formControlName="customer_temperature" step="0.1" placeholder="0.0">
+              <div *ngIf="rejectedOrderTempForm.get('customer_temperature')?.invalid && rejectedOrderTempForm.get('customer_temperature')?.touched" class="text-danger">
+                Customer's temperature is required
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Testing Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-clipboard-check"></i>Testing Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <label for="destroyed_pack_for_testing" class="form-label">Have you destroyed a pack for testing? <span class="text-danger">*</span></label>
+              <select class="form-control" id="destroyed_pack_for_testing" formControlName="destroyed_pack_for_testing">
+                <option value="">Select an option</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+              <div *ngIf="rejectedOrderTempForm.get('destroyed_pack_for_testing')?.invalid && rejectedOrderTempForm.get('destroyed_pack_for_testing')?.touched" class="text-danger">
+                Please select an option
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <label for="used_pack_in_van_for_testing" class="form-label">Have you used a pack in the van for testing? <span class="text-danger">*</span></label>
+              <select class="form-control" id="used_pack_in_van_for_testing" formControlName="used_pack_in_van_for_testing">
+                <option value="">Select an option</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+              <div *ngIf="rejectedOrderTempForm.get('used_pack_in_van_for_testing')?.invalid && rejectedOrderTempForm.get('used_pack_in_van_for_testing')?.touched" class="text-danger">
+                Please select an option
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Environmental and Product Information Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-cloud-sun"></i>Environmental & Product Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <label for="weather_conditions" class="form-label">Weather Conditions <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="weather_conditions" formControlName="weather_conditions" placeholder="Describe weather conditions">
+              <div *ngIf="rejectedOrderTempForm.get('weather_conditions')?.invalid && rejectedOrderTempForm.get('weather_conditions')?.touched" class="text-danger">
+                Weather conditions are required
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <label for="full_name_of_products_sampled" class="form-label">Full Name of Product(s) Sampled <span class="text-danger">*</span></label>
+              <textarea class="form-control" id="full_name_of_products_sampled" formControlName="full_name_of_products_sampled" rows="3" placeholder="List all products sampled"></textarea>
+              <div *ngIf="rejectedOrderTempForm.get('full_name_of_products_sampled')?.invalid && rejectedOrderTempForm.get('full_name_of_products_sampled')?.touched" class="text-danger">
+                Product names are required
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Photo Documentation Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-camera"></i>Photo Documentation
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label for="photo_temp_reading_customer" class="form-label">Photo of temp reading from customer</label>
+              
+              <!-- Photo Upload Options -->
+              <div class="photo-upload-options">
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_temp_reading_customer_file" formControlName="photo_temp_reading_customer" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_temp_reading_customer')">
+                  <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_temp_reading_customer_file')">
+                    <i class="bi bi-folder2-open"></i>
+                    Choose File
+                  </button>
+                </div>
+                
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_temp_reading_customer_camera" accept="image/*" capture="environment" style="display: none;" (change)="onFileSelected($event, 'photo_temp_reading_customer')">
+                  <button type="button" class="btn btn-outline-primary upload-btn" (click)="triggerFileInput('photo_temp_reading_customer_camera')">
+                    <i class="bi bi-camera-fill"></i>
+                    Take Photo
+                  </button>
+                </div>
+              </div>
+              
+              <div *ngIf="getSelectedFileName('photo_temp_reading_customer')" class="selected-file">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ getSelectedFileName('photo_temp_reading_customer') }}</span>
+              </div>
+           
+            </div>
+            
+            <div class="col-md-4">
+              <label for="photo_van_display_temp" class="form-label">Photo of van display temperture</label>
+              
+              <!-- Photo Upload Options -->
+              <div class="photo-upload-options">
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_van_display_temp_file" formControlName="photo_van_display_temp" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_van_display_temp')">
+                  <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_van_display_temp_file')">
+                    <i class="bi bi-folder2-open"></i>
+                    Choose File
+                  </button>
+                </div>
+                
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_van_display_temp_camera" accept="image/*" capture="environment" style="display: none;" (change)="onFileSelected($event, 'photo_van_display_temp')">
+                  <button type="button" class="btn btn-outline-primary upload-btn" (click)="triggerFileInput('photo_van_display_temp_camera')">
+                    <i class="bi bi-camera-fill"></i>
+                    Take Photo
+                  </button>
+                </div>
+              </div>
+              
+              <div *ngIf="getSelectedFileName('photo_van_display_temp')" class="selected-file">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ getSelectedFileName('photo_van_display_temp') }}</span>
+              </div>
+             
+            </div>
+            
+            <div class="col-md-4">
+              <label for="photo_probe_reading_destructive_pack" class="form-label">Photo of probe reading from destructive pack</label>
+              
+              <!-- Photo Upload Options -->
+              <div class="photo-upload-options">
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_probe_reading_destructive_pack_file" formControlName="photo_probe_reading_destructive_pack" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_probe_reading_destructive_pack')">
+                  <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_probe_reading_destructive_pack_file')">
+                    <i class="bi bi-folder2-open"></i>
+                    Choose File
+                  </button>
+                </div>
+                
+                <div class="upload-option">
+                  <input type="file" class="form-control" id="photo_probe_reading_destructive_pack_camera" accept="image/*" capture="environment" style="display: none;" (change)="onFileSelected($event, 'photo_probe_reading_destructive_pack')">
+                  <button type="button" class="btn btn-outline-primary upload-btn" (click)="triggerFileInput('photo_probe_reading_destructive_pack_camera')">
+                    <i class="bi bi-camera-fill"></i>
+                    Take Photo
+                  </button>
+                </div>
+              </div>
+              
+              <div *ngIf="getSelectedFileName('photo_probe_reading_destructive_pack')" class="selected-file">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ getSelectedFileName('photo_probe_reading_destructive_pack') }}</span>
+              </div>
+         
+            </div>
+          </div>
+        </section>
+
+        <!-- Additional Comments Section -->
+        <section class="section">
+          <div class="section-title">
+            <i class="bi bi-chat-left-text"></i>Additional Information
+            <div class="section-divider"></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <label for="further_comments" class="form-label">Further Comments</label>
+              <textarea class="form-control" id="further_comments" formControlName="further_comments" rows="4" placeholder="Vehicle issues / Delivery issues / Complaints / Returns / Accidents"></textarea>
+              
+            </div>
+          </div>
+        </section>
+
+        <!-- Submit Button Section -->
+        <section class="section" *ngIf="!isViewMode">
+          <div class="submit-section">
+            <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
+              <i class="bi bi-arrow-left"></i>
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting || rejectedOrderTempForm.invalid">
+              <i *ngIf="submitting" class="bi bi-arrow-repeat spinner-border-sm"></i>
+              <i *ngIf="!submitting" class="bi bi-check-circle"></i>
+              {{ submitting ? 'Submitting...' : 'Submit Form' }}
+            </button>
+          </div>
+        </section>
+
+        <!-- View Mode Navigation -->
+        <section class="section" *ngIf="isViewMode">
+          <div class="submit-section">
+            <button type="button" class="btn btn-secondary" (click)="goBack()">
+              <i class="bi bi-arrow-left"></i>
+              Back to Forms
+            </button>
+          </div>
+        </section>
+      </form>
+    </div>
+  </div>
+</div> 
