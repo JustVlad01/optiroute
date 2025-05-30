@@ -214,7 +214,7 @@
           },
           "configurations": {
             "production": {
-              "serviceWorker": true,
+              "serviceWorker": "projects/client/ngsw-config.json",
               "budgets": [
                 {
                   "type": "initial",
