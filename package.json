@@ -7,7 +7,7 @@
     "start:prod": "npm run build:all && node server.js",
     "build": "ng build",
     "build:all": "npm run build:admin && npm run build:client && npm run generate-version",
-    "build:client": "ng build client --configuration production && npx ngsw-config dist/client/browser projects/client/ngsw-config.json",
+    "build:client": "ng build client --configuration production",
     "build:admin": "ng build admin --configuration production",
     "generate-version": "node -e \"console.log('Build completed at:', new Date().toISOString()); const fs = require('fs'); const version = { buildTime: Date.now(), deployTime: new Date().toISOString(), gitHash: process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || 'local-' + Date.now(), timestamp: new Date().toISOString() }; fs.writeFileSync('./dist/version.json', JSON.stringify(version, null, 2)); console.log('Version file generated:', version);\"",
     "watch": "ng build --watch --configuration development",

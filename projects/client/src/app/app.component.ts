@@ -34,8 +34,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Check for server version updates
     this.checkServerVersion();
-    // Check every minute for new versions
-    interval(60000)
+    // Check every 5 minutes for new versions (optimized from 1 minute)
+    interval(300000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.checkServerVersion());
   }
@@ -68,8 +68,8 @@ export class AppComponent implements OnInit, OnDestroy {
     // Check for updates immediately
     this.checkForUpdates();
     
-    // Check for updates every 30 seconds
-    interval(30000)
+    // Check for updates every 2 minutes (optimized from 30 seconds)
+    interval(120000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.checkForUpdates());
   }
@@ -106,15 +106,19 @@ export class AppComponent implements OnInit, OnDestroy {
           const serverNum = parseInt(serverVersion, 10);
           const currentNum = parseInt(this.currentVersion, 10);
           
-          // Check if versions are different by more than 30 seconds
-          if (!isNaN(serverNum) && !isNaN(currentNum) && Math.abs(serverNum - currentNum) > 30000) {
-            console.log('Server version change detected, showing update notification');
-            this.showUpdateNotification();
+          // Check if server version is newer (higher timestamp)
+          if (!isNaN(serverNum) && !isNaN(currentNum) && serverNum > currentNum) {
+            // Additional check: versions different by more than 30 seconds to avoid false positives
+            if (Math.abs(serverNum - currentNum) > 30000) {
+              console.log('Newer server version detected, showing update notification');
+              this.showUpdateNotification();
+            }
           }
         }
       },
       error: (err) => {
         console.warn('Could not check server version:', err);
+        // Don't show error to user, just log it
       }
     });
   }
@@ -132,15 +136,23 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private showUpdateNotification() {
+    // Prevent multiple simultaneous notifications
+    if (this.showUpdatePrompt) {
+      return;
+    }
+    
     this.updateAvailable = true;
     this.showUpdatePrompt = true;
     
-    // Show notification for 10 seconds, then auto-update
+    console.log('Showing update notification to user');
+    
+    // Show notification for 15 seconds, then auto-update (increased from 10 seconds)
     setTimeout(() => {
       if (this.showUpdatePrompt) {
+        console.log('Auto-updating after timeout');
         this.updateApp();
       }
-    }, 10000);
+    }, 15000);
   }
 
   updateApp() {
@@ -152,11 +164,12 @@ export class AppComponent implements OnInit, OnDestroy {
       this.swUpdate.activateUpdate().then(() => {
         console.log('Service worker updated, reloading...');
         this.clearCachesAndReload();
-      }).catch(() => {
-        console.log('No service worker update available, clearing caches and reloading...');
+      }).catch((error) => {
+        console.log('No service worker update available or error occurred:', error);
         this.clearCachesAndReload();
       });
     } else {
+      console.log('Service worker not enabled, performing manual reload');
       this.clearCachesAndReload();
     }
   }
