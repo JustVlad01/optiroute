@@ -77,14 +77,6 @@ export const routes: Routes = [
                 component: DriverPerformanceComponent
             },
             {
-                path: 'updates',
-                component: DriverUpdatesComponent
-            },
-            {
-                path: 'van-issues',
-                component: DriverVanIssuesComponent
-            },
-            {
                 path: 'view/:id',
                 component: DriverFormsComponent // Reuse the same component for viewing forms
             }

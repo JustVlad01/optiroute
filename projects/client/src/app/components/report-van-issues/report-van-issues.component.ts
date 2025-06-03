@@ -29,7 +29,7 @@ interface ImagePreview {
 export class ReportVanIssuesComponent implements OnInit, OnDestroy {
   driverData: Driver | null = null;
   vanRegNumber: string = '';
-  issueComment: string = '';
+  issueDescriptions: string[] = [''];
   selectedImages: ImagePreview[] = [];
   isSubmitting: boolean = false;
   submitSuccess: boolean = false;
@@ -53,6 +53,18 @@ export class ReportVanIssuesComponent implements OnInit, OnDestroy {
       }
     } else {
       this.router.navigate(['/login']);
+    }
+  }
+
+  addIssueDescription(): void {
+    if (this.issueDescriptions.length < 10) { // Limit to 10 issues
+      this.issueDescriptions.push('');
+    }
+  }
+
+  removeIssueDescription(index: number): void {
+    if (this.issueDescriptions.length > 1) {
+      this.issueDescriptions.splice(index, 1);
     }
   }
 
@@ -83,9 +95,17 @@ export class ReportVanIssuesComponent implements OnInit, OnDestroy {
     }
   }
 
+  areIssuesValid(): boolean {
+    return this.issueDescriptions.some(issue => issue.trim().length > 0);
+  }
+
+  trackByIndex(index: number, item: any): number {
+    return index;
+  }
+
   async submitIssue(): Promise<void> {
-    if (!this.driverData || !this.vanRegNumber.trim() || !this.issueComment.trim()) {
-      this.submitError = 'Please provide van registration number and issue description.';
+    if (!this.driverData || !this.vanRegNumber.trim() || !this.areIssuesValid()) {
+      this.submitError = 'Please provide van registration number and at least one issue description.';
       return;
     }
 
@@ -117,11 +137,23 @@ export class ReportVanIssuesComponent implements OnInit, OnDestroy {
         }
       }
 
+      // Combine all non-empty issue descriptions into a single comment with numbered sections
+      const validIssues = this.issueDescriptions.filter(issue => issue.trim().length > 0);
+      let combinedComment = '';
+      
+      if (validIssues.length === 1) {
+        combinedComment = validIssues[0].trim();
+      } else {
+        combinedComment = validIssues
+          .map((issue, index) => `Issue ${index + 1}: ${issue.trim()}`)
+          .join('\n\n');
+      }
+
       // Create the issue record
       const issueData: VanIssue = {
         driver_id: this.driverData.id,
         van_registration: this.vanRegNumber.trim().toUpperCase(),
-        driver_comments: this.issueComment.trim(),
+        driver_comments: combinedComment,
         image_urls: imageUrls
       };
 
@@ -138,7 +170,7 @@ export class ReportVanIssuesComponent implements OnInit, OnDestroy {
       
       // Reset form
       this.vanRegNumber = '';
-      this.issueComment = '';
+      this.issueDescriptions = [''];
       this.selectedImages = [];
       
       // Show thank you message instead of just success

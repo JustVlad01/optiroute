@@ -124,6 +124,16 @@ form {
       color: #FF5252;
       font-size: 1.1rem;
     }
+    
+    .issue-counter {
+      font-size: 0.75rem;
+      color: #6c757d;
+      font-weight: 500;
+      background: rgba(108, 117, 125, 0.1);
+      padding: 0.2rem 0.4rem;
+      border-radius: 12px;
+      margin-left: auto;
+    }
   }
 }
 
@@ -212,6 +222,107 @@ form {
     small {
       color: #6c757d;
       font-size: 0.875rem;
+    }
+  }
+}
+
+/* Multiple Issues Styles */
+.issues-container {
+  .issue-input-group {
+    margin-bottom: 2rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #fafbfc;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: #dee2e6;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+    
+    .issue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      border-radius: 8px 8px 0 0;
+      
+      .issue-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.75rem;
+      }
+      
+      .remove-issue-btn {
+        background: transparent;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: #fff5f5;
+          border-color: #fecaca;
+          color: #dc2626;
+        }
+        
+        i {
+          font-size: 0.875rem;
+        }
+      }
+    }
+    
+    .issue-textarea {
+      border: none;
+      border-radius: 0 0 8px 8px;
+      background: white;
+      margin: 0;
+      
+      &:focus {
+        box-shadow: none;
+        border: none;
+      }
+    }
+  }
+  
+  .add-issue-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    
+    .add-issue-btn {
+      background: white;
+      color: #FF5252;
+      border: 2px dashed rgba(255, 82, 82, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      
+      &:hover {
+        background: rgba(255, 82, 82, 0.05);
+        border-color: rgba(255, 82, 82, 0.5);
+        transform: translateY(-1px);
+      }
+      
+      i {
+        font-size: 0.9rem;
+      }
     }
   }
 }
@@ -405,31 +516,77 @@ form {
   .images-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
+  
+  /* Mobile responsive styles for multiple issues */
+  .issues-container {
+    .issue-input-group {
+      .issue-header {
+        padding: 0.5rem 0.75rem;
+        
+        .issue-number {
+          width: 20px;
+          height: 20px;
+          font-size: 0.75rem;
+        }
+        
+        .remove-issue-btn {
+          width: 24px;
+          height: 24px;
+          font-size: 0.9rem;
+        }
+      }
+    }
+    
+    .add-issue-section {
+      margin-top: 1rem;
+      
+      .add-issue-btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+      }
+    }
+  }
+  
+  .form-group {
+    label {
+      .issue-counter {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+      }
+    }
+  }
 }
 
 /* Thank You Message Styles */
 .thank-you-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
   text-align: center;
+  width: 100%;
+  padding: 0;
 }
 
 .thank-you-content {
-  padding: 3rem 2rem;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
   
   .thank-you-icon {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     
     i {
-      font-size: 4rem;
+      font-size: 5rem;
       color: #28a745;
       background: rgba(40, 167, 69, 0.1);
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 50%;
-      width: 6rem;
-      height: 6rem;
+      width: 7rem;
+      height: 7rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -438,14 +595,16 @@ form {
   
   h2 {
     color: #2c3e50;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
     font-weight: 700;
-    font-size: 1.75rem;
+    font-size: 2rem;
+    text-align: center;
   }
 }
 
 .thank-you-actions {
-  margin-top: 2rem;
+  margin-top: 0;
+  text-align: center;
 }
 
 .back-to-home-btn {
@@ -478,20 +637,23 @@ form {
 /* Responsive adjustments for thank you message */
 @media (max-width: 768px) {
   .thank-you-content {
-    padding: 2rem 1.5rem;
+    padding: 3rem 1.5rem;
+    min-height: 50vh;
     
     .thank-you-icon {
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
       
       i {
-        font-size: 3rem;
-        width: 5rem;
-        height: 5rem;
+        font-size: 4rem;
+        width: 6rem;
+        height: 6rem;
+        padding: 1.25rem;
       }
     }
     
     h2 {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
+      margin-bottom: 2rem;
     }
   }
   

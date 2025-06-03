@@ -82,6 +82,7 @@
           <th>Driver</th>
           <th>Issue Report</th>
           <th>Images</th>
+          <th>Repair Receipts</th>
           <th>Date</th>
           <th>Fixed Date</th>
           <th>Status</th>
@@ -105,7 +106,43 @@
           
           <td class="issue-cell">
             <div class="issue-content">
-              <p class="issue-text">{{ issue.driver_comments }}</p>
+              <div class="issues-container">
+                <div class="issue-progress" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                  <span class="progress-text">
+                    {{ getCompletionProgress(issue).completed }} of {{ getCompletionProgress(issue).total }} completed
+                  </span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" 
+                         [style.width.%]="(getCompletionProgress(issue).completed / getCompletionProgress(issue).total) * 100">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="individual-issues">
+                  <div class="issue-item" 
+                       *ngFor="let parsedIssue of parseIssuesFromComments(issue.driver_comments, issue.issue_completions); trackBy: trackByIssueIndex"
+                       [class.completed]="parsedIssue.completed">
+                    <div class="issue-checkbox">
+                      <input type="checkbox" 
+                             [id]="'issue-' + issue.id + '-' + parsedIssue.index"
+                             [checked]="parsedIssue.completed"
+                             (change)="toggleIssueCompletion(issue, parsedIssue.index)"
+                             class="completion-checkbox">
+                      <label [for]="'issue-' + issue.id + '-' + parsedIssue.index" class="checkbox-label">
+                        <i class="bi bi-check" *ngIf="parsedIssue.completed"></i>
+                      </label>
+                    </div>
+                    <div class="issue-description">
+                      <span class="issue-number" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                        {{ parsedIssue.index + 1 }}.
+                      </span>
+                      <span class="issue-text" [class.completed-text]="parsedIssue.completed">
+                        {{ parsedIssue.description }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </td>
           
@@ -129,6 +166,29 @@
             </div>
             <span *ngIf="!issue.image_urls || issue.image_urls.length === 0" class="no-images-text">
               No images
+            </span>
+          </td>
+          
+          <td class="repair-receipts-cell">
+            <div class="repair-receipts-info" *ngIf="issue.repair_receipt_urls && issue.repair_receipt_urls.length > 0">
+              <span class="repair-receipt-count">{{ issue.repair_receipt_urls.length }} receipt(s)</span>
+              <div class="repair-receipt-thumbnails">
+                <img 
+                  *ngFor="let receiptPath of issue.repair_receipt_urls.slice(0, 3); trackBy: trackByReceiptPath"
+                  [src]="getImageUrl(receiptPath)" 
+                  [alt]="'Repair receipt'"
+                  (click)="openImageModal(getImageUrl(receiptPath), issue)"
+                  (error)="onImageError($event)"
+                  class="thumbnail-receipt"
+                  loading="lazy"
+                >
+                <span *ngIf="issue.repair_receipt_urls.length > 3" class="more-receipts">
+                  +{{ issue.repair_receipt_urls.length - 3 }}
+                </span>
+              </div>
+            </div>
+            <span *ngIf="!issue.repair_receipt_urls || issue.repair_receipt_urls.length === 0" class="no-receipts-text">
+              No receipts
             </span>
           </td>
           
@@ -167,6 +227,16 @@
               >
                 <i class="bi bi-eye"></i>
                 View
+              </button>
+
+              <!-- Upload Receipts Button -->
+              <button 
+                class="upload-receipts-btn"
+                (click)="openReceiptUploadModal(issue)"
+                title="Upload Repair Receipts"
+              >
+                <i class="bi bi-cloud-upload"></i>
+                {{ hasRepairReceipts(issue) ? 'Add More' : 'Upload' }} Receipts
               </button>
               
               <!-- Simple Verification Button -->
@@ -454,6 +524,103 @@
           <i class="bi bi-file-earmark-text" *ngIf="!isGeneratingReport"></i>
           <i class="bi bi-arrow-clockwise spin" *ngIf="isGeneratingReport"></i>
           {{ isGeneratingReport ? 'Generating...' : 'Detailed Report' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Repair Receipts Modal -->
+  <div class="modal-overlay" *ngIf="showReceiptUploadModal" (click)="closeReceiptUploadModal()" role="dialog" aria-modal="true">
+    <div class="modal-content receipt-upload-modal" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4>
+          <i class="bi bi-cloud-upload"></i>
+          Upload Repair Receipts
+        </h4>
+        <button class="close-btn" (click)="closeReceiptUploadModal()" aria-label="Close receipt upload">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <!-- Issue Summary -->
+        <div *ngIf="selectedIssueForReceipts" class="issue-summary">
+          <h5>Issue Details:</h5>
+          <div class="summary-details">
+            <p><strong>Vehicle:</strong> {{ selectedIssueForReceipts.van_registration }}</p>
+            <p><strong>Driver:</strong> {{ selectedIssueForReceipts.driver_name }}</p>
+            <p><strong>Date:</strong> {{ formatDate(selectedIssueForReceipts.created_at) }}</p>
+          </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="upload-section">
+          <div class="upload-instructions">
+            <h5>Upload Repair Receipt Images</h5>
+            <p>Select one or more images of repair receipts (JPG, PNG, GIF). Maximum 5MB per file.</p>
+          </div>
+          
+          <div class="file-input-container">
+            <input 
+              type="file" 
+              id="receiptFiles"
+              accept="image/*"
+              multiple
+              (change)="onReceiptFilesSelected($event)"
+              [disabled]="isUploadingReceipts"
+              class="file-input"
+            >
+            <label for="receiptFiles" class="file-input-label" [class.disabled]="isUploadingReceipts">
+              <i class="bi bi-cloud-upload"></i>
+              {{ isUploadingReceipts ? 'Uploading...' : 'Choose Receipt Images' }}
+            </label>
+          </div>
+          
+          <!-- Upload Progress -->
+          <div *ngIf="isUploadingReceipts" class="upload-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+            </div>
+            <span class="progress-text">{{ uploadProgress }}% uploaded</span>
+          </div>
+        </div>
+
+        <!-- Existing Receipts -->
+        <div *ngIf="selectedIssueForReceipts && hasRepairReceipts(selectedIssueForReceipts)" class="existing-receipts">
+          <h5>Current Repair Receipts:</h5>
+          <div class="receipt-gallery">
+            <div 
+              *ngFor="let receiptPath of selectedIssueForReceipts.repair_receipt_urls; trackBy: trackByReceiptPath"
+              class="receipt-item"
+            >
+              <img 
+                [src]="getReceiptImageUrl(receiptPath)" 
+                [alt]="'Repair receipt'"
+                (click)="openImageModal(getReceiptImageUrl(receiptPath), selectedIssueForReceipts)"
+                class="receipt-thumbnail"
+                loading="lazy"
+              >
+              <button 
+                class="delete-receipt-btn"
+                (click)="deleteReceiptImage(selectedIssueForReceipts, receiptPath)"
+                title="Delete receipt"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeReceiptUploadModal()">
+          Close
         </button>
       </div>
     </div>

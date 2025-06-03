@@ -144,22 +144,63 @@ export class RejectedOrderTempFormComponent implements OnInit {
 
   onStoreSearchInput(): void {
     if (this.storeSearchTerm.length >= 2) {
-      this.filteredStores = this.allStores.filter(store => 
-        store.name.toLowerCase().includes(this.storeSearchTerm.toLowerCase()) ||
-        store.code.toLowerCase().includes(this.storeSearchTerm.toLowerCase())
-      ).slice(0, 10);
+      this.filteredStores = this.allStores.filter(store => {
+        const storeName = store.store_name || store.dispatch_store_name || '';
+        const storeCode = store.store_code || store.dispatch_code || '';
+        
+        return storeName.toLowerCase().includes(this.storeSearchTerm.toLowerCase()) ||
+               storeCode.toLowerCase().includes(this.storeSearchTerm.toLowerCase());
+      }).slice(0, 10);
     } else {
       this.filteredStores = [];
+    }
+    
+    // Check if the current search term exactly matches a store
+    const exactMatch = this.allStores.find(store => {
+      const storeName = store.store_name || store.dispatch_store_name || '';
+      const storeCode = store.store_code || store.dispatch_code || '';
+      const combinedFormat = `${storeCode} - ${storeName}`;
+      
+      return combinedFormat.toLowerCase() === this.storeSearchTerm.toLowerCase() ||
+             storeName.toLowerCase() === this.storeSearchTerm.toLowerCase() ||
+             storeCode.toLowerCase() === this.storeSearchTerm.toLowerCase();
+    });
+    
+    if (exactMatch) {
+      // Auto-select if exact match found
+      this.rejectedOrderTempForm.patchValue({
+        store_name: exactMatch.store_name || exactMatch.dispatch_store_name,
+        store_id: exactMatch.id
+      });
+    } else {
+      // Clear the hidden fields if no exact match
+      this.rejectedOrderTempForm.patchValue({
+        store_name: '',
+        store_id: ''
+      });
     }
   }
 
   selectStore(store: any): void {
-    this.storeSearchTerm = `${store.code} - ${store.name}`;
+    const storeName = store.store_name || store.dispatch_store_name || '';
+    const storeCode = store.store_code || store.dispatch_code || '';
+    
+    this.storeSearchTerm = `${storeCode} - ${storeName}`;
     this.rejectedOrderTempForm.patchValue({
-      store_name: store.name,
+      store_name: storeName,
       store_id: store.id
     });
     this.filteredStores = [];
+  }
+
+  onStoreSearchBlur(): void {
+    // Hide the dropdown when user clicks away
+    setTimeout(() => {
+      this.filteredStores = [];
+    }, 200); // Small delay to allow for click events on dropdown items
+    
+    // Mark the store_name field as touched for validation
+    this.rejectedOrderTempForm.get('store_name')?.markAsTouched();
   }
 
   async submitForm(): Promise<void> {

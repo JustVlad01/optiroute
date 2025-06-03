@@ -144,6 +144,24 @@ export class SupabaseService {
     return true;
   }
 
+  // Method to reset a driver's password
+  async resetDriverPassword(driverId: number) {
+    console.log('Resetting password for driver with ID:', driverId);
+    
+    const { error } = await this.supabase
+      .from('drivers')
+      .update({ password: null })
+      .eq('id', driverId);
+
+    if (error) {
+      console.error('Error resetting driver password:', error);
+      return false;
+    }
+
+    console.log('Driver password reset successfully');
+    return true;
+  }
+
   // Method to submit a driver form
   async submitDriverForm(formData: any) {
     console.log('Submitting driver form with raw data:', formData);
@@ -366,20 +384,82 @@ export class SupabaseService {
 
   // Method to delete a form assignment
   async deleteFormAssignment(assignmentId: string) {
-    console.log('Deleting form assignment:', assignmentId);
+    console.log('SupabaseService: Starting deletion for assignment ID:', assignmentId);
     
-    const { error } = await this.supabase
-      .from('driver_form_assignments')
-      .delete()
-      .eq('id', assignmentId);
+    try {
+      // First, let's check if the assignment exists
+      const { data: existingAssignment, error: checkError } = await this.supabase
+        .from('driver_form_assignments')
+        .select('id, form_id, driver_id, status')
+        .eq('id', assignmentId)
+        .single();
 
-    if (error) {
-      console.error('Error deleting form assignment:', error);
+      if (checkError) {
+        console.error('Error checking if assignment exists:', checkError);
+        if (checkError.code === 'PGRST116') {
+          console.log('Assignment not found, may have already been deleted');
+          return true; // Assignment doesn't exist, consider it successfully deleted
+        }
+        return false;
+      }
+
+      console.log('Assignment found before deletion:', existingAssignment);
+
+      // If there's a related form_id, we need to handle it carefully
+      if (existingAssignment.form_id) {
+        console.log('Assignment has related form_id:', existingAssignment.form_id);
+        // Set form_id to null first to avoid constraint issues
+        const { error: updateError } = await this.supabase
+          .from('driver_form_assignments')
+          .update({ form_id: null })
+          .eq('id', assignmentId);
+
+        if (updateError) {
+          console.error('Error removing form_id reference:', updateError);
+          // Continue with deletion anyway
+        } else {
+          console.log('Successfully removed form_id reference');
+        }
+      }
+
+      // Now attempt the deletion
+      const { error: deleteError } = await this.supabase
+        .from('driver_form_assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (deleteError) {
+        console.error('Error during deletion:', deleteError);
+        console.error('Error details:', {
+          code: deleteError.code,
+          message: deleteError.message,
+          details: deleteError.details,
+          hint: deleteError.hint
+        });
+        return false;
+      }
+
+      // Verify the deletion was successful
+      const { data: verifyData, error: verifyError } = await this.supabase
+        .from('driver_form_assignments')
+        .select('id')
+        .eq('id', assignmentId)
+        .single();
+
+      if (verifyError && verifyError.code === 'PGRST116') {
+        console.log('Deletion verified: Assignment no longer exists in database');
+        return true;
+      } else if (verifyData) {
+        console.error('Deletion failed: Assignment still exists in database');
+        return false;
+      }
+
+      console.log('Form assignment deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Unexpected error during deletion:', error);
       return false;
     }
-
-    console.log('Form assignment deleted successfully');
-    return true;
   }
 
   // Method to get the current session
@@ -2010,7 +2090,7 @@ export class SupabaseService {
           drivers (
             name,
             custom_id,
-            phone_number
+            phone_number,
           )
         `)
         .eq('driver_id', driverId)
@@ -2029,7 +2109,7 @@ export class SupabaseService {
     }
   }
 
-  // Method to get all temperature issue reports for admin
+//method tpo get all tempertures from the form 
   async getAllTemperatureReports() {
     console.log('Fetching all temperature issue reports for admin');
     

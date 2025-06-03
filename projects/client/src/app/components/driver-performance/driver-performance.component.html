@@ -20,45 +20,67 @@
     <p>Loading your performance data...</p>
   </div>
 
-  <!-- No Images Message -->
-  <div class="no-data-container" *ngIf="!isLoading && performanceImages.length === 0 && standaloneComments.length === 0">
+  <!-- No Data Message -->
+  <div class="no-data-container" *ngIf="!isLoading && groupedPerformanceData.length === 0">
     <i class="bi bi-exclamation-circle"></i>
     <h2>No Performance Data Available</h2>
     <p>Your supervisor has not uploaded any performance reports yet.</p>
   </div>
 
-  <!-- Standalone Comments Section -->
-  <div class="comments-section" *ngIf="!isLoading && standaloneComments.length > 0">
-    <div class="performance-comments">
-      <div class="comment-item" *ngFor="let comment of standaloneComments">
-        <div class="comment-content">
-          <p class="comment-text">{{ comment.comments }}</p>
-          <div class="comment-meta">
-            <span class="comment-date">{{ comment.created_at | date:'medium' }}</span>
-            <span class="comment-author" *ngIf="comment.created_by">{{ comment.created_by }}</span>
+  <!-- Grouped Performance Data by Date -->
+  <div class="performance-content" *ngIf="!isLoading && groupedPerformanceData.length > 0">
+    <div class="date-groups">
+      <div class="date-group" *ngFor="let dayGroup of groupedPerformanceData">
+        <!-- Date Header with Dropdown Toggle -->
+        <div class="date-header" (click)="toggleDayExpansion(dayGroup)">
+          <div class="date-info">
+            <i class="bi" [class.bi-chevron-down]="dayGroup.isExpanded" [class.bi-chevron-right]="!dayGroup.isExpanded"></i>
+            <h3 class="date-title">{{ dayGroup.displayDate }}</h3>
+            <span class="item-count">{{ dayGroup.items.length }} item{{ dayGroup.items.length !== 1 ? 's' : '' }}</span>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Performance Images List -->
-  <div class="performance-content" *ngIf="!isLoading && performanceImages.length > 0">
-    <div class="performance-grid">
-      <div class="performance-card" *ngFor="let image of performanceImages">
-        <div class="card-header">
-          <span class="report-title">Performance Report</span>
-          <span class="report-date">{{ image.created_at | date:'medium' }}</span>
-        </div>
-        <div class="image-container">
-          <img [src]="image.url" [alt]="image.name" (click)="openImage(image)">
-        </div>
-        <div *ngIf="image.comments" class="comments-section">
-          <h6 class="comment-header">
-            <i class="bi bi-chat-text me-1"></i> Supervisor Comments
-            <small *ngIf="image.comment_created_by" class="text-muted">(by {{ image.comment_created_by }})</small>
-          </h6>
-          <p class="comment-text">{{ image.comments }}</p>
+        <!-- Collapsible Content -->
+        <div class="date-content" [class.expanded]="dayGroup.isExpanded" *ngIf="dayGroup.isExpanded">
+          <div class="performance-grid">
+            <!-- Performance Images -->
+            <div class="performance-card" *ngFor="let item of dayGroup.items" [class.comment-card]="item.type === 'comment'">
+              <!-- Image Cards -->
+              <div *ngIf="item.type === 'image'" class="image-card">
+                <div class="card-header">
+                  <span class="report-title">Performance Report</span>
+                  <span class="report-time">{{ item.created_at | date:'shortTime' }}</span>
+                </div>
+                <div class="image-container">
+                  <img [src]="item.url" [alt]="item.name" (click)="openImage(item)">
+                </div>
+                <div *ngIf="item.comments" class="comments-section">
+                  <h6 class="comment-header">
+                    <i class="bi bi-chat-text me-1"></i> Supervisor Comments
+                    <small *ngIf="item.comment_created_by" class="text-muted">(by {{ item.comment_created_by }})</small>
+                  </h6>
+                  <p class="comment-text">{{ item.comments }}</p>
+                </div>
+              </div>
+
+              <!-- Comment Cards -->
+              <div *ngIf="item.type === 'comment'" class="comment-card-content">
+                <div class="card-header">
+                  <span class="comment-title">
+                    <i class="bi bi-chat-square-text me-2"></i>
+                    {{ item.name }}
+                  </span>
+                  <span class="comment-time">{{ item.created_at | date:'shortTime' }}</span>
+                </div>
+                <div class="comment-content">
+                  <p class="comment-text">{{ item.comments }}</p>
+                  <div class="comment-meta">
+                    <span class="comment-author" *ngIf="item.created_by">by {{ item.created_by }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

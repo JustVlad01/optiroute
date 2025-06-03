@@ -101,6 +101,9 @@ export class DriverDashboardComponent implements OnInit {
       this.showPerformanceSection = false;
       this.showFormsSection = false;
       
+      // Record that the driver viewed the performance section
+      this.recordPerformanceView();
+      
       // Force reload performance images
       this.isLoadingPerformance = true;
       this.loadPerformanceImages();
@@ -324,5 +327,61 @@ export class DriverDashboardComponent implements OnInit {
     // Clear localStorage and redirect to login
     localStorage.removeItem('loggedInDriver');
     this.router.navigate(['/login']);
+  }
+
+  async recordPerformanceView(): Promise<void> {
+    if (!this.driverId) return;
+    
+    try {
+      const supabase = this.supabaseService.getSupabase();
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
+
+      // First check if a record exists for this driver
+      const { data: existingRecord } = await supabase
+        .from('driver_performance_views')
+        .select('*')
+        .eq('driver_id', this.driverId)
+        .limit(1);
+
+      const currentTime = new Date().toISOString();
+
+      if (existingRecord && existingRecord.length > 0) {
+        // Update existing record
+        const { error } = await supabase
+          .from('driver_performance_views')
+          .update({ 
+            viewed_at: currentTime,
+            updated_at: currentTime 
+          })
+          .eq('driver_id', this.driverId);
+
+        if (error) {
+          console.error('Error updating performance view:', error);
+        } else {
+          console.log('Performance view updated successfully for driver:', this.driverId, 'at:', currentTime);
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('driver_performance_views')
+          .insert({
+            driver_id: this.driverId,
+            viewed_at: currentTime,
+            created_at: currentTime,
+            updated_at: currentTime
+          });
+
+        if (error) {
+          console.error('Error inserting performance view:', error);
+        } else {
+          console.log('Performance view recorded successfully for driver:', this.driverId, 'at:', currentTime);
+        }
+      }
+    } catch (error) {
+      console.error('Exception recording performance view:', error);
+    }
   }
 } 

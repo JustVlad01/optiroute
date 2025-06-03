@@ -85,6 +85,7 @@
                   [(ngModel)]="storeSearchTerm"
                   [ngModelOptions]="{standalone: true}"
                   (input)="onStoreSearchInput()" 
+                  (blur)="onStoreSearchBlur()"
                   placeholder="Start typing store name or code..."
                   autocomplete="off">
                 
@@ -94,13 +95,19 @@
                     *ngFor="let store of filteredStores" 
                     class="search-result-item" 
                     (click)="selectStore(store)">
-                    <strong>{{ store.code }}</strong> - {{ store.name }}
+                    <strong>{{ store.store_code || store.dispatch_code }}</strong> - {{ store.store_name || store.dispatch_store_name }}
                   </div>
                 </div>
               </div>
 
               <input type="hidden" formControlName="store_name">
               <input type="hidden" formControlName="store_id">
+              
+              <!-- Store Selection Status -->
+              <div *ngIf="rejectedOrderTempForm.get('store_name')?.value" class="text-success mt-2">
+                <i class="bi bi-check-circle-fill"></i>
+                Store selected: {{ rejectedOrderTempForm.get('store_name')?.value }}
+              </div>
               
               <div *ngIf="rejectedOrderTempForm.get('store_name')?.invalid && rejectedOrderTempForm.get('store_name')?.touched" class="text-danger">
                 Please select a store from the search results
@@ -402,6 +409,14 @@
               <i *ngIf="!submitting" class="bi bi-check-circle"></i>
               {{ submitting ? 'Submitting...' : 'Submit Form' }}
             </button>
+          </div>
+          
+          <!-- Form Validation Helper -->
+          <div *ngIf="rejectedOrderTempForm.invalid" class="mt-3 text-center">
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i>
+              Please fill in all required fields (marked with *) to enable submission
+            </small>
           </div>
         </section>
 

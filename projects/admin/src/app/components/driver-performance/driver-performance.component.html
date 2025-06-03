@@ -3,12 +3,12 @@
     <i class="bi bi-speedometer2"></i> Drivers Performance
   </h2>
   <p class="section-description">
-    Upload performance images for drivers to view in their dashboard
+    Upload performance images and comments for drivers to view in their dashboard
   </p>
 
   <div class="performance-content card">
     <div class="card-body">
-      <h3 class="card-title">Performance Image Management</h3>
+      <h3 class="card-title">Performance Content Management</h3>
       
       <!-- Driver Selection -->
       <div class="form-group mb-4">
@@ -33,161 +33,199 @@
         <p class="mt-2">Loading data...</p>
       </div>
 
-      <!-- Upload Form -->
-      <div *ngIf="selectedDriver && !isLoading" class="upload-section">
-        <h4 class="upload-title">Upload New Performance Image</h4>
+      <!-- Batch Upload Section -->
+      <div *ngIf="selectedDriver && !isLoading" class="batch-upload-section">
+        <h4 class="upload-title">Add Performance Content</h4>
         <p>Selected Driver: <strong>{{ selectedDriver.name }}</strong></p>
         
-        <form class="upload-form">
-          <div class="row mb-3">
-            <div class="col-12">
-              <ul class="nav nav-tabs upload-tabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                  <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-upload" type="button" role="tab" aria-controls="file-upload" aria-selected="true">
-                    <i class="bi bi-file-earmark-image me-1"></i> File Upload
+        <!-- Image Upload Area -->
+        <div class="upload-area-container mb-4">
+          <h5 class="section-subtitle">
+            <i class="bi bi-images me-2"></i>
+            Add Images
+          </h5>
+          
+          <!-- File Upload and Paste Area -->
+          <div class="unified-upload-area mb-3">
+            <div class="upload-methods">
+              <!-- File Upload Section -->
+              <div class="upload-method file-upload">
+                <div class="method-header">
+                  <i class="bi bi-file-earmark-image me-2"></i>
+                  <span>Upload Image Files</span>
+                </div>
+                <div class="form-group">
+                  <input 
+                    type="file" 
+                    class="form-control" 
+                    id="performanceImages" 
+                    (change)="onFileSelected($event)"
+                    accept="image/*"
+                    multiple
+                  >
+                  <div class="form-text">Upload PNG, JPG or GIF files (max 10MB each). You can select multiple files at once.</div>
+                </div>
+              </div>
+
+              <div class="upload-divider">
+                <span>OR</span>
+              </div>
+
+              <!-- Paste/Drop Section -->
+              <div class="upload-method paste-upload">
+                <div class="method-header">
+                  <i class="bi bi-clipboard me-2"></i>
+                  <span>Paste Screenshots or Drag & Drop</span>
+                </div>
+                <div class="paste-area" 
+                  tabindex="0"
+                  (paste)="onPaste($event)"
+                  [class.drag-over]="isDragOver"
+                  (dragover)="onDragOver($event)" 
+                  (dragleave)="onDragLeave()"
+                  (drop)="onDrop($event)">
+                  
+                  <div class="paste-placeholder">
+                    <i class="bi bi-clipboard"></i>
+                    <p>Paste screenshots here (Ctrl+V) or drag and drop images</p>
+                    <small>You can paste directly from clipboard or drag multiple images</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Images Preview -->
+          <div *ngIf="batchImages.length > 0" class="batch-images-preview">
+            <h6 class="preview-title">
+              <i class="bi bi-eye me-1"></i>
+              Images to Upload ({{ batchImages.length }})
+            </h6>
+            <div class="batch-images-grid">
+              <div *ngFor="let batchImage of batchImages; let i = index" class="batch-image-item">
+                <div class="image-preview">
+                  <img [src]="batchImage.preview" alt="Image preview">
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-danger remove-image" 
+                    (click)="removeImageFromBatch(batchImage.id)"
+                    title="Remove image"
+                  >
+                    <i class="bi bi-x-lg"></i>
                   </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button class="nav-link" id="paste-tab" data-bs-toggle="tab" data-bs-target="#paste-upload" type="button" role="tab" aria-controls="paste-upload" aria-selected="false">
-                    <i class="bi bi-clipboard me-1"></i> Paste Screenshot
-                  </button>
-                </li>
-              </ul>
+                </div>
+                <div class="image-comment-input">
+                  <textarea 
+                    class="form-control form-control-sm" 
+                    rows="2"
+                    [(ngModel)]="batchImage.comment"
+                    [name]="'imageComment_' + i"
+                    placeholder="Add comment for this image (optional)..."
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standalone Comments Section -->
+        <div class="comments-area-container mb-4">
+          <h5 class="section-subtitle">
+            <i class="bi bi-chat-text me-2"></i>
+            Add General Comments
+          </h5>
+          
+          <!-- Add Comment Input -->
+          <div class="add-comment-section">
+            <div class="input-group">
+              <textarea 
+                class="form-control" 
+                rows="3"
+                [(ngModel)]="currentStandaloneComment"
+                name="currentStandaloneComment"
+                placeholder="Add a general performance comment (without an image)..."
+              ></textarea>
+              <button 
+                type="button" 
+                class="btn btn-outline-primary" 
+                (click)="addStandaloneComment()"
+                [disabled]="!currentStandaloneComment.trim()"
+              >
+                <i class="bi bi-plus-circle me-1"></i>
+                Add
+              </button>
+            </div>
+            <div class="form-text">These comments will be visible to the driver without being attached to a specific image.</div>
+          </div>
+
+          <!-- Batch Comments Preview -->
+          <div *ngIf="batchComments.length > 0" class="batch-comments-preview mt-3">
+            <h6 class="preview-title">
+              <i class="bi bi-chat-dots me-1"></i>
+              Comments to Save ({{ batchComments.length }})
+            </h6>
+            <div class="batch-comments-list">
+              <div *ngFor="let comment of batchComments" class="batch-comment-item">
+                <div class="comment-content">
+                  <p class="comment-text">{{ comment.comment }}</p>
+                </div>
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-outline-danger remove-comment" 
+                  (click)="removeStandaloneComment(comment.id)"
+                  title="Remove comment"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save All Button -->
+        <div class="save-all-section">
+          <div class="save-summary mb-3">
+            <div class="summary-items">
+              <span class="summary-item" *ngIf="batchImages.length > 0">
+                <i class="bi bi-images me-1"></i>
+                {{ batchImages.length }} image(s)
+              </span>
+              <span class="summary-item" *ngIf="batchComments.length > 0">
+                <i class="bi bi-chat-text me-1"></i>
+                {{ batchComments.length }} comment(s)
+              </span>
             </div>
           </div>
           
-          <div class="tab-content">
-            <!-- File Upload Tab -->
-            <div class="tab-pane fade show active" id="file-upload" role="tabpanel" aria-labelledby="file-tab">
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="form-group mb-3">
-                    <label for="performanceImage" class="form-label">Select Image</label>
-                    <input 
-                      type="file" 
-                      class="form-control" 
-                      id="performanceImage" 
-                      (change)="onFileSelected($event)"
-                      accept="image/*"
-                    >
-                    <div class="form-text">Upload PNG, JPG or GIF files (max 10MB).</div>
-                  </div>
-                  
-                  <div class="form-group mb-3">
-                    <label for="performanceComments" class="form-label">Performance Comments</label>
-                    <div class="comment-input-group">
-                      <textarea 
-                        id="performanceComments" 
-                        class="form-control" 
-                        rows="3"
-                        [(ngModel)]="performanceComments"
-                        name="performanceComments"
-                        placeholder="Add comments about this driver's performance (optional)..."
-                      ></textarea>
-                      <button 
-                        type="button" 
-                        class="btn btn-primary btn-sm mt-2" 
-                        (click)="saveStandaloneComment()"
-                        [disabled]="!performanceComments.trim() || !selectedDriver"
-                        title="Save comment without uploading image"
-                      >
-                        <i class="bi bi-chat-square-text me-1"></i> Save Comment
-                      </button>
-                    </div>
-                    <div class="form-text">These comments will be visible to the driver. You can save comments without uploading an image.</div>
-                  </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                  <button 
-                    type="button" 
-                    class="btn btn-primary w-100" 
-                    (click)="uploadPerformanceImage()"
-                    [disabled]="isUploading || !selectedFile"
-                  >
-                    <i class="bi bi-cloud-upload me-2"></i>
-                    <span *ngIf="!isUploading">Upload</span>
-                    <span *ngIf="isUploading">Uploading...</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Paste Upload Tab -->
-            <div class="tab-pane fade" id="paste-upload" role="tabpanel" aria-labelledby="paste-tab">
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="paste-area" 
-                    tabindex="0"
-                    (paste)="onPaste($event)"
-                    [class.has-preview]="pastedImagePreview"
-                    [class.drag-over]="isDragOver"
-                    (dragover)="onDragOver($event)" 
-                    (dragleave)="onDragLeave()"
-                    (drop)="onDrop($event)">
-                    
-                    <div *ngIf="!pastedImagePreview" class="paste-placeholder">
-                      <i class="bi bi-clipboard"></i>
-                      <p>Paste screenshot here (Ctrl+V) or drag and drop image</p>
-                      <small>You can paste directly from clipboard or screenshot tool</small>
-                    </div>
-                    
-                    <div *ngIf="pastedImagePreview" class="paste-preview">
-                      <img [src]="pastedImagePreview" alt="Pasted screenshot preview">
-                      <button type="button" class="btn btn-sm btn-outline-danger remove-preview" (click)="clearPastedImage()">
-                        <i class="bi bi-x-lg"></i>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="form-group mt-3">
-                    <label for="pastePerformanceComments" class="form-label">Performance Comments</label>
-                    <div class="comment-input-group">
-                      <textarea 
-                        id="pastePerformanceComments" 
-                        class="form-control" 
-                        rows="3"
-                        [(ngModel)]="performanceComments"
-                        name="pastePerformanceComments"
-                        placeholder="Add comments about this driver's performance (optional)..."
-                      ></textarea>
-                      <button 
-                        type="button" 
-                        class="btn btn-primary btn-sm mt-2" 
-                        (click)="saveStandaloneComment()"
-                        [disabled]="!performanceComments.trim() || !selectedDriver"
-                        title="Save comment without uploading image"
-                      >
-                        <i class="bi bi-chat-square-text me-1"></i> Save Comment
-                      </button>
-                    </div>
-                    <div class="form-text">These comments will be visible to the driver. You can save comments without uploading an image.</div>
-                  </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                  <button 
-                    type="button" 
-                    class="btn btn-primary w-100" 
-                    (click)="uploadPastedImage()"
-                    [disabled]="isUploading || !pastedImage"
-                  >
-                    <i class="bi bi-cloud-upload me-2"></i>
-                    <span *ngIf="!isUploading">Upload</span>
-                    <span *ngIf="isUploading">Uploading...</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+          <button 
+            type="button" 
+            class="btn btn-primary btn-lg save-all-btn" 
+            (click)="saveBatchContent()"
+            [disabled]="isUploading || (batchImages.length === 0 && batchComments.length === 0)"
+          >
+            <i class="bi bi-cloud-upload me-2" *ngIf="!isUploading"></i>
+            <i class="bi bi-hourglass-split me-2" *ngIf="isUploading"></i>
+            <span *ngIf="!isUploading">Save All Performance Content</span>
+            <span *ngIf="isUploading">Saving... ({{ uploadProgress }}%)</span>
+          </button>
+          
+          <div class="progress mt-2" *ngIf="isUploading">
+            <div 
+              class="progress-bar progress-bar-striped progress-bar-animated" 
+              role="progressbar" 
+              [style.width.%]="uploadProgress"
+            ></div>
           </div>
+        </div>
 
-          <!-- Upload status messages -->
-          <div *ngIf="uploadSuccess" class="alert alert-success mt-3">
-            <i class="bi bi-check-circle-fill me-2"></i> Performance image uploaded successfully!
-          </div>
+        <!-- Upload status messages -->
+        <div *ngIf="uploadSuccess" class="alert alert-success mt-3">
+          <i class="bi bi-check-circle-fill me-2"></i> Performance content saved successfully!
+        </div>
 
-          <div *ngIf="uploadError" class="alert alert-danger mt-3">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ uploadError }}
-          </div>
-        </form>
+        <div *ngIf="uploadError" class="alert alert-danger mt-3">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ uploadError }}
+        </div>
       </div>
 
       <!-- Existing Performance Images -->
@@ -311,7 +349,101 @@
       <!-- Instructions for new users -->
       <div *ngIf="!selectedDriver && !isLoading" class="text-center my-5">
         <i class="bi bi-info-circle" style="font-size: 48px; color: #007bff;"></i>
-        <p class="mt-3">Please select a driver to manage their performance images.</p>
+        <p class="mt-3">Please select a driver to manage their performance images and comments.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver Performance View Tracking Table -->
+  <div class="tracking-section card mt-4" *ngIf="!isLoading">
+    <div class="card-body">
+      <h3 class="card-title">
+        <i class="bi bi-eye-fill me-2"></i>
+        Performance View Tracking
+      </h3>
+      <p class="section-description">
+        Track which drivers have viewed their performance updates uploaded by admin
+      </p>
+
+      <!-- Refresh Button -->
+      <div class="tracking-controls mb-3">
+        <button 
+          type="button" 
+          class="btn btn-primary btn-sm"
+          (click)="loadPerformanceViewTracking()"
+          [disabled]="isLoadingTracking"
+        >
+          <i class="bi" [class.bi-arrow-clockwise]="!isLoadingTracking" [class.bi-hourglass-split]="isLoadingTracking"></i>
+          <span *ngIf="!isLoadingTracking">Refresh Tracking Data</span>
+          <span *ngIf="isLoadingTracking">Loading...</span>
+        </button>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div *ngIf="isLoadingTracking" class="text-center my-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading tracking data...</span>
+        </div>
+        <p class="mt-2">Loading performance view tracking...</p>
+      </div>
+
+      <!-- Tracking Table -->
+      <div *ngIf="!isLoadingTracking" class="tracking-table-container">
+        <div *ngIf="unviewedDriversTracking.length === 0" class="text-center my-4">
+          <i class="bi bi-check-circle" style="font-size: 48px; color: #28a745;"></i>
+          <p class="mt-2">All drivers have viewed their performance updates!</p>
+          <small>Great job! All drivers are up to date with their performance notifications.</small>
+        </div>
+
+        <div *ngIf="unviewedDriversTracking.length > 0" class="table-responsive">
+          <table class="table table-striped tracking-table">
+            <thead class="table-header">
+              <tr>
+                <th scope="col">
+                  <i class="bi bi-person-circle me-1"></i>
+                  Driver Name
+                </th>
+                <th scope="col">
+                  <i class="bi bi-card-text me-1"></i>
+                  Driver ID
+                </th>
+                <th scope="col">
+                  <i class="bi bi-images me-1"></i>
+                  Total Performance Images
+                </th>
+                <th scope="col">
+                  <i class="bi bi-clock-history me-1"></i>
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tracking of unviewedDriversTracking" 
+                  class="tracking-row not-viewed">
+                <td class="driver-name">
+                  <div class="driver-info">
+                    <span class="name">{{ tracking.driverName }}</span>
+                  </div>
+                </td>
+                <td class="driver-id">
+                  <span class="custom-id">{{ tracking.driverCustomId }}</span>
+                </td>
+                <td class="performance-count">
+                  <span class="count-badge" [class.has-content]="tracking.performanceImageCount > 0">
+                    <i class="bi bi-images me-1"></i>
+                    {{ tracking.performanceImageCount }}
+                  </span>
+                </td>
+                <td class="view-status">
+                  <span class="status-badge status-not-viewed">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    Not Viewed
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

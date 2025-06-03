@@ -13,7 +13,6 @@ import { Subscription } from 'rxjs';
 })
 export class DriverFormContainerComponent implements OnInit, OnDestroy {
   activeTab: string = 'forms';
-  unverifiedVanIssues: number = 0;
   private notificationSubscription?: Subscription;
 
   constructor(
@@ -27,22 +26,13 @@ export class DriverFormContainerComponent implements OnInit, OnDestroy {
       this.activeTab = 'assignments';
     } else if (currentUrl.includes('/performance')) {
       this.activeTab = 'performance';
-    } else if (currentUrl.includes('/updates')) {
-      this.activeTab = 'updates';
-    } else if (currentUrl.includes('/van-issues')) {
-      this.activeTab = 'van-issues';
     } else if (currentUrl.includes('/forms') || currentUrl === '/driver-forms') {
       this.activeTab = 'forms';
     }
   }
 
   ngOnInit(): void {
-    // Subscribe to notification updates
-    this.notificationSubscription = this.notificationService.notifications$.subscribe(
-      notifications => {
-        this.unverifiedVanIssues = notifications.unverifiedVanIssues;
-      }
-    );
+    // Subscribe to notification updates if needed for other components
   }
 
   ngOnDestroy(): void {

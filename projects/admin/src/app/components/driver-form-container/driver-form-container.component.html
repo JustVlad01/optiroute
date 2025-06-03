@@ -21,13 +21,6 @@
       <button [class.active]="activeTab === 'assignments'" (click)="navigateTo('assignments')">
         <i class="bi bi-clipboard-data"></i> Form Assignments
       </button>
-      <button [class.active]="activeTab === 'updates'" (click)="navigateTo('updates')">
-        <i class="bi bi-truck"></i> Driver Updates
-      </button>
-      <button [class.active]="activeTab === 'van-issues'" (click)="navigateTo('van-issues')" class="tab-with-notification">
-        <i class="bi bi-exclamation-triangle"></i> Van Issues
-        <span *ngIf="unverifiedVanIssues > 0" class="notification-badge">{{ unverifiedVanIssues }}</span>
-      </button>
     </div>
   </div>
 

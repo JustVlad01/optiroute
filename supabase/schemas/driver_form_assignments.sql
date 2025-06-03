@@ -31,6 +31,9 @@ ON driver_form_assignments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can update form assignments" 
 ON driver_form_assignments FOR UPDATE USING (true);
 
+CREATE POLICY "Anyone can delete form assignments" 
+ON driver_form_assignments FOR DELETE USING (true);
+
 -- Comments for documentation
 COMMENT ON TABLE driver_form_assignments IS 'Tracks form assignments to drivers';
 COMMENT ON COLUMN driver_form_assignments.driver_id IS 'The driver assigned to complete the form';

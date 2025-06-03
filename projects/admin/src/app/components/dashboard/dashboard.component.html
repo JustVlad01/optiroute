@@ -2,7 +2,7 @@
   <!-- Header/Navbar -->
   <header class="navbar">
     <div class="logo">
-      <div class="main-title">OPTIROUTE</div>
+      <div class="main-title">Around Noon</div>
       
     </div>
     <div class="nav-links">
@@ -16,12 +16,25 @@
     <h2 class="dashboard-title">Admin Dashboard</h2>
     
     <div class="admin-cards-grid">
-      <!-- Store Masterfile Card -->
-      <div class="admin-card" (click)="navigateTo('/store-masterfile')">
+      <!-- News/Updates Card -->
+      <div class="admin-card">
         <div class="card-icon">
-          
+          <i class="bi bi-megaphone"></i>
         </div>
-        
+        <div class="card-content">
+          <h3>News / Updates</h3>
+        </div>
+      </div>
+
+      <!-- Reports Card -->
+      <div class="admin-card" (click)="navigateTo('/reports')">
+        <div class="card-icon">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+        <div class="card-content">
+          <h3>Reports</h3>
+          <p class="card-description">View and manage vehicle accident reports</p>
+        </div>
       </div>
 
       <!-- Store Library Card -->
@@ -41,8 +54,8 @@
           <i class="bi bi-people"></i>
         </div>
         <div class="card-content">
-          <h3>Staff / Rosta</h3>
-          <p class="card-description">Manage your delivery team and driver information</p>
+          <h3>Team</h3>
+          <p class="card-description">Manage your team's information</p>
         </div>
       </div>
 
@@ -65,27 +78,6 @@
         <div class="card-content">
           <h3>Vehicle/Crate Tracking</h3>
           <p class="card-description">Track crates going in and out</p>
-        </div>
-      </div>
-
-      <!-- Reports Card -->
-      <div class="admin-card" (click)="navigateTo('/reports')">
-        <div class="card-icon">
-          <i class="bi bi-file-earmark-text"></i>
-        </div>
-        <div class="card-content">
-          <h3>Reports</h3>
-          <p class="card-description">View and manage vehicle accident reports</p>
-        </div>
-      </div>
-
-      <!-- News/Updates Card -->
-      <div class="admin-card">
-        <div class="card-icon">
-          <i class="bi bi-megaphone"></i>
-        </div>
-        <div class="card-content">
-          <h3>News / Updates</h3>
         </div>
       </div>
     </div>

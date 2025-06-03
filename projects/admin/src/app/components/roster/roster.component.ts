@@ -48,6 +48,11 @@ export class RosterComponent implements OnInit {
   selectedDriver: Driver | null = null;
   showModal = false;
   
+  // Reset password properties
+  selectedDriverForPasswordReset: Driver | null = null;
+  showPasswordResetModal = false;
+  resettingPassword = false;
+  
   // Roster images properties
   selectedFile: File | null = null;
   isDragOver = false;
@@ -378,5 +383,46 @@ export class RosterComponent implements OnInit {
     setTimeout(() => {
       this.alertMessage.show = false;
     }, 5000);
+  }
+
+  confirmPasswordReset(driver: Driver): void {
+    this.selectedDriverForPasswordReset = driver;
+    this.showPasswordResetModal = true;
+  }
+
+  closePasswordResetModal(): void {
+    this.showPasswordResetModal = false;
+    this.selectedDriverForPasswordReset = null;
+  }
+
+  async resetDriverPassword(): Promise<void> {
+    if (!this.selectedDriverForPasswordReset) return;
+    
+    this.resettingPassword = true;
+    
+    // Store the driver name before closing the modal
+    const driverName = this.selectedDriverForPasswordReset.name;
+    
+    try {
+      const success = await this.supabaseService.resetDriverPassword(this.selectedDriverForPasswordReset.id);
+      
+      // Close the modal
+      this.closePasswordResetModal();
+      
+      if (success) {
+        this.message = `Password reset successfully for ${driverName}. They will need to create a new password on their next login.`;
+        this.isError = false;
+      } else {
+        this.message = 'Failed to reset password.';
+        this.isError = true;
+      }
+    } catch (error) {
+      console.error('Error resetting driver password:', error);
+      this.message = 'An unexpected error occurred during password reset.';
+      this.isError = true;
+    } finally {
+      this.selectedDriverForPasswordReset = null;
+      this.resettingPassword = false;
+    }
   }
 } 

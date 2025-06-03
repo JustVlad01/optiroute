@@ -60,24 +60,54 @@
         </div>
       </div>
 
-      <!-- Comment Section -->
+      <!-- Issue Descriptions Section -->
       <div class="form-group">
-        <label for="issueComment">
+        <label>
           <i class="bi bi-chat-text"></i>
-          Describe the Issue
+          Describe the Issues
+          <span class="issue-counter" *ngIf="issueDescriptions.length > 1">
+            ({{issueDescriptions.length}} issues)
+          </span>
         </label>
-        <textarea
-          id="issueComment"
-          name="issueComment"
-          [(ngModel)]="issueComment"
-          placeholder="Please describe the van issue in detail..."
-          rows="5"
-          class="form-control"
-          required
-          #commentInput="ngModel"
-        ></textarea>
-        <div class="validation-error" *ngIf="commentInput.invalid && commentInput.touched">
-          Issue description is required
+        <div class="issues-container">
+          <div class="issue-input-group" *ngFor="let issue of issueDescriptions; let i = index; trackBy: trackByIndex">
+            <div class="issue-header">
+              <span class="issue-number" *ngIf="issueDescriptions.length > 1">{{i + 1}}</span>
+              <button 
+                type="button" 
+                class="remove-issue-btn" 
+                *ngIf="issueDescriptions.length > 1"
+                (click)="removeIssueDescription(i)"
+                title="Remove this issue"
+              >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            <textarea
+              [id]="'issueDescription' + i"
+              [name]="'issueDescription' + i"
+              [(ngModel)]="issueDescriptions[i]"
+              [placeholder]="issueDescriptions.length > 1 ? 'Describe issue ' + (i + 1) + ' in detail...' : 'Please describe the van issue in detail...'"
+              rows="4"
+              class="form-control issue-textarea"
+            ></textarea>
+          </div>
+          
+          <div class="add-issue-section">
+            <button 
+              type="button" 
+              class="add-issue-btn" 
+              (click)="addIssueDescription()"
+              *ngIf="issueDescriptions.length < 10"
+            >
+              <i class="bi bi-plus-circle"></i>
+              Add Another Issue
+            </button>
+          </div>
+          
+          <div class="validation-error" *ngIf="!areIssuesValid() && vanRegInput.touched">
+            At least one issue description is required
+          </div>
         </div>
       </div>
 
@@ -135,7 +165,7 @@
         <button
           type="submit"
           class="submit-btn"
-          [disabled]="isSubmitting || issueForm.invalid"
+          [disabled]="isSubmitting || !vanRegNumber.trim() || !areIssuesValid()"
         >
           <i class="bi bi-send" *ngIf="!isSubmitting"></i>
           <i class="bi bi-arrow-clockwise spin" *ngIf="isSubmitting"></i>

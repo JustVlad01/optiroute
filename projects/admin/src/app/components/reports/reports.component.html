@@ -32,6 +32,9 @@
         (click)="setActiveTab('van-issues')"
       >
         <i class="bi bi-exclamation-triangle"></i> Van Issues Report
+        <span class="notification-badge" *ngIf="getVanIssuesPendingCount() > 0">
+          {{ getVanIssuesPendingCount() }}
+        </span>
       </button>
       <button 
         [class.active]="activeTab === 'rejected-orders'"
@@ -45,56 +48,6 @@
       >
         <i class="bi bi-thermometer-half"></i> Temperature Issue Report
       </button>
-    </div>
-  </div>
-
-  <!-- Date Range Selector - Only show for Driver Updates tab -->
-  <div *ngIf="activeTab === 'driver-updates'" class="date-range-selector">
-    <div class="date-range-header">
-      <h4><i class="bi bi-calendar-range"></i> Export Date Range</h4>
-      <p>Select a custom date range to export driver updates</p>
-    </div>
-    <div class="date-range-controls">
-      <div class="date-input-group">
-        <label for="exportStartDate">From Date:</label>
-        <input 
-          type="date" 
-          id="exportStartDate" 
-          [(ngModel)]="exportStartDate"
-          class="date-input"
-        >
-      </div>
-      <div class="date-input-group">
-        <label for="exportEndDate">To Date:</label>
-        <input 
-          type="date" 
-          id="exportEndDate" 
-          [(ngModel)]="exportEndDate"
-          class="date-input"
-        >
-      </div>
-      <div class="export-actions">
-        <button 
-          class="btn-export-range" 
-          (click)="exportDateRange()"
-          [disabled]="!exportStartDate || !exportEndDate"
-        >
-          <i class="bi bi-file-earmark-pdf"></i>
-          Export Range
-        </button>
-        <button 
-          class="btn-quick-range" 
-          (click)="setQuickRange('week')"
-        >
-          Last Week
-        </button>
-        <button 
-          class="btn-quick-range" 
-          (click)="setQuickRange('month')"
-        >
-          Last Month
-        </button>
-      </div>
     </div>
   </div>
 
@@ -310,7 +263,7 @@
               </div>
               <div class="detail-item">
                 <label>Collision Date:</label>
-                <span>{{ selectedReport.date_of_collision | date:'dd/MM/yyyy' }}</span>
+                <span>{{ selectedReport.date_of_collision }}</span>
               </div>
               <div class="detail-item">
                 <label>Location:</label>
@@ -422,235 +375,264 @@
 
     <!-- Driver Updates Tab Content -->
     <div *ngIf="activeTab === 'driver-updates'" class="tab-content">
-      <div class="driver-updates-container">
-        <div class="section-header">
-          <i class="bi bi-truck"></i> <h2>Drivers Updates</h2>
-          <p class="subtitle">Driver delivery updates grouped by day (Last {{ dateRange }} days)</p>
+      <!-- Date Range Selector -->
+      <div class="date-range-selector">
+        <div class="date-range-header">
+          <h4><i class="bi bi-calendar-range"></i> Export Date Range</h4>
+          <p>Select a custom date range to export driver updates</p>
         </div>
-
-        <!-- Day-Grouped View Mode -->
-        <div *ngIf="driverViewMode === 'list'" class="day-grouped-view">
-          <div *ngIf="driverLoading" class="loading-indicator">
-            <i class="bi bi-hourglass-split spin"></i> Loading updates...
+        <div class="date-range-controls">
+          <div class="date-input-group">
+            <label for="exportStartDate">From Date:</label>
+            <input 
+              type="date" 
+              id="exportStartDate" 
+              [(ngModel)]="exportStartDate"
+              class="date-input"
+            >
           </div>
-
-          <div *ngIf="!driverLoading && dayGroups.length === 0" class="no-data">
-            <i class="bi bi-info-circle"></i>
-            <p>No delivery updates found for the last {{ dateRange }} days</p>
+          <div class="date-input-group">
+            <label for="exportEndDate">To Date:</label>
+            <input 
+              type="date" 
+              id="exportEndDate" 
+              [(ngModel)]="exportEndDate"
+              class="date-input"
+            >
           </div>
+          <div class="export-actions">
+            <button 
+              class="btn-export-range" 
+              (click)="exportDateRange()"
+              [disabled]="!exportStartDate || !exportEndDate"
+            >
+              <i class="bi bi-file-earmark-pdf"></i>
+              Export Range
+            </button>
+            <button 
+              class="btn-quick-range" 
+              (click)="setQuickRange('week')"
+            >
+              Last Week
+            </button>
+            <button 
+              class="btn-quick-range" 
+              (click)="setQuickRange('month')"
+            >
+              Last Month
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <div *ngIf="!driverLoading && dayGroups.length > 0" class="day-groups-container">
-            <!-- Global Actions -->
-            <div class="global-actions">
-              <button *ngIf="getSelectedUpdatesFromAllDays().length > 0" class="export-selected-btn" (click)="exportSelectedDays()">
-                <i class="bi bi-file-earmark-pdf"></i> Export Selected ({{ getSelectedUpdatesFromAllDays().length }})
-              </button>
-            </div>
+      <!-- Loading State -->
+      <div *ngIf="driverLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading driver updates...</p>
+      </div>
 
-            <!-- Day Groups -->
-            <div class="day-group" *ngFor="let dayGroup of dayGroups">
-              <div class="day-header" (click)="toggleDayExpansion(dayGroup)">
-                <div class="day-info">
-                  <i class="bi" [class.bi-chevron-down]="dayGroup.isExpanded" [class.bi-chevron-right]="!dayGroup.isExpanded"></i>
-                  <h3>{{ dayGroup.displayDate }}</h3>
-                </div>
-                <div class="day-actions" (click)="$event.stopPropagation()">
-                  <div class="day-stats">
-                    <span class="stat-box outstanding">
-                      <i class="bi bi-box-seam"></i>
-                      {{ getOutstandingDeliveriesForDay(dayGroup) }} Outstanding
-                    </span>
-                    <span class="stat-box notifications">
-                      <i class="bi bi-bell"></i>
-                      {{ getAdvancedNotificationsForDay(dayGroup) }} Advanced Notifications
-                    </span>
-                  </div>
-                  <div class="day-selection">
-                    <input 
-                      type="checkbox" 
-                      [id]="'day-' + dayGroup.date" 
-                      [checked]="isDayFullySelected(dayGroup)"
-                      [indeterminate]="isDayPartiallySelected(dayGroup)"
-                      (change)="toggleDaySelection(dayGroup)"
-                      class="day-checkbox"
-                    >
-                    <label [for]="'day-' + dayGroup.date" class="day-select-label">
-                      {{ isDayFullySelected(dayGroup) ? 'Deselect All' : 'Select All' }}
-                    </label>
-                  </div>
-                </div>
-              </div>
+      <!-- No Data State -->
+      <div *ngIf="!driverLoading && dayGroups.length === 0" class="empty-state">
+        <i class="bi bi-truck"></i>
+        <h3>No Driver Updates Found</h3>
+        <p>No delivery updates have been submitted for the selected period.</p>
+      </div>
 
-              <!-- Expanded Day Content -->
-              <div class="day-content" *ngIf="dayGroup.isExpanded">
-                <div class="updates-grid">
-                  <div class="update-card" *ngFor="let update of dayGroup.updates">
-                    <div class="update-header">
-                      <div class="update-selection">
-                        <input 
-                          type="checkbox" 
-                          [id]="'update-' + dayGroup.date + '-' + update.id" 
-                          [checked]="isUpdateSelectedInDay(dayGroup, update.id)"
-                          (change)="toggleUpdateInDay(dayGroup, update.id)"
-                          class="update-checkbox"
-                        >
-                      </div>
-                      <div class="update-info">
-                        <div class="update-time">{{ formatDate(update.created_at) }}</div>
-                        <div class="update-driver">{{ update.drivers?.name || 'Unknown' }}</div>
-                        <div class="update-route">{{ update.route_name || 'N/A' }}</div>
-                      </div>
-                      <div class="update-stats">
-                       
-                      </div>
-                      <div class="update-actions">
-                        <button class="view-btn" (click)="viewUpdateDetails(update)">
-                          <i class="bi bi-eye"></i> View
-                        </button>
-                        <button class="export-btn-card" (click)="exportFullUpdate(update)">
-                          <i class="bi bi-file-earmark-pdf"></i> Export
-                        </button>
-                      </div>
+      <!-- Driver Updates Table -->
+      <div *ngIf="!driverLoading && dayGroups.length > 0" class="reports-table-container">
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Updates Count</th>
+              <th>Outstanding</th>
+              <th>Notifications</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let dayGroup of dayGroups">
+              <tr class="day-group-row">
+                <td>
+                  <div class="date-info" (click)="toggleDayExpansion(dayGroup)" style="cursor: pointer;">
+                    <div class="day-header-content">
+                      <i class="bi" [class.bi-chevron-down]="dayGroup.isExpanded" [class.bi-chevron-right]="!dayGroup.isExpanded"></i>
+                      {{ dayGroup.displayDate }}
                     </div>
-                    
-                    <!-- Quick Preview of Stores -->
-                    <div class="update-preview" *ngIf="getStoreCount(update) > 0 || (update.comments && update.comments.trim().length > 0)">
-                      <div class="preview-section">
-                        <div class="summary-info">
-                          <span class="total-outstanding" *ngIf="getStoreCount(update) > 0">
-                            <i class="bi bi-box-seam"></i>
-                            {{ getStoreCount(update) }} Outstanding Stores
-                          </span>
-                          <span class="has-notification" *ngIf="update.comments && update.comments.trim().length > 0">
-                            <i class="bi bi-bell-fill"></i>
-                            Has Advanced Notification
-                          </span>
+                    <small>{{ dayGroup.updates.length }} updates</small>
+                  </div>
+                </td>
+                <td>{{ dayGroup.updates.length }}</td>
+                <td>
+                  <span class="stat-badge outstanding">
+                    <i class="bi bi-box-seam"></i>
+                    {{ getOutstandingDeliveriesForDay(dayGroup) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="stat-badge notifications">
+                    <i class="bi bi-bell"></i>
+                    {{ getAdvancedNotificationsForDay(dayGroup) }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button class="btn-view" (click)="toggleDayExpansion(dayGroup)">
+                      <i class="bi" [class.bi-eye]="!dayGroup.isExpanded" [class.bi-eye-slash]="dayGroup.isExpanded"></i>
+                      {{ dayGroup.isExpanded ? 'Hide Details' : 'View Details' }}
+                    </button>
+                    <button class="btn-export" (click)="exportDayReport(dayGroup)">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                      Export
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Expanded Day Content -->
+              <tr *ngIf="dayGroup.isExpanded" class="day-expansion-row">
+                <td colspan="5" class="day-expansion-content">
+                  <div class="expanded-day-details">
+                    <div class="day-content">
+                      <div class="updates-grid">
+                        <div class="update-card" *ngFor="let update of dayGroup.updates">
+                          <div class="update-header">
+                            <div class="update-selection">
+                              <input 
+                                type="checkbox" 
+                                [id]="'update-' + dayGroup.date + '-' + update.id" 
+                                [checked]="isUpdateSelectedInDay(dayGroup, update.id)"
+                                (change)="toggleUpdateInDay(dayGroup, update.id)"
+                                class="update-checkbox"
+                              >
+                            </div>
+                            <div class="update-info">
+                              <div class="update-time">{{ formatDate(update.created_at) }}</div>
+                              <div class="update-driver">{{ update.drivers?.name || 'Unknown' }}</div>
+                              <div class="update-route">{{ update.route_name || 'N/A' }}</div>
+                            </div>
+                            <div class="update-actions">
+                              <button class="view-btn" (click)="viewUpdateDetails(update); $event.stopPropagation()">
+                                <i class="bi bi-eye"></i> View
+                              </button>
+                              <div class="action-indicators">
+                                <span class="indicator-icon outstanding" *ngIf="getStoreCount(update) > 0" 
+                                      [title]="getStoreCount(update) + ' Outstanding Stores'">
+                                  <i class="bi bi-box-seam"></i>
+                                  <span class="count">{{ getStoreCount(update) }}</span>
+                                </span>
+                                <span class="indicator-icon notification" *ngIf="update.comments && update.comments.trim().length > 0"
+                                      title="Has Advanced Notification">
+                                  <i class="bi bi-bell-fill"></i>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Detail View Mode -->
+      <div *ngIf="activeTab === 'driver-updates' && driverViewMode === 'detail' && selectedDriverUpdate" class="update-detail">
+        <div class="detail-header">
+          <button class="back-btn" (click)="backToDriverList()">
+            <i class="bi bi-arrow-left"></i> Back to List
+          </button>
+          <h3>Update Details - {{ formatDate(selectedDriverUpdate.created_at) }}</h3>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-section">
+            <div class="section-title">
+              <i class="bi bi-info-circle"></i>
+              <h4>General Information</h4>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Driver:</div>
+              <div class="detail-value">{{ selectedDriverUpdate.drivers?.name || 'Unknown' }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Route:</div>
+              <div class="detail-value">{{ selectedDriverUpdate.route_name || 'N/A' }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Submitted:</div>
+              <div class="detail-value">{{ formatDate(selectedDriverUpdate.created_at) }}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Last Updated:</div>
+              <div class="detail-value">{{ formatDate(selectedDriverUpdate.updated_at) }}</div>
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedDriverUpdate.comments">
+            <div class="section-title">
+              <i class="bi bi-chat-left-text"></i>
+              <h4>Advanced Notification Comments</h4>
+            </div>
+            <div class="comments-box">
+              {{ selectedDriverUpdate.comments || 'No comments provided' }}
+            </div>
+          </div>
+
+          <div class="detail-section" *ngIf="selectedDriverUpdate.delivery_data?.length > 0">
+            <div class="section-title">
+              <i class="bi bi-box-seam"></i>
+              <h4>Delivery Update - Outstanding Deliveries</h4>
+            </div>
+            <div class="select-actions" *ngIf="getAllStoresFromDeliveries().length > 0">
+              <button class="select-btn" (click)="selectAllStores()">
+                <i class="bi bi-check-all"></i> Select All
+              </button>
+              <button class="select-btn" (click)="deselectAllStores()">
+                <i class="bi bi-x"></i> Deselect All
+              </button>
+            </div>
+            <div class="delivery-list">
+              <div class="delivery-item" *ngFor="let delivery of selectedDriverUpdate.delivery_data; let deliveryIndex = index">
+                <div class="delivery-header">
+                  <span class="delivery-name">{{ delivery.shop_name }}</span>
+                  <span class="delivery-time">{{ delivery.delivery_time }}</span>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Analytics Section -->
-        <div *ngIf="driverViewMode === 'list' && !driverLoading && dayGroups.length > 0" class="analytics-section">
-          <div class="analytics-header">
-            <div class="analytics-title">
-              <i class="bi bi-graph-up-arrow"></i>
-              <h2>Route Performance Analytics</h2>
-              <span class="analytics-subtitle">Weekly insights and delivery metrics</span>
-            </div>
-            <button class="toggle-analytics-btn" (click)="toggleAnalytics()">
-              <i class="bi" [class.bi-chevron-up]="showAnalytics" [class.bi-chevron-down]="!showAnalytics"></i>
-              {{ showAnalytics ? 'Hide Analytics' : 'Show Analytics' }}
-            </button>
-          </div>
-
-          <div *ngIf="showAnalytics" class="analytics-content">
-          </div>
-        </div>
-
-        <!-- Detail View Mode -->
-        <div *ngIf="driverViewMode === 'detail' && selectedDriverUpdate" class="update-detail">
-          <div class="detail-header">
-            <button class="back-btn" (click)="backToDriverList()">
-              <i class="bi bi-arrow-left"></i> Back to List
-            </button>
-            <h3>Update Details - {{ formatDate(selectedDriverUpdate.created_at) }}</h3>
-            <button *ngIf="hasSelectedStores()" class="export-btn" (click)="exportSelectedStores()">
-              <i class="bi bi-file-earmark-pdf"></i> Export Selected
-            </button>
-          </div>
-
-          <div class="detail-card">
-            <div class="detail-section">
-              <div class="section-title">
-                <i class="bi bi-info-circle"></i>
-                <h4>General Information</h4>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Driver:</div>
-                <div class="detail-value">{{ selectedDriverUpdate.drivers?.name || 'Unknown' }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Route:</div>
-                <div class="detail-value">{{ selectedDriverUpdate.route_name || 'N/A' }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Submitted:</div>
-                <div class="detail-value">{{ formatDate(selectedDriverUpdate.created_at) }}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Last Updated:</div>
-                <div class="detail-value">{{ formatDate(selectedDriverUpdate.updated_at) }}</div>
-              </div>
-            </div>
-
-            <div class="detail-section" *ngIf="selectedDriverUpdate.comments">
-              <div class="section-title">
-                <i class="bi bi-chat-left-text"></i>
-                <h4>Advanced Notification Comments</h4>
-              </div>
-              <div class="comments-box">
-                {{ selectedDriverUpdate.comments || 'No comments provided' }}
-              </div>
-            </div>
-
-            <div class="detail-section" *ngIf="selectedDriverUpdate.delivery_data?.length > 0">
-              <div class="section-title">
-                <i class="bi bi-box-seam"></i>
-                <h4>Delivery Update - Outstanding Deliveries</h4>
-              </div>
-              <div class="select-actions" *ngIf="getAllStoresFromDeliveries().length > 0">
-                <button class="select-btn" (click)="selectAllStores()">
-                  <i class="bi bi-check-all"></i> Select All
-                </button>
-                <button class="select-btn" (click)="deselectAllStores()">
-                  <i class="bi bi-x"></i> Deselect All
-                </button>
-              </div>
-              <div class="delivery-list">
-                <div class="delivery-item" *ngFor="let delivery of selectedDriverUpdate.delivery_data; let deliveryIndex = index">
-                  <div class="delivery-header">
-                    <span class="delivery-name">{{ delivery.shop_name }}</span>
-                    <span class="delivery-time">{{ delivery.delivery_time }}</span>
-                  </div>
-                  
-                  <div class="store-list" *ngIf="delivery.stores?.length > 0">
-                    <div class="store-item" *ngFor="let store of delivery.stores; let storeIndex = index">
-                      <div class="store-selector">
-                        <input 
-                          type="checkbox" 
-                          [id]="'store-' + deliveryIndex + '-' + storeIndex" 
-                          [checked]="isStoreSelected(deliveryIndex, storeIndex)" 
-                          (change)="toggleStoreSelection(deliveryIndex, storeIndex)"
-                        >
-                        <label [for]="'store-' + deliveryIndex + '-' + storeIndex">{{ store.store_name }}</label>
-                      </div>
-                      <span class="store-code">{{ store.store_code || 'N/A' }}</span>
+                
+                <div class="store-list" *ngIf="delivery.stores?.length > 0">
+                  <div class="store-item" *ngFor="let store of delivery.stores; let storeIndex = index">
+                    <div class="store-selector">
+                      <input 
+                        type="checkbox" 
+                        [id]="'store-' + deliveryIndex + '-' + storeIndex" 
+                        [checked]="isStoreSelected(deliveryIndex, storeIndex)" 
+                        (change)="toggleStoreSelection(deliveryIndex, storeIndex)"
+                      >
+                      <label [for]="'store-' + deliveryIndex + '-' + storeIndex">{{ store.store_name }}</label>
                     </div>
+                    <span class="store-code">{{ store.store_code || 'N/A' }}</span>
                   </div>
-                  
-                  <div class="no-stores" *ngIf="!delivery.stores || delivery.stores.length === 0">
-                    No stores added for this shop
-                  </div>
+                </div>
+                
+                <div class="no-stores" *ngIf="!delivery.stores || delivery.stores.length === 0">
+                  No stores added for this shop
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="detail-section" *ngIf="selectedDriverUpdate.last_delivery_times">
-              <div class="section-title">
-                <i class="bi bi-clock-history"></i>
-                <h4>Last Delivery Times</h4>
-              </div>
-              <div class="last-delivery-list">
-                <div class="last-delivery-item" *ngFor="let time of selectedDriverUpdate.last_delivery_times | keyvalue">
-                  <span class="shop-name">{{ time.key }}:</span>
-                  <span class="delivery-time">{{ time.value }}</span>
-                </div>
+          <div class="detail-section" *ngIf="selectedDriverUpdate.last_delivery_times">
+            <div class="section-title">
+              <i class="bi bi-clock-history"></i>
+              <h4>Last Delivery Times</h4>
+            </div>
+            <div class="last-delivery-list">
+              <div class="last-delivery-item" *ngFor="let time of selectedDriverUpdate.last_delivery_times | keyvalue">
+                <span class="shop-name">{{ time.key }}:</span>
+                <span class="delivery-time">{{ time.value }}</span>
               </div>
             </div>
           </div>
@@ -660,199 +642,266 @@
 
     <!-- Van Issues Tab Content -->
     <div *ngIf="activeTab === 'van-issues'" class="tab-content">
-      <!-- Loading State -->
-      <div class="loading-container" *ngIf="vanIssuesLoading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="vanIssuesSearchTerm">Search Issues</label>
+            <input
+              type="text"
+              id="vanIssuesSearchTerm"
+              [(ngModel)]="searchTerm"
+              (input)="onFilterChange()"
+              placeholder="Search by vehicle, driver, or issue description..."
+              class="filter-input"
+            >
+          </div>
+          
+          <div class="filter-group">
+            <label for="vanIssuesDateFilter">Filter by Date</label>
+            <input
+              type="date"
+              id="vanIssuesDateFilter"
+              [(ngModel)]="dateFilter"
+              (change)="onFilterChange()"
+              class="filter-input"
+            >
+          </div>
+          
+          <div class="filter-actions">
+            <button class="btn-refresh" (click)="refreshReports()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Refresh
+            </button>
+            <button class="btn-export" (click)="generateVanIssuesQuickReport('all')">
+              <i class="bi bi-download"></i>
+              Export All
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="vanIssuesLoading" class="loading-state">
+        <div class="spinner"></div>
         <p>Loading van issues...</p>
       </div>
 
-      <!-- Empty State -->
-      <div class="no-issues-container" *ngIf="!vanIssuesLoading && vanIssues.length === 0">
-        <i class="bi bi-shield-check"></i>
-        <h3>No Issues Reported</h3>
-        <p>All vehicles are currently operating without reported issues.</p>
+      <!-- No Issues State -->
+      <div *ngIf="!vanIssuesLoading && (searchTerm || dateFilter ? filteredVanIssues.length === 0 : vanIssues.length === 0)" class="empty-state">
+        <i class="bi bi-shield-check" *ngIf="!searchTerm && !dateFilter"></i>
+        <i class="bi bi-search" *ngIf="searchTerm || dateFilter"></i>
+        <h3 *ngIf="!searchTerm && !dateFilter">No Issues Reported</h3>
+        <h3 *ngIf="searchTerm || dateFilter">No Issues Found</h3>
+        <p *ngIf="!searchTerm && !dateFilter">All vehicles are currently operating without reported issues.</p>
+        <p *ngIf="searchTerm || dateFilter">Try adjusting your search criteria or date filter.</p>
       </div>
 
-      <!-- PDF Report Section -->
-      <div class="report-section" *ngIf="!vanIssuesLoading && vanIssues.length > 0">
-        <div class="report-header">
-          <h3>
-            <i class="bi bi-file-earmark-pdf"></i>
-            Generate Reports
-          </h3>
-          <p>Create PDF reports for van issues with customizable filters</p>
-        </div>
-        
-        <div class="report-actions">
-          <!-- Quick Report Buttons -->
-          <div class="quick-reports">
-            <button 
-              class="report-btn quick-btn"
-              (click)="generateVanIssuesQuickReport('all')"
-              [disabled]="isGeneratingReport"
-              title="Generate report for all issues"
-            >
-              <i class="bi bi-file-earmark-pdf"></i>
-              All Issues ({{ vanIssues.length }})
-            </button>
+      <!-- Van Issues Accordion -->
+      <div *ngIf="!vanIssuesLoading && (searchTerm || dateFilter ? filteredVanIssues.length > 0 : vanIssues.length > 0)" class="van-issues-accordion">
+        <div class="accordion-item" *ngFor="let issue of paginatedVanIssues; let i = index" 
+             [class.verified]="issue.verified"
+             [class.expanded]="isIssueExpanded(i)">
+          
+          <!-- Accordion Header (Collapsed View) -->
+          <div class="accordion-header" (click)="toggleIssueExpansion(i)">
+            <div class="header-main">
+              <div class="vehicle-driver-info">
+                <div class="vehicle-badge">{{ issue.van_registration }}</div>
+                <div class="driver-name">{{ issue.driver_name }}</div>
+                <small class="driver-id">ID: {{ issue.driver_custom_id }}</small>
+              </div>
+              
+              <div class="issue-summary">
+                <div class="issue-preview" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length === 1">
+                  {{ parseIssuesFromComments(issue.driver_comments, issue.issue_completions)[0].description | slice:0:100 }}{{ parseIssuesFromComments(issue.driver_comments, issue.issue_completions)[0].description.length > 100 ? '...' : '' }}
+                </div>
+                <div class="multiple-issues" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                  <span class="issues-count">{{ parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length }} Issues</span>
+                  <span class="remaining-count" *ngIf="getIncompleteIssuesCount(issue) > 0">
+                    {{ getIncompleteIssuesCount(issue) }} Remaining
+                  </span>
+                  <span class="completed-badge" *ngIf="getIncompleteIssuesCount(issue) === 0">
+                    <i class="bi bi-check-circle"></i> All Complete
+                  </span>
+                </div>
+              </div>
+              
+              <div class="header-badges">
+                <span class="status-badge" [class.verified]="issue.verified" [class.pending]="!issue.verified">
+                  <i class="bi" [class.bi-check-circle-fill]="issue.verified" [class.bi-clock]="!issue.verified"></i>
+                  {{ issue.verified ? 'Verified' : 'Pending' }}
+                </span>
+                <span class="date-badge">{{ formatVanIssueDate(issue.created_at) }}</span>
+              </div>
+            </div>
             
-            <button 
-              class="report-btn quick-btn verified"
-              (click)="generateVanIssuesQuickReport('verified')"
-              [disabled]="isGeneratingReport"
-              title="Generate report for verified issues only"
-            >
-              <i class="bi bi-check-circle"></i>
-              Verified ({{ getVanIssuesVerifiedCount() }})
-            </button>
-            
-            <button 
-              class="report-btn quick-btn pending"
-              (click)="generateVanIssuesQuickReport('pending')"
-              [disabled]="isGeneratingReport"
-              title="Generate report for pending issues only"
-            >
-              <i class="bi bi-clock"></i>
-              Pending ({{ getVanIssuesPendingCount() }})
-            </button>
+            <div class="expand-icon" [class.expanded]="isIssueExpanded(i)">
+              <i class="fas fa-chevron-down"></i>
+            </div>
           </div>
           
-          <!-- Custom Report Button -->
-          <div class="custom-report">
-            <button 
-              class="report-btn custom-btn"
-              (click)="openVanIssuesReportModal()"
-              [disabled]="isGeneratingReport"
-              title="Create custom report with filters"
-            >
-              <i class="bi bi-sliders"></i>
-              Custom Report
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Issues Table -->
-      <div class="issues-table-container" *ngIf="!vanIssuesLoading && vanIssues.length > 0">
-        <table class="issues-table">
-          <thead>
-            <tr>
-              <th>Vehicle</th>
-              <th>Driver</th>
-              <th>Issue Report</th>
-              <th>Images</th>
-              <th>Date</th>
-              <th>Fixed Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let issue of vanIssues; trackBy: trackByIssueId" class="issue-row" [class.verified]="issue.verified">
-              <td class="vehicle-cell">
-                <div class="vehicle-info">
-                  <span class="van-reg">{{ issue.van_registration }}</span>
-                </div>
-              </td>
+          <!-- Accordion Content (Expanded View) -->
+          <div class="accordion-content" *ngIf="isIssueExpanded(i)">
+            <div class="expanded-details">
               
-              <td class="driver-cell">
-                <div class="driver-info">
-                  <span class="driver-name">{{ issue.driver_name }}</span>
-                  <span class="driver-id">ID: {{ issue.driver_custom_id }}</span>
+              <!-- Issue Details Section -->
+              <div class="detail-section">
+                <h4><i class="bi bi-exclamation-triangle"></i> Issue Details</h4>
+                <div class="issues-container">
+                  <div class="individual-issues">
+                    <div class="issue-item" 
+                         *ngFor="let parsedIssue of parseIssuesFromComments(issue.driver_comments, issue.issue_completions); trackBy: trackByIssueIndex"
+                         [class.completed]="parsedIssue.completed">
+                      <div class="issue-checkbox" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                        <input type="checkbox" 
+                               [id]="'issue-' + issue.id + '-' + parsedIssue.index"
+                               [checked]="parsedIssue.completed"
+                               (change)="toggleIssueCompletion(issue, parsedIssue.index)"
+                               class="completion-checkbox">
+                        <label [for]="'issue-' + issue.id + '-' + parsedIssue.index" class="checkbox-label">
+                          <i class="bi bi-check" *ngIf="parsedIssue.completed"></i>
+                        </label>
+                      </div>
+                      <div class="issue-description">
+                        <span class="issue-number" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                          {{ parsedIssue.index + 1 }}.
+                        </span>
+                        <span class="issue-text" [class.completed-text]="parsedIssue.completed">
+                          {{ parsedIssue.description }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </td>
+              </div>
               
-              <td class="issue-cell">
-                <div class="issue-content">
-                  <p class="issue-text">{{ issue.driver_comments }}</p>
+              <!-- Images Section -->
+              <div class="detail-section" *ngIf="issue.image_urls && issue.image_urls.length > 0">
+                <h4><i class="bi bi-camera"></i> Images ({{ issue.image_urls.length }})</h4>
+                <div class="image-gallery">
+                  <img *ngFor="let imagePath of issue.image_urls.slice(0, 4); trackBy: trackByImagePath"
+                       [src]="getImageUrl(imagePath)" 
+                       [alt]="'Issue documentation'"
+                       (click)="openVanIssueImageModal(getImageUrl(imagePath), issue)"
+                       (error)="onImageError($event)"
+                       class="thumbnail-image"
+                       loading="lazy">
+                  <div *ngIf="issue.image_urls.length > 4" class="more-images">
+                    +{{ issue.image_urls.length - 4 }} more
+                  </div>
                 </div>
-              </td>
+              </div>
               
-              <td class="images-cell">
-                <div class="images-info" *ngIf="issue.image_urls && issue.image_urls.length > 0">
-                  <span class="image-count">{{ issue.image_urls.length }} image(s)</span>
-                  <div class="image-thumbnails">
-                    <img 
-                      *ngFor="let imagePath of issue.image_urls.slice(0, 3); trackBy: trackByImagePath"
-                      [src]="getImageUrl(imagePath)" 
-                      [alt]="'Issue documentation'"
-                      (click)="openVanIssueImageModal(getImageUrl(imagePath), issue)"
-                      (error)="onImageError($event)"
-                      class="thumbnail-img"
-                      loading="lazy"
+              <!-- Repair Receipts Section -->
+              <div class="detail-section" *ngIf="issue.repair_receipt_urls && issue.repair_receipt_urls.length > 0">
+                <h4><i class="bi bi-receipt"></i> Repair Receipts ({{ issue.repair_receipt_urls.length }})</h4>
+                <div class="receipt-gallery">
+                  <div *ngFor="let receiptPath of issue.repair_receipt_urls.slice(0, 4); trackBy: trackByReceiptPath" class="receipt-item">
+                    <img [src]="getImageUrl(receiptPath)" 
+                         [alt]="'Repair receipt'"
+                         (click)="openVanIssueImageModal(getImageUrl(receiptPath), issue)"
+                         (error)="onImageError($event)"
+                         class="thumbnail-receipt"
+                         loading="lazy">
+                    <button 
+                      class="delete-receipt-btn"
+                      (click)="deleteReceiptImage(issue, receiptPath); $event.stopPropagation()"
+                      title="Delete receipt"
                     >
-                    <span *ngIf="issue.image_urls.length > 3" class="more-images">
-                      +{{ issue.image_urls.length - 3 }}
-                    </span>
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                  <div *ngIf="issue.repair_receipt_urls.length > 4" class="more-receipts">
+                    +{{ issue.repair_receipt_urls.length - 4 }} more
                   </div>
                 </div>
-                <span *ngIf="!issue.image_urls || issue.image_urls.length === 0" class="no-images-text">
-                  No images
-                </span>
-              </td>
+              </div>
               
-              <td class="date-cell">
-                <span class="issue-date">{{ formatVanIssueDate(issue.created_at) }}</span>
-              </td>
-              
-              <td class="fixed-date-cell">
-                <div class="fixed-date-info">
-                  <span *ngIf="issue.date_fixed" class="fixed-date">{{ formatVanIssueDate(issue.date_fixed) }}</span>
-                  <span *ngIf="!issue.date_fixed" class="no-fixed-date">Not fixed yet</span>
-                </div>
-              </td>
-              
-              <td class="status-cell">
-                <div class="status-info">
-                  <span class="status-badge" [class.verified]="issue.verified" [class.pending]="!issue.verified">
-                    <i class="bi" [class.bi-check-circle-fill]="issue.verified" [class.bi-clock]="!issue.verified"></i>
-                    {{ issue.verified ? 'Verified' : 'Pending' }}
-                  </span>
-                  <div *ngIf="issue.verified && issue.verified_at" class="verification-details">
-                    <small class="verified-date">Verified: {{ formatVanIssueDate(issue.verified_at) }}</small>
-                    <small *ngIf="issue.verified_by" class="verified-by">by {{ issue.verified_by }}</small>
-                  </div>
-                </div>
-              </td>
-              
-              <td class="actions-cell">
-                <div class="action-buttons">
-                  <!-- View Images Button -->
+              <!-- Actions Section -->
+              <div class="detail-section">
+                <h4><i class="bi bi-gear"></i> Actions</h4>
+                <div class="action-buttons-expanded">
                   <button 
                     *ngIf="issue.image_urls && issue.image_urls.length > 0"
-                    class="view-btn"
+                    class="btn-view"
                     (click)="openVanIssueImageModal(getImageUrl(issue.image_urls[0]), issue)"
-                    title="View Images"
                   >
                     <i class="bi bi-eye"></i>
-                    View
+                    View Images
                   </button>
-                  
-                  <!-- Simple Verification Button -->
+
+                  <button 
+                    class="upload-receipts-btn"
+                    (click)="openReceiptUploadModal(issue)"
+                    title="Upload Repair Receipts"
+                  >
+                    <i class="bi bi-cloud-upload"></i>
+                    {{ hasRepairReceipts(issue) ? 'Add More' : 'Upload' }} Receipts
+                  </button>
+
                   <button 
                     *ngIf="!issue.verified"
-                    class="verify-btn"
+                    class="btn-pdf"
                     (click)="verifyIssue(issue.id)"
                     [disabled]="isVerifying[issue.id]"
-                    title="Mark as Seen"
                   >
                     <i class="bi bi-check-circle" *ngIf="!isVerifying[issue.id]"></i>
                     <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[issue.id]"></i>
-                    {{ isVerifying[issue.id] ? 'Processing...' : 'Mark as Seen' }}
+                    {{ isVerifying[issue.id] ? 'Processing...' : 'Mark Seen' }}
                   </button>
-                  
-                  <!-- Verified Status -->
                   <span *ngIf="issue.verified" class="verified-label">
                     <i class="bi bi-check-circle-fill"></i>
-                    Seen
+                    Issue Seen
                   </span>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Van Issues Pagination -->
+      <div *ngIf="!vanIssuesLoading && vanIssuesTotalPages > 1" class="pagination van-issues-pagination">
+        <div class="pagination-info">
+          <span class="results-count">
+            Showing {{ ((vanIssuesCurrentPage - 1) * vanIssuesItemsPerPage) + 1 }} - 
+            {{ Math.min(vanIssuesCurrentPage * vanIssuesItemsPerPage, vanIssuesTotalCount) }} 
+            of {{ vanIssuesTotalCount }} issues
+          </span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="btn-page" 
+            [disabled]="vanIssuesCurrentPage === 1"
+            (click)="onVanIssuesPageChange(vanIssuesCurrentPage - 1)"
+          >
+            <i class="bi bi-chevron-left"></i>
+            Previous
+          </button>
+          
+          <div class="page-numbers">
+            <button 
+              *ngFor="let page of [].constructor(vanIssuesTotalPages); let i = index"
+              [class.active]="(i + 1) === vanIssuesCurrentPage"
+              class="page-number-btn"
+              (click)="onVanIssuesPageChange(i + 1)"
+            >
+              {{ i + 1 }}
+            </button>
+          </div>
+          
+          <button 
+            class="btn-page" 
+            [disabled]="vanIssuesCurrentPage === vanIssuesTotalPages"
+            (click)="onVanIssuesPageChange(vanIssuesCurrentPage + 1)"
+          >
+            Next
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Van Issue Image Viewer Modal -->
@@ -1062,6 +1111,103 @@
           </div>
         </div>
       </div>
+
+      <!-- Upload Repair Receipts Modal -->
+      <div class="modal-overlay" *ngIf="showReceiptUploadModal" (click)="closeReceiptUploadModal()" role="dialog" aria-modal="true">
+        <div class="modal-content receipt-upload-modal" (click)="$event.stopPropagation()">
+          
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <h4>
+              <i class="bi bi-cloud-upload"></i>
+              Upload Repair Receipts
+            </h4>
+            <button class="close-btn" (click)="closeReceiptUploadModal()" aria-label="Close receipt upload">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          
+          <!-- Modal Body -->
+          <div class="modal-body">
+            
+            <!-- Issue Summary -->
+            <div *ngIf="selectedIssueForReceipts" class="issue-summary">
+              <h5>Issue Details:</h5>
+              <div class="summary-details">
+                <p><strong>Vehicle:</strong> {{ selectedIssueForReceipts.van_registration }}</p>
+                <p><strong>Driver:</strong> {{ selectedIssueForReceipts.driver_name }}</p>
+                <p><strong>Date:</strong> {{ formatVanIssueDate(selectedIssueForReceipts.created_at) }}</p>
+              </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="upload-section">
+              <div class="upload-instructions">
+                <h5>Upload Repair Receipt Images</h5>
+                <p>Select one or more images of repair receipts (JPG, PNG, GIF). Maximum 5MB per file.</p>
+              </div>
+              
+              <div class="file-input-container">
+                <input 
+                  type="file" 
+                  id="receiptFiles"
+                  accept="image/*"
+                  multiple
+                  (change)="onReceiptFilesSelected($event)"
+                  [disabled]="isUploadingReceipts"
+                  class="file-input"
+                >
+                <label for="receiptFiles" class="file-input-label" [class.disabled]="isUploadingReceipts">
+                  <i class="bi bi-cloud-upload"></i>
+                  {{ isUploadingReceipts ? 'Uploading...' : 'Choose Receipt Images' }}
+                </label>
+              </div>
+              
+              <!-- Upload Progress -->
+              <div *ngIf="isUploadingReceipts" class="upload-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+                </div>
+                <span class="progress-text">{{ uploadProgress }}% uploaded</span>
+              </div>
+            </div>
+
+            <!-- Existing Receipts -->
+            <div *ngIf="selectedIssueForReceipts && hasRepairReceipts(selectedIssueForReceipts)" class="existing-receipts">
+              <h5>Current Repair Receipts:</h5>
+              <div class="receipt-gallery">
+                <div 
+                  *ngFor="let receiptPath of selectedIssueForReceipts.repair_receipt_urls; trackBy: trackByReceiptPath"
+                  class="receipt-item"
+                >
+                  <img 
+                    [src]="getReceiptImageUrl(receiptPath)" 
+                    [alt]="'Repair receipt'"
+                    (click)="openVanIssueImageModal(getReceiptImageUrl(receiptPath), selectedIssueForReceipts)"
+                    class="receipt-thumbnail"
+                    loading="lazy"
+                  >
+                  <button 
+                    class="delete-receipt-btn"
+                    (click)="deleteReceiptImage(selectedIssueForReceipts, receiptPath)"
+                    title="Delete receipt"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Modal Footer -->
+          <div class="modal-footer">
+            <button class="cancel-btn" (click)="closeReceiptUploadModal()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Rejected Orders Tab Content -->
@@ -1228,7 +1374,9 @@
               </div>
               <div class="info-item">
                 <label>Van Temperature</label>
-                <span>{{ selectedRejectedOrder.van_temp_by_display }}°C</span>
+                <span class="temperature-reading" [class.high]="selectedRejectedOrder.van_temp_by_display > 5">
+                  {{ selectedRejectedOrder.van_temp_by_display }}°C
+                </span>
               </div>
               <div class="info-item">
                 <label>Site Keys Available</label>
@@ -1363,8 +1511,6 @@
                 <th>Route</th>
                 <th>Vehicle</th>
                 <th>Store</th>
-                <th>Van Temp</th>
-                <th>Customer Temp</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -1378,18 +1524,8 @@
                 <td>
                   <div class="store-info">
                     <div>{{ report.store_name }}</div>
-                    <small>Drop #{{ report.drop_number }}</small>
+                    <small>Drop #{{ report.drop_number_on_route }}</small>
                   </div>
-                </td>
-                <td>
-                  <span class="temperature-value" [class.high]="report.van_temp_by_display > 5">
-                    {{ report.van_temp_by_display }}°C
-                  </span>
-                </td>
-                <td>
-                  <span class="temperature-value" [class.high]="report.customer_temperature > 5">
-                    {{ report.customer_temperature }}°C
-                  </span>
                 </td>
                 <td class="actions-cell">
                   <div class="action-buttons">
@@ -1410,7 +1546,7 @@
       </div>
 
       <!-- Detail View -->
-      <div *ngIf="temperatureReportsViewMode === 'detail' && selectedTemperatureReport" class="temperature-report-detail-view">
+      <div *ngIf="temperatureReportsViewMode === 'detail' && selectedTemperatureReport" class="rejected-order-detail-view">
         <!-- Clean Header -->
         <div class="detail-header">
           <button class="back-btn" (click)="backToTemperatureReportsList()">
@@ -1455,7 +1591,7 @@
             <h3>Store & Delivery Information</h3>
             <div class="store-header">
               <span class="store-name">{{ selectedTemperatureReport.store_name }}</span>
-              <span class="drop-number">Drop #{{ selectedTemperatureReport.drop_number }}</span>
+              <span class="drop-number">Drop #{{ selectedTemperatureReport.drop_number_on_route }}</span>
             </div>
             <div class="info-grid">
               <div class="info-item">
@@ -1464,7 +1600,7 @@
               </div>
               <div class="info-item">
                 <label>Wait Time</label>
-                <span>{{ selectedTemperatureReport.wait_time_in_store }} minutes</span>
+                <span>{{ selectedTemperatureReport.wait_time_at_store }} minutes</span>
               </div>
               <div class="info-item">
                 <label>Driving Start Time</label>
@@ -1472,7 +1608,13 @@
               </div>
               <div class="info-item">
                 <label>Total Crates</label>
-                <span>{{ selectedTemperatureReport.total_crates }}</span>
+                <span>{{ selectedTemperatureReport.total_crates_into_store }}</span>
+              </div>
+              <div class="info-item">
+                <label>Van Temperature</label>
+                <span class="temperature-reading" [class.high]="selectedTemperatureReport.van_temp_by_display > 5">
+                  {{ selectedTemperatureReport.van_temp_by_display }}°C
+                </span>
               </div>
               <div class="info-item">
                 <label>Site Keys Available</label>
@@ -1484,24 +1626,30 @@
           </div>
 
           <!-- Temperature Monitoring Section -->
-          <div class="info-section temperature-section">
+          <div class="info-section">
             <h3>Temperature Monitoring</h3>
-            <div class="temperature-grid">
-              <div class="temp-item" [class.critical]="selectedTemperatureReport.van_temp_by_display > 5">
+            <div class="info-grid">
+              <div class="info-item">
                 <label>Van Temperature (Display)</label>
-                <span class="temp-value">{{ selectedTemperatureReport.van_temp_by_display }}°C</span>
+                <span class="temperature-reading" [class.high]="selectedTemperatureReport.van_temp_by_display > 5">
+                  {{ selectedTemperatureReport.van_temp_by_display }}°C
+                </span>
               </div>
-              <div class="temp-item">
+              <div class="info-item">
                 <label>Probe Serial Number</label>
                 <span>{{ selectedTemperatureReport.probe_serial_number }}</span>
               </div>
-              <div class="temp-item" [class.critical]="selectedTemperatureReport.probe_temperature > 5">
+              <div class="info-item">
                 <label>Probe Temperature</label>
-                <span class="temp-value">{{ selectedTemperatureReport.probe_temperature }}°C</span>
+                <span class="temperature-reading" [class.high]="selectedTemperatureReport.probe_temperature > 5">
+                  {{ selectedTemperatureReport.probe_temperature }}°C
+                </span>
               </div>
-              <div class="temp-item" [class.critical]="selectedTemperatureReport.customer_temperature > 5">
+              <div class="info-item">
                 <label>Customer Temperature</label>
-                <span class="temp-value">{{ selectedTemperatureReport.customer_temperature }}°C</span>
+                <span class="temperature-reading" [class.high]="selectedTemperatureReport.customer_temperature > 5">
+                  {{ selectedTemperatureReport.customer_temperature }}°C
+                </span>
               </div>
             </div>
           </div>
@@ -1534,29 +1682,34 @@
           </div>
 
           <!-- Photo Documentation Section -->
-          <div class="info-section" *ngIf="selectedTemperatureReport.photo_temp_reading_from_customer || selectedTemperatureReport.photo_van_display_temp || selectedTemperatureReport.photo_probe_reading_from_destructive_pack">
+          <div class="info-section" *ngIf="selectedTemperatureReport.photo_temp_reading_customer || selectedTemperatureReport.photo_van_display_temp || selectedTemperatureReport.photo_probe_reading_destructive_pack">
             <h3>Photo Documentation</h3>
-            <div class="photos-grid">
-              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_temp_reading_from_customer">
-                <label>Customer Temperature Reading</label>
-                <img [src]="selectedTemperatureReport.photo_temp_reading_from_customer" alt="Customer Temperature" (click)="openImageModal(selectedTemperatureReport.photo_temp_reading_from_customer)">
-              </div>
-              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_van_display_temp">
-                <label>Van Display Temperature</label>
-                <img [src]="selectedTemperatureReport.photo_van_display_temp" alt="Van Display" (click)="openImageModal(selectedTemperatureReport.photo_van_display_temp)">
-              </div>
-              <div class="photo-item" *ngIf="selectedTemperatureReport.photo_probe_reading_from_destructive_pack">
-                <label>Probe Reading from Destructive Pack</label>
-                <img [src]="selectedTemperatureReport.photo_probe_reading_from_destructive_pack" alt="Probe Reading" (click)="openImageModal(selectedTemperatureReport.photo_probe_reading_from_destructive_pack)">
+            <div class="photo-documentation">
+              <div class="photo-grid">
+                <div class="photo-item" *ngIf="selectedTemperatureReport.photo_temp_reading_customer">
+                  <label>Customer Temperature Reading</label>
+                  <img [src]="selectedTemperatureReport.photo_temp_reading_customer" alt="Customer Temperature" (click)="openImageModal(selectedTemperatureReport.photo_temp_reading_customer)">
+                </div>
+                <div class="photo-item" *ngIf="selectedTemperatureReport.photo_van_display_temp">
+                  <label>Van Display Temperature</label>
+                  <img [src]="selectedTemperatureReport.photo_van_display_temp" alt="Van Display" (click)="openImageModal(selectedTemperatureReport.photo_van_display_temp)">
+                </div>
+                <div class="photo-item" *ngIf="selectedTemperatureReport.photo_probe_reading_destructive_pack">
+                  <label>Probe Reading from Destructive Pack</label>
+                  <img [src]="selectedTemperatureReport.photo_probe_reading_destructive_pack" alt="Probe Reading" (click)="openImageModal(selectedTemperatureReport.photo_probe_reading_destructive_pack)">
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Comments Section -->
           <div class="info-section" *ngIf="selectedTemperatureReport.further_comments">
-            <h3>Additional Comments</h3>
-            <div class="comments-content">
-              <p>{{ selectedTemperatureReport.further_comments }}</p>
+            <h3>Additional Information</h3>
+            <div class="comments-list">
+              <div class="comment">
+                <strong>Further Comments:</strong>
+                <p>{{ selectedTemperatureReport.further_comments }}</p>
+              </div>
             </div>
           </div>
         </div>

@@ -516,15 +516,63 @@ export class FormAssignmentsComponent implements OnInit {
   }
 
   deleteAssignment(assignmentId: string): void {
+    console.log('Delete button clicked for assignment ID:', assignmentId);
+    
     if (confirm('Are you sure you want to delete this assignment?')) {
+      console.log('User confirmed deletion');
+      console.log('Current formAssignments count:', this.formAssignments.length);
+      console.log('Current filteredAssignments count:', this.filteredAssignments.length);
+      
+      // Find the assignment to be deleted for logging
+      const assignmentToDelete = this.formAssignments.find(a => a.id === assignmentId);
+      console.log('Assignment to delete:', assignmentToDelete);
+      
+      // Optimistically remove from UI immediately
+      const originalAssignments = [...this.formAssignments];
+      const originalFiltered = [...this.filteredAssignments];
+      
+      // Remove from both arrays immediately
+      this.formAssignments = this.formAssignments.filter(assignment => assignment.id !== assignmentId);
+      this.filteredAssignments = this.filteredAssignments.filter(assignment => assignment.id !== assignmentId);
+      
+      console.log('After optimistic removal:');
+      console.log('formAssignments count:', this.formAssignments.length);
+      console.log('filteredAssignments count:', this.filteredAssignments.length);
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      // Now perform the actual deletion
+      console.log('Calling backend deletion for ID:', assignmentId);
       this.supabaseService.deleteFormAssignment(assignmentId)
         .then(success => {
+          console.log('Backend deletion result:', success);
           if (success) {
-            this.loadFormAssignments();
+            console.log('Assignment deleted successfully from database');
+            // Optionally reload to ensure consistency
+            setTimeout(() => {
+              console.log('Reloading form assignments for consistency check');
+              this.loadFormAssignments();
+            }, 500);
           } else {
+            console.error('Backend deletion failed, reverting UI');
+            // Revert the optimistic update if deletion failed
+            this.formAssignments = originalAssignments;
+            this.filteredAssignments = originalFiltered;
+            this.cdr.detectChanges();
             alert('Failed to delete assignment. Please try again.');
           }
+        })
+        .catch(error => {
+          console.error('Backend deletion threw error, reverting UI:', error);
+          // Revert the optimistic update on error
+          this.formAssignments = originalAssignments;
+          this.filteredAssignments = originalFiltered;
+          this.cdr.detectChanges();
+          alert('Failed to delete assignment. Please try again.');
         });
+    } else {
+      console.log('User cancelled deletion');
     }
   }
 

@@ -21,6 +21,14 @@ interface VanIssue {
   driver_custom_id?: string;
   driver_phone?: string;
   driver_location?: string;
+  issue_completions?: { [key: number]: boolean };
+  repair_receipt_urls?: string[];
+}
+
+interface ParsedIssue {
+  index: number;
+  description: string;
+  completed: boolean;
 }
 
 @Component({
@@ -55,6 +63,12 @@ export class DriverVanIssuesComponent implements OnInit {
   };
   availableVehicles: string[] = [];
   isGeneratingReport = false;
+
+  // Repair receipt upload properties
+  showReceiptUploadModal = false;
+  selectedIssueForReceipts: VanIssue | null = null;
+  isUploadingReceipts = false;
+  uploadProgress = 0;
 
   constructor(
     private supabaseService: SupabaseService,
@@ -238,8 +252,16 @@ export class DriverVanIssuesComponent implements OnInit {
     return issue.id;
   }
 
+  trackByIssueIndex(index: number, parsedIssue: ParsedIssue): number {
+    return parsedIssue.index;
+  }
+
   trackByImagePath(index: number, imagePath: string): string {
     return imagePath;
+  }
+
+  trackByReceiptPath(index: number, receiptPath: string): string {
+    return receiptPath;
   }
 
   getTodayDate(): string {
@@ -377,5 +399,227 @@ export class DriverVanIssuesComponent implements OnInit {
 
   getPendingCount(): number {
     return this.vanIssues.filter(issue => !issue.verified).length;
+  }
+
+  parseIssuesFromComments(comments: string, issueCompletions?: { [key: number]: boolean }): ParsedIssue[] {
+    if (!comments) return [];
+    
+    // Check if comments contain numbered issues (Issue 1:, Issue 2:, etc.)
+    const numberedIssuePattern = /Issue (\d+):\s*(.+?)(?=Issue \d+:|$)/gs;
+    const matches = [...comments.matchAll(numberedIssuePattern)];
+    
+    if (matches.length > 0) {
+      // Multiple numbered issues found
+      return matches.map((match, index) => ({
+        index: parseInt(match[1]) - 1, // Convert to 0-based index
+        description: match[2].trim(),
+        completed: issueCompletions?.[parseInt(match[1]) - 1] || false
+      }));
+    } else {
+      // Single issue
+      return [{
+        index: 0,
+        description: comments.trim(),
+        completed: issueCompletions?.[0] || false
+      }];
+    }
+  }
+
+  async toggleIssueCompletion(vanIssue: VanIssue, issueIndex: number): Promise<void> {
+    const issueCompletions = { ...(vanIssue.issue_completions || {}) };
+    issueCompletions[issueIndex] = !issueCompletions[issueIndex];
+
+    try {
+      const { error } = await this.supabaseService.getSupabase()
+        .from('van-issues')
+        .update({ issue_completions: issueCompletions })
+        .eq('id', vanIssue.id);
+
+      if (error) {
+        console.error('Error updating issue completion:', error);
+        return;
+      }
+
+      // Update local data
+      const issueIndex = this.vanIssues.findIndex(i => i.id === vanIssue.id);
+      if (issueIndex !== -1) {
+        this.vanIssues[issueIndex].issue_completions = issueCompletions;
+      }
+
+      console.log('Issue completion updated successfully');
+    } catch (error) {
+      console.error('Error updating issue completion:', error);
+    }
+  }
+
+  getCompletionProgress(vanIssue: VanIssue): { completed: number; total: number } {
+    const issues = this.parseIssuesFromComments(vanIssue.driver_comments, vanIssue.issue_completions);
+    const completed = issues.filter(issue => issue.completed).length;
+    return { completed, total: issues.length };
+  }
+
+  isIssueFullyCompleted(vanIssue: VanIssue): boolean {
+    const progress = this.getCompletionProgress(vanIssue);
+    return progress.completed === progress.total && progress.total > 0;
+  }
+
+  // Repair Receipt Methods
+  openReceiptUploadModal(issue: VanIssue): void {
+    this.selectedIssueForReceipts = issue;
+    this.showReceiptUploadModal = true;
+  }
+
+  closeReceiptUploadModal(): void {
+    this.showReceiptUploadModal = false;
+    this.selectedIssueForReceipts = null;
+    this.uploadProgress = 0;
+  }
+
+  async onReceiptFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    
+    if (!files || files.length === 0 || !this.selectedIssueForReceipts) {
+      return;
+    }
+
+    this.isUploadingReceipts = true;
+    this.uploadProgress = 0;
+
+    try {
+      const uploadedUrls: string[] = [];
+      const totalFiles = files.length;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type (images only)
+        if (!file.type.startsWith('image/')) {
+          console.error(`File ${file.name} is not an image`);
+          continue;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          console.error(`File ${file.name} is too large (max 5MB)`);
+          continue;
+        }
+
+        // Generate unique filename
+        const timestamp = new Date().getTime();
+        const randomString = Math.random().toString(36).substring(2, 15);
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `repair-receipts/${this.selectedIssueForReceipts.id}/${timestamp}-${randomString}.${fileExtension}`;
+
+        // Upload to Supabase storage
+        const { data, error } = await this.supabaseService.getSupabase()
+          .storage
+          .from('van-issues')
+          .upload(fileName, file);
+
+        if (error) {
+          console.error('Error uploading receipt:', error);
+          continue;
+        }
+
+        // Get public URL
+        const { data: urlData } = this.supabaseService.getSupabase()
+          .storage
+          .from('van-issues')
+          .getPublicUrl(data.path);
+
+        uploadedUrls.push(data.path);
+        
+        // Update progress
+        this.uploadProgress = Math.round(((i + 1) / totalFiles) * 100);
+      }
+
+      if (uploadedUrls.length > 0) {
+        // Update database with new receipt URLs
+        const currentReceipts = this.selectedIssueForReceipts.repair_receipt_urls || [];
+        const updatedReceipts = [...currentReceipts, ...uploadedUrls];
+
+        const { error } = await this.supabaseService.getSupabase()
+          .from('van-issues')
+          .update({ repair_receipt_urls: updatedReceipts })
+          .eq('id', this.selectedIssueForReceipts.id);
+
+        if (error) {
+          console.error('Error updating database with receipt URLs:', error);
+          return;
+        }
+
+        // Update local data
+        const issueIndex = this.vanIssues.findIndex(issue => issue.id === this.selectedIssueForReceipts!.id);
+        if (issueIndex !== -1) {
+          this.vanIssues[issueIndex].repair_receipt_urls = updatedReceipts;
+        }
+
+        console.log('Repair receipts uploaded successfully');
+        this.closeReceiptUploadModal();
+      }
+
+    } catch (error) {
+      console.error('Error uploading repair receipts:', error);
+    } finally {
+      this.isUploadingReceipts = false;
+      this.uploadProgress = 0;
+      // Clear the input
+      if (input) {
+        input.value = '';
+      }
+    }
+  }
+
+  async deleteReceiptImage(issue: VanIssue, imagePath: string): Promise<void> {
+    try {
+      // Delete from storage
+      const { error: storageError } = await this.supabaseService.getSupabase()
+        .storage
+        .from('van-issues')
+        .remove([imagePath]);
+
+      if (storageError) {
+        console.error('Error deleting receipt from storage:', storageError);
+        return;
+      }
+
+      // Update database
+      const updatedReceipts = (issue.repair_receipt_urls || []).filter(url => url !== imagePath);
+      
+      const { error } = await this.supabaseService.getSupabase()
+        .from('van-issues')
+        .update({ repair_receipt_urls: updatedReceipts })
+        .eq('id', issue.id);
+
+      if (error) {
+        console.error('Error updating database after receipt deletion:', error);
+        return;
+      }
+
+      // Update local data
+      const issueIndex = this.vanIssues.findIndex(i => i.id === issue.id);
+      if (issueIndex !== -1) {
+        this.vanIssues[issueIndex].repair_receipt_urls = updatedReceipts;
+      }
+
+      console.log('Repair receipt deleted successfully');
+
+    } catch (error) {
+      console.error('Error deleting repair receipt:', error);
+    }
+  }
+
+  getReceiptImageUrl(imagePath: string): string {
+    const { data } = this.supabaseService.getSupabase()
+      .storage
+      .from('van-issues')
+      .getPublicUrl(imagePath);
+    
+    return data.publicUrl;
+  }
+
+  hasRepairReceipts(issue: VanIssue): boolean {
+    return !!(issue.repair_receipt_urls && issue.repair_receipt_urls.length > 0);
   }
 } 

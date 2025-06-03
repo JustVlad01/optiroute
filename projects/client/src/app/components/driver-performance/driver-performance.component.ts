@@ -26,6 +26,10 @@ export class DriverPerformanceComponent implements OnInit {
   maxZoom = 3;
   minZoom = 0.5;
 
+  // Properties for grouping by date
+  groupedPerformanceData: any[] = [];
+  expandedDays: { [key: string]: boolean } = {};
+
   @ViewChild('imageElement') imageElement!: ElementRef;
 
   constructor(
@@ -81,9 +85,69 @@ export class DriverPerformanceComponent implements OnInit {
   markPerformanceAsViewed(): void {
     if (!this.driverId) return;
     
+    // Keep localStorage for backward compatibility
     const lastViewedKey = `performance_last_viewed_${this.driverId}`;
     localStorage.setItem(lastViewedKey, new Date().toISOString());
     console.log('Performance marked as viewed for driver:', this.driverId);
+    
+    // Also record in database for admin tracking
+    this.recordPerformanceView();
+  }
+
+  async recordPerformanceView(): Promise<void> {
+    if (!this.driverId) return;
+    
+    try {
+      const supabase = this.supabaseService.getSupabase();
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
+
+      // First check if a record exists for this driver
+      const { data: existingRecord } = await supabase
+        .from('driver_performance_views')
+        .select('*')
+        .eq('driver_id', this.driverId)
+        .limit(1);
+
+      const currentTime = new Date().toISOString();
+
+      if (existingRecord && existingRecord.length > 0) {
+        // Update existing record
+        const { error } = await supabase
+          .from('driver_performance_views')
+          .update({ 
+            viewed_at: currentTime,
+            updated_at: currentTime 
+          })
+          .eq('driver_id', this.driverId);
+
+        if (error) {
+          console.error('Error updating performance view:', error);
+        } else {
+          console.log('Performance view updated successfully for driver:', this.driverId, 'at:', currentTime);
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('driver_performance_views')
+          .insert({
+            driver_id: this.driverId,
+            viewed_at: currentTime,
+            created_at: currentTime,
+            updated_at: currentTime
+          });
+
+        if (error) {
+          console.error('Error inserting performance view:', error);
+        } else {
+          console.log('Performance view recorded successfully for driver:', this.driverId, 'at:', currentTime);
+        }
+      }
+    } catch (error) {
+      console.error('Exception recording performance view:', error);
+    }
   }
 
   async loadPerformanceImages(): Promise<void> {
@@ -203,6 +267,9 @@ export class DriverPerformanceComponent implements OnInit {
       
       console.log('Loaded performance images:', this.performanceImages.length);
       console.log('Loaded standalone comments:', this.standaloneComments.length);
+      
+      // Group performance data by date after loading
+      this.groupPerformanceDataByDate();
     } catch (error) {
       console.error('Exception loading performance images:', error);
       this.performanceImages = [];
@@ -324,5 +391,71 @@ export class DriverPerformanceComponent implements OnInit {
   goBack(): void {
     console.log('Navigating back to dashboard');
     this.router.navigate(['/dashboard']);
+  }
+
+  groupPerformanceDataByDate(): void {
+    // Combine images and standalone comments
+    const allItems = [
+      ...this.performanceImages.map(img => ({ ...img, type: 'image' })),
+      ...this.standaloneComments.map(comment => ({ 
+        ...comment, 
+        type: 'comment',
+        created_at: comment.created_at,
+        name: comment.image_name || 'General Comment'
+      }))
+    ];
+
+    // Group by date
+    const grouped = allItems.reduce((groups: any, item: any) => {
+      const date = new Date(item.created_at);
+      const dateKey = date.toDateString(); // e.g., "Mon Jan 20 2025"
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = {
+          date: dateKey,
+          displayDate: this.formatDisplayDate(date),
+          items: [],
+          isExpanded: false
+        };
+      }
+      
+      groups[dateKey].items.push(item);
+      return groups;
+    }, {});
+
+    // Convert to array and sort by date (most recent first)
+    this.groupedPerformanceData = Object.values(grouped).sort((a: any, b: any) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
+    // Auto-expand the most recent day
+    if (this.groupedPerformanceData.length > 0) {
+      this.groupedPerformanceData[0].isExpanded = true;
+    }
+
+    console.log('Grouped performance data:', this.groupedPerformanceData);
+  }
+
+  formatDisplayDate(date: Date): string {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
+  }
+
+  toggleDayExpansion(dayGroup: any): void {
+    dayGroup.isExpanded = !dayGroup.isExpanded;
   }
 }
