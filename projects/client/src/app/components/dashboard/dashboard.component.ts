@@ -21,12 +21,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   hasNewPerformanceData: boolean = false;
   newPerformanceCount: number = 0;
   
+  // PWA properties
+  showPwaButton: boolean = false;
+  
   // Interval for periodic checks
   private notificationCheckInterval: any;
   
   constructor(
     private router: Router,
-    private supabaseService: SupabaseService
+    private supabaseService: SupabaseService,
+    private pwaService: PwaService
   ) { }
 
   async ngOnInit(): Promise<void> {
@@ -55,6 +59,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!this.driverData) {
       this.router.navigate(['/login']);
     }
+    
+    // Check if PWA can be installed
+    this.showPwaButton = this.pwaService.canInstall() && !this.pwaService.isInstalled();
   }
 
   ngOnDestroy(): void {
@@ -136,6 +143,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   navigateToPerformance(): void {
     this.markPerformanceAsViewed();
     this.router.navigate(['/driver-performance']);
+  }
+
+  installPwa(): void {
+    this.pwaService.showInstallPrompt();
+    // Hide the button after installation attempt
+    setTimeout(() => {
+      this.showPwaButton = this.pwaService.canInstall() && !this.pwaService.isInstalled();
+    }, 1000);
   }
 
   logout(): void {

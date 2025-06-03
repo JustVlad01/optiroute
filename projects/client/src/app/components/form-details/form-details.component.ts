@@ -56,10 +56,6 @@ export class FormDetailsComponent implements OnInit {
       orders_products_issues_reason: [''],
       site_issues: [false],
       site_issues_reason: [''],
-      customer_complaints: [false],
-      customer_complaints_reason: [''],
-      product_complaints: [false],
-      product_complaints_reason: [''],
       shift_end_time: [''],
       closing_mileage: [''],
       number_of_crates_in: [''],
@@ -138,24 +134,6 @@ export class FormDetailsComponent implements OnInit {
       this.driverForm.get('site_issues_reason')?.updateValueAndValidity();
     });
     
-    this.driverForm.get('customer_complaints')?.valueChanges.subscribe(value => {
-      if (value) {
-        this.driverForm.get('customer_complaints_reason')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('customer_complaints_reason')?.clearValidators();
-      }
-      this.driverForm.get('customer_complaints_reason')?.updateValueAndValidity();
-    });
-    
-    this.driverForm.get('product_complaints')?.valueChanges.subscribe(value => {
-      if (value) {
-        this.driverForm.get('product_complaints_reason')?.setValidators([Validators.required]);
-      } else {
-        this.driverForm.get('product_complaints_reason')?.clearValidators();
-      }
-      this.driverForm.get('product_complaints_reason')?.updateValueAndValidity();
-    });
-    
     // Clear section errors when form values change
     this.driverForm.valueChanges.subscribe(() => {
       if (this.showSectionErrors) {
@@ -220,10 +198,6 @@ export class FormDetailsComponent implements OnInit {
         orders_products_issues_reason: completedForm.orders_products_issues_reason,
         site_issues: completedForm.site_issues,
         site_issues_reason: completedForm.site_issues_reason,
-        customer_complaints: completedForm.customer_complaints,
-        customer_complaints_reason: completedForm.customer_complaints_reason,
-        product_complaints: completedForm.product_complaints,
-        product_complaints_reason: completedForm.product_complaints_reason,
         shift_end_time: completedForm.shift_end_time,
         closing_mileage: completedForm.closing_mileage,
         number_of_crates_in: completedForm.number_of_crates_in,
@@ -257,11 +231,20 @@ export class FormDetailsComponent implements OnInit {
       (formValues.paperwork_issues && formValues.paperwork_issues_reason?.trim()) || 
       (formValues.orders_products_issues && formValues.orders_products_issues_reason?.trim()) || 
       (formValues.site_issues && formValues.site_issues_reason?.trim()) || 
-      (formValues.customer_complaints && formValues.customer_complaints_reason?.trim()) || 
-      (formValues.product_complaints && formValues.product_complaints_reason?.trim()) || 
       formValues.has_van_issues || 
       !formValues.van_fridge_working
     );
+  }
+
+  shouldRedirectToRejectedOrderForm(formValues: any): string | null {
+    if (formValues.orders_products_issues && formValues.orders_products_issues_reason) {
+      return formValues.orders_products_issues_reason; // This will be the route like 'rejected-order-temp-form' or 'rejected-order-form'
+    }
+    return null;
+  }
+
+  shouldRedirectToVanReport(formValues: any): boolean {
+    return formValues.has_van_issues;
   }
 
   validateSections(): string[] {
@@ -303,9 +286,7 @@ export class FormDetailsComponent implements OnInit {
     const issueFields = [
       { issue: 'paperwork_issues', reason: 'paperwork_issues_reason' },
       { issue: 'orders_products_issues', reason: 'orders_products_issues_reason' },
-      { issue: 'site_issues', reason: 'site_issues_reason' },
-      { issue: 'customer_complaints', reason: 'customer_complaints_reason' },
-      { issue: 'product_complaints', reason: 'product_complaints_reason' }
+      { issue: 'site_issues', reason: 'site_issues_reason' }
     ];
     
     for (const field of issueFields) {
@@ -317,10 +298,6 @@ export class FormDetailsComponent implements OnInit {
     }
     
     return errors;
-  }
-
-  shouldRedirectToVanReport(formValues: any): boolean {
-    return formValues.has_van_issues;
   }
 
   async submitForm(): Promise<void> {
@@ -350,6 +327,9 @@ export class FormDetailsComponent implements OnInit {
       // Check if we need to redirect to van issues report
       const needsVanReport = this.shouldRedirectToVanReport(formValues);
       
+      // Check if we need to redirect to rejected order form
+      const rejectedOrderFormRoute = this.shouldRedirectToRejectedOrderForm(formValues);
+      
       // Create the final form data with default values for required fields
       const formData = {
         driver_name: this.driverName,
@@ -374,10 +354,6 @@ export class FormDetailsComponent implements OnInit {
         orders_products_issues_reason: formValues.orders_products_issues ? (formValues.orders_products_issues_reason || '') : null,
         site_issues: formValues.site_issues || false,
         site_issues_reason: formValues.site_issues ? (formValues.site_issues_reason || '') : null,
-        customer_complaints: formValues.customer_complaints || false,
-        customer_complaints_reason: formValues.customer_complaints ? (formValues.customer_complaints_reason || '') : null,
-        product_complaints: formValues.product_complaints || false,
-        product_complaints_reason: formValues.product_complaints ? (formValues.product_complaints_reason || '') : null,
         shift_end_time: formValues.shift_end_time || '',
         closing_mileage: formValues.closing_mileage || null,
         number_of_crates_in: formValues.number_of_crates_in || null,
@@ -402,9 +378,11 @@ export class FormDetailsComponent implements OnInit {
           
           this.submitting = false;
           
-          // Redirect based on whether van issues report is needed
+          // Redirect based on priority: van issues first, then rejected order forms, then success page
           if (needsVanReport) {
             this.router.navigate(['/report-van-issues']);
+          } else if (rejectedOrderFormRoute) {
+            this.router.navigate([`/${rejectedOrderFormRoute}`]);
           } else {
             this.router.navigate(['/driver-forms'], { 
               queryParams: { success: true } 
@@ -467,6 +445,9 @@ export class FormDetailsComponent implements OnInit {
     // Check if we need to redirect to van issues report
     const needsVanReport = this.shouldRedirectToVanReport(formValues);
     
+    // Check if we need to redirect to rejected order form
+    const rejectedOrderFormRoute = this.shouldRedirectToRejectedOrderForm(formValues);
+    
     // Create the final form data with default values for required fields
     const formData = {
       driver_name: this.driverName,
@@ -491,10 +472,6 @@ export class FormDetailsComponent implements OnInit {
       orders_products_issues_reason: formValues.orders_products_issues ? (formValues.orders_products_issues_reason || '') : null,
       site_issues: formValues.site_issues || false,
       site_issues_reason: formValues.site_issues ? (formValues.site_issues_reason || '') : null,
-      customer_complaints: formValues.customer_complaints || false,
-      customer_complaints_reason: formValues.customer_complaints ? (formValues.customer_complaints_reason || '') : null,
-      product_complaints: formValues.product_complaints || false,
-      product_complaints_reason: formValues.product_complaints ? (formValues.product_complaints_reason || '') : null,
       shift_end_time: formValues.shift_end_time || '',
       closing_mileage: formValues.closing_mileage || null,
       number_of_crates_in: formValues.number_of_crates_in || null,
@@ -519,9 +496,11 @@ export class FormDetailsComponent implements OnInit {
         
         this.submitting = false;
         
-        // Redirect based on whether van issues report is needed
+        // Redirect based on priority: van issues first, then rejected order forms, then success page
         if (needsVanReport) {
           this.router.navigate(['/report-van-issues']);
+        } else if (rejectedOrderFormRoute) {
+          this.router.navigate([`/${rejectedOrderFormRoute}`]);
         } else {
           this.router.navigate(['/driver-forms'], { 
             queryParams: { success: true } 

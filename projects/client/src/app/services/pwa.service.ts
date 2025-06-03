@@ -45,7 +45,7 @@ export class PwaService {
     }
   }
 
-  private showInstallPrompt(): void {
+  public showInstallPrompt(): void {
     console.log('PWA: showInstallPrompt() called');
     console.log('PWA: deferredPrompt available:', !!this.deferredPrompt);
     console.log('PWA: isIos():', this.isIos());

@@ -116,7 +116,6 @@ export class DriverFormsComponent implements OnInit {
         id: 'rejected-order-temp',
         form_type: 'rejected_order_temp_checklist',
         title: 'Rejected Order - Temperature Issue Report',
-        description: 'Report products with above-normal temperatures and complete temperature checklist',
         icon: 'bi bi-thermometer-half',
         route: '/rejected-order-temp-form'
       },
@@ -124,7 +123,6 @@ export class DriverFormsComponent implements OnInit {
         id: 'rejected-order-damaged',
         form_type: 'rejected_order_checklist', 
         title: 'Rejected Order Checklist - Damaged Product',
-        description: 'Report damaged products and complete damage assessment checklist',
         icon: 'bi bi-x-octagon',
         route: '/rejected-order-form'
       }

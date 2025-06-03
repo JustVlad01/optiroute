@@ -204,11 +204,33 @@
               </div>
             </div>
             <div *ngIf="driverForm.get('orders_products_issues')?.value" class="issue-details mt-1 mb-2 ms-4">
-              <textarea class="form-control form-control-sm" id="orders_products_issues_reason" 
-                        formControlName="orders_products_issues_reason" rows="2" 
-                        placeholder="Please describe the issue"></textarea>
+              <div class="mb-3">
+                <label class="form-label small fw-bold">Select the appropriate form to complete:</label>
+                <div class="alert alert-info py-2 px-3 mb-3">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <small>You will be redirected to the selected form after submitting this daily driver form.</small>
+                </div>
+                <div class="form-check mb-2 p-2 border border-light rounded">
+                  <input class="form-check-input" type="radio" name="selected_order_form" id="temp_issue_form" 
+                         value="rejected-order-temp-form" formControlName="orders_products_issues_reason">
+                  <label class="form-check-label w-100" for="temp_issue_form">
+                    <i class="bi bi-thermometer-half me-2 text-danger"></i>
+                    <strong>Temperature Issue Report</strong>
+                    <small class="d-block text-muted mt-1">For products with temperature-related problems</small>
+                  </label>
+                </div>
+                <div class="form-check p-2 border border-light rounded">
+                  <input class="form-check-input" type="radio" name="selected_order_form" id="damaged_product_form" 
+                         value="rejected-order-form" formControlName="orders_products_issues_reason">
+                  <label class="form-check-label w-100" for="damaged_product_form">
+                    <i class="bi bi-x-octagon me-2 text-warning"></i>
+                    <strong>Damaged Product Checklist</strong>
+                    <small class="d-block text-muted mt-1">For damaged or defective products</small>
+                  </label>
+                </div>
+              </div>
               <div *ngIf="driverForm.get('orders_products_issues_reason')?.invalid && driverForm.get('orders_products_issues_reason')?.touched" class="text-danger small mt-1">
-                Required
+                Please select a form to complete
               </div>
             </div>
           </div>
@@ -228,46 +250,6 @@
                         formControlName="site_issues_reason" rows="2" 
                         placeholder="Please describe the issue"></textarea>
               <div *ngIf="driverForm.get('site_issues_reason')?.invalid && driverForm.get('site_issues_reason')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
-            </div>
-          </div>
-          
-          <!-- Customer Complaints -->
-          <div class="issue-row">
-            <div class="d-flex align-items-center py-2">
-              <i class="bi bi-people me-2 text-primary"></i>
-              <span class="flex-grow-1">Customer Complaints</span>
-              <div class="form-check form-switch ms-2 mb-0">
-                <input class="form-check-input" type="checkbox" id="customer_complaints" formControlName="customer_complaints">
-                <label class="form-check-label small" for="customer_complaints">Yes</label>
-              </div>
-            </div>
-            <div *ngIf="driverForm.get('customer_complaints')?.value" class="issue-details mt-1 mb-2 ms-4">
-              <textarea class="form-control form-control-sm" id="customer_complaints_reason" 
-                        formControlName="customer_complaints_reason" rows="2" 
-                        placeholder="Please describe the complaint"></textarea>
-              <div *ngIf="driverForm.get('customer_complaints_reason')?.invalid && driverForm.get('customer_complaints_reason')?.touched" class="text-danger small mt-1">
-                Required
-              </div>
-            </div>
-          </div>
-          
-          <!-- Product Complaints -->
-          <div class="issue-row">
-            <div class="d-flex align-items-center py-2">
-              <i class="bi bi-exclamation-triangle me-2 text-primary"></i>
-              <span class="flex-grow-1">Product Complaints</span>
-              <div class="form-check form-switch ms-2 mb-0">
-                <input class="form-check-input" type="checkbox" id="product_complaints" formControlName="product_complaints">
-                <label class="form-check-label small" for="product_complaints">Yes</label>
-              </div>
-            </div>
-            <div *ngIf="driverForm.get('product_complaints')?.value" class="issue-details mt-1 mb-2 ms-4">
-              <textarea class="form-control form-control-sm" id="product_complaints_reason" 
-                        formControlName="product_complaints_reason" rows="2" 
-                        placeholder="Please describe the complaint"></textarea>
-              <div *ngIf="driverForm.get('product_complaints_reason')?.invalid && driverForm.get('product_complaints_reason')?.touched" class="text-danger small mt-1">
                 Required
               </div>
             </div>

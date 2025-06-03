@@ -697,16 +697,16 @@
         <p *ngIf="searchTerm || dateFilter">Try adjusting your search criteria or date filter.</p>
       </div>
 
-      <!-- Van Issues Accordion -->
-      <div *ngIf="!vanIssuesLoading && (searchTerm || dateFilter ? filteredVanIssues.length > 0 : vanIssues.length > 0)" class="van-issues-accordion">
-        <div class="accordion-item" *ngFor="let issue of paginatedVanIssues; let i = index" 
+      <!-- Van Issues List -->
+      <div *ngIf="!vanIssuesLoading && (searchTerm || dateFilter ? filteredVanIssues.length > 0 : vanIssues.length > 0)" class="van-issues-list">
+        <div class="issue-card" *ngFor="let issue of paginatedVanIssues; let i = index" 
              [class.verified]="issue.verified"
              [class.expanded]="isIssueExpanded(i)">
           
-          <!-- Accordion Header (Collapsed View) -->
-          <div class="accordion-header" (click)="toggleIssueExpansion(i)">
-            <div class="header-main">
-              <div class="vehicle-driver-info">
+          <!-- Issue Header -->
+          <div class="issue-header" (click)="toggleIssueExpansion(i)">
+            <div class="header-content">
+              <div class="vehicle-info">
                 <div class="vehicle-badge">{{ issue.van_registration }}</div>
                 <div class="driver-name">{{ issue.driver_name }}</div>
                 <small class="driver-id">ID: {{ issue.driver_custom_id }}</small>
@@ -727,7 +727,7 @@
                 </div>
               </div>
               
-              <div class="header-badges">
+              <div class="issue-badges">
                 <span class="status-badge" [class.verified]="issue.verified" [class.pending]="!issue.verified">
                   <i class="bi" [class.bi-check-circle-fill]="issue.verified" [class.bi-clock]="!issue.verified"></i>
                   {{ issue.verified ? 'Verified' : 'Pending' }}
@@ -741,122 +741,118 @@
             </div>
           </div>
           
-          <!-- Accordion Content (Expanded View) -->
-          <div class="accordion-content" *ngIf="isIssueExpanded(i)">
-            <div class="expanded-details">
-              
-              <!-- Issue Details Section -->
-              <div class="detail-section">
-                <h4><i class="bi bi-exclamation-triangle"></i> Issue Details</h4>
-                <div class="issues-container">
-                  <div class="individual-issues">
-                    <div class="issue-item" 
-                         *ngFor="let parsedIssue of parseIssuesFromComments(issue.driver_comments, issue.issue_completions); trackBy: trackByIssueIndex"
-                         [class.completed]="parsedIssue.completed">
-                      <div class="issue-checkbox" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
-                        <input type="checkbox" 
-                               [id]="'issue-' + issue.id + '-' + parsedIssue.index"
-                               [checked]="parsedIssue.completed"
-                               (change)="toggleIssueCompletion(issue, parsedIssue.index)"
-                               class="completion-checkbox">
-                        <label [for]="'issue-' + issue.id + '-' + parsedIssue.index" class="checkbox-label">
-                          <i class="bi bi-check" *ngIf="parsedIssue.completed"></i>
-                        </label>
-                      </div>
-                      <div class="issue-description">
-                        <span class="issue-number" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
-                          {{ parsedIssue.index + 1 }}.
-                        </span>
-                        <span class="issue-text" [class.completed-text]="parsedIssue.completed">
-                          {{ parsedIssue.description }}
-                        </span>
-                      </div>
-                    </div>
+          <!-- Issue Details (Expanded) -->
+          <div class="issue-details" *ngIf="isIssueExpanded(i)">
+            
+            <!-- Issue Descriptions -->
+            <div class="details-section">
+              <h4><i class="bi bi-exclamation-triangle"></i> Issue Details</h4>
+              <div class="individual-issues">
+                <div class="issue-item" 
+                     *ngFor="let parsedIssue of parseIssuesFromComments(issue.driver_comments, issue.issue_completions); trackBy: trackByIssueIndex"
+                     [class.completed]="parsedIssue.completed">
+                  <div class="issue-checkbox" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                    <input type="checkbox" 
+                           [id]="'issue-' + issue.id + '-' + parsedIssue.index"
+                           [checked]="parsedIssue.completed"
+                           (change)="toggleIssueCompletion(issue, parsedIssue.index)"
+                           class="completion-checkbox">
+                    <label [for]="'issue-' + issue.id + '-' + parsedIssue.index" class="checkbox-label">
+                      <i class="bi bi-check" *ngIf="parsedIssue.completed"></i>
+                    </label>
+                  </div>
+                  <div class="issue-description">
+                    <span class="issue-number" *ngIf="parseIssuesFromComments(issue.driver_comments, issue.issue_completions).length > 1">
+                      {{ parsedIssue.index + 1 }}.
+                    </span>
+                    <span class="issue-text" [class.completed-text]="parsedIssue.completed">
+                      {{ parsedIssue.description }}
+                    </span>
                   </div>
                 </div>
               </div>
-              
-              <!-- Images Section -->
-              <div class="detail-section" *ngIf="issue.image_urls && issue.image_urls.length > 0">
-                <h4><i class="bi bi-camera"></i> Images ({{ issue.image_urls.length }})</h4>
-                <div class="image-gallery">
-                  <img *ngFor="let imagePath of issue.image_urls.slice(0, 4); trackBy: trackByImagePath"
-                       [src]="getImageUrl(imagePath)" 
-                       [alt]="'Issue documentation'"
-                       (click)="openVanIssueImageModal(getImageUrl(imagePath), issue)"
+            </div>
+            
+            <!-- Images -->
+            <div class="details-section" *ngIf="issue.image_urls && issue.image_urls.length > 0">
+              <h4><i class="bi bi-camera"></i> Images ({{ issue.image_urls.length }})</h4>
+              <div class="image-gallery">
+                <img *ngFor="let imagePath of issue.image_urls.slice(0, 4); trackBy: trackByImagePath"
+                     [src]="getImageUrl(imagePath)" 
+                     [alt]="'Issue documentation'"
+                     (click)="openVanIssueImageModal(getImageUrl(imagePath), issue)"
+                     (error)="onImageError($event)"
+                     class="thumbnail-image"
+                     loading="lazy">
+                <div *ngIf="issue.image_urls.length > 4" class="more-images">
+                  +{{ issue.image_urls.length - 4 }} more
+                </div>
+              </div>
+            </div>
+            
+            <!-- Repair Receipts -->
+            <div class="details-section" *ngIf="issue.repair_receipt_urls && issue.repair_receipt_urls.length > 0">
+              <h4><i class="bi bi-receipt"></i> Repair Receipts ({{ issue.repair_receipt_urls.length }})</h4>
+              <div class="receipt-gallery">
+                <div *ngFor="let receiptPath of issue.repair_receipt_urls.slice(0, 4); trackBy: trackByReceiptPath" class="receipt-item">
+                  <img [src]="getImageUrl(receiptPath)" 
+                       [alt]="'Repair receipt'"
+                       (click)="openVanIssueImageModal(getImageUrl(receiptPath), issue)"
                        (error)="onImageError($event)"
-                       class="thumbnail-image"
+                       class="thumbnail-receipt"
                        loading="lazy">
-                  <div *ngIf="issue.image_urls.length > 4" class="more-images">
-                    +{{ issue.image_urls.length - 4 }} more
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Repair Receipts Section -->
-              <div class="detail-section" *ngIf="issue.repair_receipt_urls && issue.repair_receipt_urls.length > 0">
-                <h4><i class="bi bi-receipt"></i> Repair Receipts ({{ issue.repair_receipt_urls.length }})</h4>
-                <div class="receipt-gallery">
-                  <div *ngFor="let receiptPath of issue.repair_receipt_urls.slice(0, 4); trackBy: trackByReceiptPath" class="receipt-item">
-                    <img [src]="getImageUrl(receiptPath)" 
-                         [alt]="'Repair receipt'"
-                         (click)="openVanIssueImageModal(getImageUrl(receiptPath), issue)"
-                         (error)="onImageError($event)"
-                         class="thumbnail-receipt"
-                         loading="lazy">
-                    <button 
-                      class="delete-receipt-btn"
-                      (click)="deleteReceiptImage(issue, receiptPath); $event.stopPropagation()"
-                      title="Delete receipt"
-                    >
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                  <div *ngIf="issue.repair_receipt_urls.length > 4" class="more-receipts">
-                    +{{ issue.repair_receipt_urls.length - 4 }} more
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Actions Section -->
-              <div class="detail-section">
-                <h4><i class="bi bi-gear"></i> Actions</h4>
-                <div class="action-buttons-expanded">
                   <button 
-                    *ngIf="issue.image_urls && issue.image_urls.length > 0"
-                    class="btn-view"
-                    (click)="openVanIssueImageModal(getImageUrl(issue.image_urls[0]), issue)"
+                    class="delete-receipt-btn"
+                    (click)="deleteReceiptImage(issue, receiptPath); $event.stopPropagation()"
+                    title="Delete receipt"
                   >
-                    <i class="bi bi-eye"></i>
-                    View Images
+                    <i class="bi bi-trash"></i>
                   </button>
+                </div>
+                <div *ngIf="issue.repair_receipt_urls.length > 4" class="more-receipts">
+                  +{{ issue.repair_receipt_urls.length - 4 }} more
+                </div>
+              </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="details-section">
+              <h4><i class="bi bi-gear"></i> Actions</h4>
+              <div class="action-buttons">
+                <button 
+                  *ngIf="issue.image_urls && issue.image_urls.length > 0"
+                  class="btn-view"
+                  (click)="openVanIssueImageModal(getImageUrl(issue.image_urls[0]), issue)"
+                >
+                  <i class="bi bi-eye"></i>
+                  View Images
+                </button>
 
-                  <button 
-                    class="upload-receipts-btn"
-                    (click)="openReceiptUploadModal(issue)"
-                    title="Upload Repair Receipts"
-                  >
-                    <i class="bi bi-cloud-upload"></i>
-                    {{ hasRepairReceipts(issue) ? 'Add More' : 'Upload' }} Receipts
-                  </button>
+                <button 
+                  class="upload-receipts-btn"
+                  (click)="openReceiptUploadModal(issue)"
+                  title="Upload Repair Receipts"
+                >
+                  <i class="bi bi-cloud-upload"></i>
+                  {{ hasRepairReceipts(issue) ? 'Add More' : 'Upload' }} Receipts
+                </button>
 
-                  <button 
-                    *ngIf="!issue.verified"
-                    class="btn-pdf"
-                    (click)="verifyIssue(issue.id)"
-                    [disabled]="isVerifying[issue.id]"
-                  >
-                    <i class="bi bi-check-circle" *ngIf="!isVerifying[issue.id]"></i>
-                    <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[issue.id]"></i>
-                    {{ isVerifying[issue.id] ? 'Processing...' : 'Mark Seen' }}
-                  </button>
-                  <span *ngIf="issue.verified" class="verified-label">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Issue Seen
-                  </span>
+                <button 
+                  *ngIf="!issue.verified"
+                  class="btn-verify"
+                  (click)="openVanIssueVerificationModal(issue)"
+                  [disabled]="isVerifying[issue.id]"
+                >
+                  <i class="bi bi-check-circle" *ngIf="!isVerifying[issue.id]"></i>
+                  <i class="bi bi-arrow-clockwise spin" *ngIf="isVerifying[issue.id]"></i>
+                  {{ isVerifying[issue.id] ? 'Processing...' : 'Mark as Verified' }}
+                </button>
+
+                <div class="verified-label" *ngIf="issue.verified">
+                  <i class="bi bi-shield-check"></i>
+                  Verified {{ issue.verified_at ? ('on ' + formatVanIssueDate(issue.verified_at)) : '' }}
                 </div>
               </div>
-              
             </div>
           </div>
         </div>

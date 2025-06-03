@@ -128,3 +128,11 @@
     </div>
   </div>
 </div>
+
+<!-- PWA Download Footer -->
+<footer class="pwa-footer" *ngIf="showPwaButton">
+  <button class="pwa-footer-btn" (click)="installPwa()">
+    <i class="bi bi-download"></i>
+    <span>Install App</span>
+  </button>
+</footer>
