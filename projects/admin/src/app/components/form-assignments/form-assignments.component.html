@@ -78,6 +78,12 @@
             <i class="bi bi-plus-circle"></i> 
             {{ showAssignmentForm ? 'Cancel' : 'Assign New Form' }}
           </button>
+
+          <button class="btn-assign-all" (click)="assignToAllDrivers()" [disabled]="drivers.length === 0 || isAssigningToAll">
+            <i class="bi bi-people-fill" *ngIf="!isAssigningToAll"></i>
+            <i class="bi bi-arrow-clockwise spin" *ngIf="isAssigningToAll"></i>
+            {{ isAssigningToAll ? 'Assigning...' : 'Assign to All Drivers' }}
+          </button>
         </div>
       </div>
       

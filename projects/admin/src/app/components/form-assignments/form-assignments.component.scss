@@ -289,6 +289,71 @@
   }
 }
 
+.btn-assign {
+  background-color: #0a3161;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-left: 0.5rem;
+  
+  &:hover {
+    background-color: #0d4485;
+  }
+  
+  i {
+    font-size: 0.85rem;
+  }
+}
+
+.btn-assign-all {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5855eb, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  
+  &:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  i {
+    font-size: 0.85rem;
+  }
+  
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .status-options {
   display: flex;
   flex-direction: row;
@@ -330,29 +395,6 @@
   
   &:hover {
     background-color: #e4e4e4;
-  }
-  
-  i {
-    font-size: 0.85rem;
-  }
-}
-
-.btn-assign {
-  background-color: #0a3161;
-  color: white;
-  border: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-left: 0.5rem;
-  
-  &:hover {
-    background-color: #0d4485;
   }
   
   i {

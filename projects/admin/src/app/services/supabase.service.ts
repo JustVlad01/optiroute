@@ -314,6 +314,39 @@ export class SupabaseService {
     return data;
   }
 
+  // Method to assign forms to all drivers at once
+  async assignFormToAllDrivers(dueDate?: string | null, notes?: string, resetPeriod?: number) {
+    console.log('Assigning forms to all drivers');
+    
+    // First, get all drivers
+    const drivers = await this.getAllDrivers();
+    if (!drivers || drivers.length === 0) {
+      console.log('No drivers found to assign forms to');
+      return null;
+    }
+
+    // Create assignment records for all drivers
+    const assignments = drivers.map(driver => ({
+      driver_id: driver.id,
+      due_date: dueDate || null,
+      notes: notes || 'Form assigned to all drivers',
+      reset_period: resetPeriod || 24
+    }));
+
+    const { data, error } = await this.supabase
+      .from('driver_form_assignments')
+      .insert(assignments)
+      .select();
+
+    if (error) {
+      console.error('Error assigning forms to all drivers:', error);
+      return null;
+    }
+
+    console.log(`Forms assigned to ${data?.length || 0} drivers`);
+    return data;
+  }
+
   // Method to get all form assignments
   async getAllFormAssignments() {
     console.log('Getting all form assignments');

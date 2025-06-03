@@ -539,7 +539,7 @@
           <i class="bi bi-cloud-upload"></i>
           Upload Repair Receipts
         </h4>
-        <button class="close-btn" (click)="closeReceiptUploadModal()" aria-label="Close receipt upload">
+        <button class="close-modal-btn" (click)="closeReceiptUploadModal()" aria-label="Close receipt upload">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
@@ -549,39 +549,61 @@
         
         <!-- Issue Summary -->
         <div *ngIf="selectedIssueForReceipts" class="issue-summary">
-          <h5>Issue Details:</h5>
+          <div class="summary-header">
+            <i class="bi bi-info-circle"></i>
+            <h5>Issue Details</h5>
+          </div>
           <div class="summary-details">
-            <p><strong>Vehicle:</strong> {{ selectedIssueForReceipts.van_registration }}</p>
-            <p><strong>Driver:</strong> {{ selectedIssueForReceipts.driver_name }}</p>
-            <p><strong>Date:</strong> {{ formatDate(selectedIssueForReceipts.created_at) }}</p>
+            <div class="detail-item">
+              <span class="label">Vehicle:</span>
+              <span class="value">{{ selectedIssueForReceipts.van_registration }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Driver:</span>
+              <span class="value">{{ selectedIssueForReceipts.driver_name }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Date:</span>
+              <span class="value">{{ formatDate(selectedIssueForReceipts.created_at) }}</span>
+            </div>
           </div>
         </div>
 
         <!-- File Upload Section -->
         <div class="upload-section">
-          <div class="upload-instructions">
-            <h5>Upload Repair Receipt Images</h5>
-            <p>Select one or more images of repair receipts (JPG, PNG, GIF). Maximum 5MB per file.</p>
-          </div>
-          
-          <div class="file-input-container">
-            <input 
-              type="file" 
-              id="receiptFiles"
-              accept="image/*"
-              multiple
-              (change)="onReceiptFilesSelected($event)"
-              [disabled]="isUploadingReceipts"
-              class="file-input"
-            >
-            <label for="receiptFiles" class="file-input-label" [class.disabled]="isUploadingReceipts">
+          <div class="upload-area" [class.dragover]="false">
+            <div class="upload-icon">
               <i class="bi bi-cloud-upload"></i>
-              {{ isUploadingReceipts ? 'Uploading...' : 'Choose Receipt Images' }}
-            </label>
+            </div>
+            <div class="upload-text">
+              <h5>Upload Repair Receipt Images</h5>
+              <p>Select one or more images of repair receipts (JPG, PNG, GIF). Maximum 5MB per file.</p>
+              <div class="file-types">Supported formats: JPG, PNG, GIF</div>
+            </div>
+            
+            <div class="file-input-container">
+              <input 
+                type="file" 
+                id="receiptFiles"
+                accept="image/*"
+                multiple
+                (change)="onReceiptFilesSelected($event)"
+                [disabled]="isUploadingReceipts"
+                class="file-input"
+              >
+              <label for="receiptFiles" class="file-input-label" [class.disabled]="isUploadingReceipts">
+                <i class="bi bi-cloud-upload"></i>
+                {{ isUploadingReceipts ? 'Uploading...' : 'Choose Receipt Images' }}
+              </label>
+            </div>
           </div>
           
           <!-- Upload Progress -->
           <div *ngIf="isUploadingReceipts" class="upload-progress">
+            <div class="progress-label">
+              <i class="bi bi-upload"></i>
+              Uploading receipts...
+            </div>
             <div class="progress-bar">
               <div class="progress-fill" [style.width.%]="uploadProgress"></div>
             </div>
@@ -591,24 +613,24 @@
 
         <!-- Existing Receipts -->
         <div *ngIf="selectedIssueForReceipts && hasRepairReceipts(selectedIssueForReceipts)" class="existing-receipts">
-          <h5>Current Repair Receipts:</h5>
+          <div class="receipts-header">
+            <i class="bi bi-receipt"></i>
+            <h5>Current Repair Receipts ({{ selectedIssueForReceipts.repair_receipt_urls?.length || 0 }})</h5>
+          </div>
           <div class="receipt-gallery">
             <div 
               *ngFor="let receiptPath of selectedIssueForReceipts.repair_receipt_urls; trackBy: trackByReceiptPath"
-              class="receipt-item"
-            >
+              class="receipt-item">
               <img 
                 [src]="getReceiptImageUrl(receiptPath)" 
                 [alt]="'Repair receipt'"
                 (click)="openImageModal(getReceiptImageUrl(receiptPath), selectedIssueForReceipts)"
                 class="receipt-thumbnail"
-                loading="lazy"
-              >
+                loading="lazy">
               <button 
                 class="delete-receipt-btn"
                 (click)="deleteReceiptImage(selectedIssueForReceipts, receiptPath)"
-                title="Delete receipt"
-              >
+                title="Delete receipt">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -619,9 +641,16 @@
       
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <button class="cancel-btn" (click)="closeReceiptUploadModal()">
-          Close
-        </button>
+        <div class="upload-info">
+          <span *ngIf="selectedIssueForReceipts && hasRepairReceipts(selectedIssueForReceipts)" class="file-count">
+            {{ selectedIssueForReceipts.repair_receipt_urls?.length || 0 }} receipt(s) uploaded
+          </span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" (click)="closeReceiptUploadModal()">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>

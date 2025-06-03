@@ -38,6 +38,9 @@ export class FormAssignmentsComponent implements OnInit {
   // Submission date filter options
   showSubmittedOnly: boolean = false;
   showNotSubmittedOnly: boolean = false;
+  
+  // Bulk assignment state
+  isAssigningToAll: boolean = false;
 
   constructor(
     private supabaseService: SupabaseService,
@@ -509,6 +512,36 @@ export class FormAssignmentsComponent implements OnInit {
         control?.markAsTouched();
       });
     }
+  }
+
+  assignToAllDrivers(): void {
+    if (this.drivers.length === 0) {
+      alert('No drivers available to assign forms to.');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to assign a form to all ${this.drivers.length} drivers?`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    this.isAssigningToAll = true;
+    
+    this.supabaseService.assignFormToAllDrivers()
+      .then(result => {
+        this.isAssigningToAll = false;
+        if (result) {
+          alert(`Successfully assigned forms to ${result.length} drivers.`);
+          this.loadFormAssignments();
+        } else {
+          alert('Failed to assign forms to all drivers. Please try again.');
+        }
+      })
+      .catch(error => {
+        this.isAssigningToAll = false;
+        console.error('Error assigning forms to all drivers:', error);
+        alert('An error occurred while assigning forms. Please try again.');
+      });
   }
 
   getResetPeriodText(hours: number): string {

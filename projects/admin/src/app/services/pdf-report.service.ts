@@ -54,38 +54,35 @@ export class PdfReportService {
   }
 
   private addHeader(doc: jsPDF, title: string, primaryColor: number[]): void {
-    // Company header background
+    // Company header background - made much smaller
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(0, 0, 210, 35, 'F');
+    doc.rect(0, 0, 210, 18, 'F');
     
-    // Company name
+    // Report title only (removed company name)
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Around Noon Driver Management', 20, 20);
-    
-    // Report title
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    doc.text(title, 20, 28);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, 20, 12);
     
     // Reset text color
     doc.setTextColor(0, 0, 0);
   }
 
   private addReportMetadata(doc: jsPDF, totalIssues: number): void {
-    const currentY = 45;
+    const currentY = 28; // Adjusted to account for smaller header
     
     // Report info box
     doc.setFillColor(248, 249, 250);
-    doc.rect(20, currentY, 170, 25, 'F');
+    doc.rect(20, currentY, 170, 15, 'F'); // Made smaller height
     doc.setDrawColor(233, 236, 239);
-    doc.rect(20, currentY, 170, 25, 'S');
+    doc.rect(20, currentY, 170, 15, 'S');
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
+    
+    // Put both on the same row
     doc.text('Report Generated:', 25, currentY + 8);
-    doc.text('Total Issues:', 25, currentY + 16);
+    doc.text('Total Issues:', 120, currentY + 8); // Positioned on the same line
     
     doc.setFont('helvetica', 'normal');
     doc.text(new Date().toLocaleDateString('en-GB', { 
@@ -94,8 +91,8 @@ export class PdfReportService {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    }), 70, currentY + 8);
-    doc.text(totalIssues.toString(), 70, currentY + 16);
+    }), 25, currentY + 12); // Moved to second line under "Report Generated"
+    doc.text(totalIssues.toString(), 150, currentY + 8); // On same line as "Total Issues"
   }
 
   private addIssuesTable(doc: jsPDF, issues: VanIssue[], primaryColor: number[], secondaryColor: number[]): void {
@@ -113,7 +110,7 @@ export class PdfReportService {
     autoTable(doc, {
       head: [['Vehicle', 'Driver', 'Driver ID', 'Issue Description', 'Reported Date', 'Fixed Date', 'Status', 'Images']],
       body: tableData,
-      startY: 80,
+      startY: 53,
       theme: 'grid',
       margin: { left: 7, right: 7 },
       tableWidth: 'wrap',
@@ -355,7 +352,7 @@ export class PdfReportService {
   }
 
   private addDetailedIssuesList(doc: jsPDF, issues: VanIssue[], primaryColor: number[], secondaryColor: number[]): void {
-    let currentY = 85;
+    let currentY = 58; // Adjusted from 85 to account for smaller header
     const pageHeight = doc.internal.pageSize.height;
     const margin = 20;
     const lineHeight = 6;

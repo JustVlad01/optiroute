@@ -375,34 +375,30 @@
 
     <!-- Driver Updates Tab Content -->
     <div *ngIf="activeTab === 'driver-updates'" class="tab-content">
-      <!-- Date Range Selector -->
-      <div class="date-range-selector">
-        <div class="date-range-header">
-          <h4><i class="bi bi-calendar-range"></i> Export Date Range</h4>
-          <p>Select a custom date range to export driver updates</p>
-        </div>
-        <div class="date-range-controls">
-          <div class="date-input-group">
-            <label for="exportStartDate">From Date:</label>
+      <!-- Filters Section - Made consistent with other tabs -->
+      <div class="filters-section">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="exportStartDate">From Date</label>
             <input 
               type="date" 
               id="exportStartDate" 
               [(ngModel)]="exportStartDate"
-              class="date-input"
+              class="filter-input"
             >
           </div>
-          <div class="date-input-group">
-            <label for="exportEndDate">To Date:</label>
+          <div class="filter-group">
+            <label for="exportEndDate">To Date</label>
             <input 
               type="date" 
               id="exportEndDate" 
               [(ngModel)]="exportEndDate"
-              class="date-input"
+              class="filter-input"
             >
           </div>
-          <div class="export-actions">
+          <div class="filter-actions">
             <button 
-              class="btn-export-range" 
+              class="btn-export" 
               (click)="exportDateRange()"
               [disabled]="!exportStartDate || !exportEndDate"
             >
@@ -410,15 +406,17 @@
               Export Range
             </button>
             <button 
-              class="btn-quick-range" 
+              class="btn-refresh" 
               (click)="setQuickRange('week')"
             >
+              <i class="bi bi-calendar-week"></i>
               Last Week
             </button>
             <button 
-              class="btn-quick-range" 
+              class="btn-refresh" 
               (click)="setQuickRange('month')"
             >
+              <i class="bi bi-calendar-month"></i>
               Last Month
             </button>
           </div>
