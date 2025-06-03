@@ -47,18 +47,10 @@
             <div class="performance-card" *ngFor="let item of dayGroup.items" [class.comment-card]="item.type === 'comment'">
               <!-- Image Cards -->
               <div *ngIf="item.type === 'image'" class="image-card">
-                <div class="card-header">
-                  <span class="report-title">Performance Report</span>
-                  <span class="report-time">{{ item.created_at | date:'shortTime' }}</span>
-                </div>
                 <div class="image-container">
                   <img [src]="item.url" [alt]="item.name" (click)="openImage(item)">
                 </div>
                 <div *ngIf="item.comments" class="comments-section">
-                  <h6 class="comment-header">
-                    <i class="bi bi-chat-text me-1"></i> Supervisor Comments
-                    <small *ngIf="item.comment_created_by" class="text-muted">(by {{ item.comment_created_by }})</small>
-                  </h6>
                   <p class="comment-text">{{ item.comments }}</p>
                 </div>
               </div>

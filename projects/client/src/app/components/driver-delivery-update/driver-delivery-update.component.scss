@@ -1,45 +1,73 @@
 .navbar {
-  background-color: #ff5959;
-  padding: 15px 20px;
+  background: linear-gradient(135deg, #0a5081 0%, #0a3161 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
   
   .container-fluid {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
   }
   
   .nav-left {
-    .title-info {
-      display: flex;
-      align-items: center;
-      
-      i {
-        font-size: 1.3rem;
-        margin-right: 10px;
-        color: #fff;
-      }
-      
-      span {
-        font-weight: 500;
-        color: #fff;
-        font-size: 1.1rem;
-      }
-    }
-  }
-  
-  .home-btn {
-    background-color: transparent;
-    color: #fff;
-    border: none;
-    height: 36px;
-    width: 36px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  }
+  
+  .nav-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: white;
+  }
+  
+  .title-info {
+    display: flex;
+    align-items: center;
     
     i {
       font-size: 1.3rem;
+      margin-right: 10px;
+      color: #fff;
+    }
+    
+    span {
+      font-weight: 600;
+      color: #fff;
+      font-size: 1.3rem;
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  .home-btn,
+  .home-button-flat {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 42px;
+    height: 42px;
+    color: white;
+    text-decoration: none;
+    background-color: transparent;
+    border: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    
+    &:hover {
+      transform: scale(1.1);
+      color: white;
+    }
+    
+    i {
+      font-size: 1.35rem;
     }
   }
 }

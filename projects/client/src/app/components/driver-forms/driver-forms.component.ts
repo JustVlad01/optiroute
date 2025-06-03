@@ -98,17 +98,44 @@ export class DriverFormsComponent implements OnInit {
   }
 
   get sortedForms(): FormAssignment[] {
+    // Only include daily driver forms in assigned forms section
     return this.forms
-      .filter(form => form.form_type === 'daily_driver') // Only show daily driver forms
+      .filter(form => form.form_type === 'daily_driver')
       .sort((a, b) => {
         // Sort by created date (newest first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
   }
 
+  // Add rejected order forms as standalone forms (not assigned forms)
+  get availableForms(): any[] {
+    return [
+      {
+        id: 'rejected-order-temp',
+        form_type: 'rejected_order_temp_checklist',
+        title: 'Rejected Order - Temperature Issue Report',
+        description: 'Report products with above-normal temperatures and complete temperature checklist',
+        icon: 'bi bi-thermometer-half',
+        route: '/rejected-order-temp-form'
+      },
+      {
+        id: 'rejected-order-damaged',
+        form_type: 'rejected_order_checklist', 
+        title: 'Rejected Order Checklist - Damaged Product',
+        description: 'Report damaged products and complete damage assessment checklist',
+        icon: 'bi bi-x-octagon',
+        route: '/rejected-order-form'
+      }
+    ];
+  }
+
   viewForm(formId: string): void {
     // Navigate to daily driver form details
     this.router.navigate(['/form-details', formId]);
+  }
+
+  navigateToRejectedOrderForm(route: string): void {
+    this.router.navigate([route]);
   }
 
   clearSuccessMessage(): void {
@@ -129,6 +156,13 @@ export class DriverFormsComponent implements OnInit {
   }
 
   getFormTitle(form: FormAssignment): string {
-    return 'Daily Driver Form';
+    switch(form.form_type) {
+      case 'rejected_order_temp_checklist':
+        return 'Rejected Order - Temperature Issue Report';
+      case 'rejected_order_checklist':
+        return 'Rejected Order Checklist - Damaged Product';
+      default:
+        return 'Daily Driver Form';
+    }
   }
 } 

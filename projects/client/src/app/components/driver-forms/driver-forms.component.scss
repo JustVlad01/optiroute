@@ -24,7 +24,7 @@
   }
   
   .nav-title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
     letter-spacing: 0.5px;
     color: white;
@@ -119,6 +119,7 @@
   h5 {
     margin: 0 0 5px 0;
     color: var(--secondary-color);
+    font-size: 10px;
   }
   
   p {
@@ -155,7 +156,7 @@
       .form-title {
         color: var(--primary-color);
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.6rem;
         margin: 0;
       }
       
@@ -502,5 +503,102 @@
         }
       }
     }
+  }
+}
+
+/* Section Titles */
+.forms-section {
+  margin-bottom: 1.5rem;
+  
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    
+    &::before {
+      content: '';
+      width: 3px;
+      height: 1.2rem;
+      background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+      margin-right: 0.5rem;
+      border-radius: 2px;
+    }
+  }
+  
+  /* Compact styling for Available Forms */
+  &:last-child {
+    .forms-list {
+      gap: 12px;
+      
+      .form-card {
+        .form-header {
+          padding: 8px 12px;
+        }
+        
+        .form-body {
+          padding: 12px;
+          
+          p {
+            margin-bottom: 0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+          }
+        }
+        
+        .form-actions {
+          padding: 8px 12px;
+          
+          .btn-primary {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Form Title with Icon */
+.form-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  i {
+    color: var(--secondary-color);
+    font-size: 1.1rem;
+  }
+  
+  .form-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+/* Button styling consistency */
+.btn-primary {
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  i {
+    margin-right: 0.25rem;
   }
 } 

@@ -1,9 +1,8 @@
 /* Add navbar styles to match store library component */
 .navbar {
-  background: linear-gradient(135deg, #dc3545, #e74c3c);
-  border-bottom: 1px solid #c82333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: 56px;
+  background: linear-gradient(135deg, #0a5081 0%, #0a3161 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  height: 64px;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -25,31 +24,29 @@
   }
   
   .nav-title {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     font-weight: 600;
+    letter-spacing: 0.5px;
     color: white;
-    margin: 0;
   }
   
   .home-button-flat {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     color: white;
     text-decoration: none;
     transition: all 0.2s;
-    cursor: pointer;
-    border-radius: 6px;
     
     &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
+      transform: scale(1.1);
       color: white;
     }
     
     i {
-      font-size: 1.2rem;
+      font-size: 1.35rem;
     }
   }
 }
