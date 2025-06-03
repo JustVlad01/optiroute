@@ -25,6 +25,9 @@ export class LoginComponent implements OnInit {
   isLoading: boolean = false;
   showPasswordSetup: boolean = false;
   currentDriver: any = null;
+  
+  // PWA properties
+  showPwaButton: boolean = false;
 
   constructor(
     private supabaseService: SupabaseService,
@@ -33,7 +36,22 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Additional initialization logic if needed
+    // Check if PWA can be installed
+    console.log('PWA Service Debug:', {
+      canInstall: this.pwaService.canInstall(),
+      isInstalled: this.pwaService.isInstalled(),
+      userAgent: navigator.userAgent
+    });
+    
+    this.showPwaButton = this.pwaService.canInstall() && !this.pwaService.isInstalled();
+    
+    // For debugging - temporarily show button regardless (remove this line in production)
+    if (!this.showPwaButton) {
+      console.log('PWA button hidden. Showing for testing...');
+      this.showPwaButton = true;
+    }
+    
+    console.log('Show PWA Button:', this.showPwaButton);
   }
 
   // Helper method to check if passwords match
@@ -193,6 +211,14 @@ export class LoginComponent implements OnInit {
     this.confirmPassword = '';
     this.message = '';
     this.isError = false;
+  }
+
+  installPwa(): void {
+    this.pwaService.showInstallPrompt();
+    // Hide the button after installation attempt
+    setTimeout(() => {
+      this.showPwaButton = this.pwaService.canInstall() && !this.pwaService.isInstalled();
+    }, 1000);
   }
 
   onAroundNoonClick(): void {

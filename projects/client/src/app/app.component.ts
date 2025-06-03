@@ -14,8 +14,6 @@ import { HttpClient } from '@angular/common/http';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'Around Noon';
-  updateAvailable = false;
-  showUpdatePrompt = false;
   private destroy$ = new Subject<void>();
   private currentVersion: string | null = null;
 
@@ -46,15 +44,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private setupServiceWorkerUpdates() {
-    // Listen for available updates
+    // Listen for available updates and automatically apply them
     this.swUpdate.versionUpdates
       .pipe(
         filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
         takeUntil(this.destroy$)
       )
       .subscribe(() => {
-        console.log('New version available via service worker');
-        this.showUpdateNotification();
+        console.log('New version available via service worker - updating automatically');
+        this.updateAppSilently();
       });
 
     // Handle unrecoverable state
@@ -75,19 +73,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private getAppVersion(): string {
-    // Try to get version from meta tag
-    const metaTag = document.querySelector('meta[name="build-timestamp"]');
-    const metaVersion = metaTag?.getAttribute('content');
-    
-    if (metaVersion) {
-      console.log('Found meta version:', metaVersion);
-      return metaVersion;
+    // Try to get version from meta tag or use timestamp
+    const versionMeta = document.querySelector('meta[name="app-version"]');
+    if (versionMeta) {
+      return versionMeta.getAttribute('content') || Date.now().toString();
     }
-    
-    // Fallback to current timestamp
-    const fallbackVersion = Date.now().toString();
-    console.log('No meta version found, using fallback:', fallbackVersion);
-    return fallbackVersion;
+    return Date.now().toString();
   }
 
   private checkServerVersion() {
@@ -110,8 +101,8 @@ export class AppComponent implements OnInit, OnDestroy {
           if (!isNaN(serverNum) && !isNaN(currentNum) && serverNum > currentNum) {
             // Additional check: versions different by more than 30 seconds to avoid false positives
             if (Math.abs(serverNum - currentNum) > 30000) {
-              console.log('Newer server version detected, showing update notification');
-              this.showUpdateNotification();
+              console.log('Newer server version detected - updating automatically');
+              this.updateAppSilently();
             }
           }
         }
@@ -127,7 +118,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.swUpdate.isEnabled) {
       this.swUpdate.checkForUpdate().then((hasUpdate) => {
         if (hasUpdate) {
-          console.log('Service worker update found');
+          console.log('Service worker update found - will update automatically');
         }
       }).catch(err => {
         console.error('Error checking for updates:', err);
@@ -135,34 +126,14 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  private showUpdateNotification() {
-    // Prevent multiple simultaneous notifications
-    if (this.showUpdatePrompt) {
-      return;
-    }
-    
-    this.updateAvailable = true;
-    this.showUpdatePrompt = true;
-    
-    console.log('Showing update notification to user');
-    
-    // Show notification for 15 seconds, then auto-update (increased from 10 seconds)
-    setTimeout(() => {
-      if (this.showUpdatePrompt) {
-        console.log('Auto-updating after timeout');
-        this.updateApp();
-      }
-    }, 15000);
-  }
-
-  updateApp() {
-    console.log('Updating app to latest version...');
-    this.showUpdatePrompt = false;
+  // New method for silent updates
+  private updateAppSilently() {
+    console.log('Updating app automatically to latest version...');
     
     // First try to activate the service worker update
     if (this.swUpdate.isEnabled) {
       this.swUpdate.activateUpdate().then(() => {
-        console.log('Service worker updated, reloading...');
+        console.log('Service worker updated, reloading automatically...');
         this.clearCachesAndReload();
       }).catch((error) => {
         console.log('No service worker update available or error occurred:', error);
@@ -174,38 +145,37 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  dismissUpdate() {
-    this.showUpdatePrompt = false;
-    this.updateAvailable = false;
-  }
+  private async clearCachesAndReload() {
+    try {
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            console.log('Clearing cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }
 
-  private clearCachesAndReload() {
-    // Clear all caches
-    if ('caches' in window) {
-      caches.keys().then(cacheNames => {
-        const deletePromises = cacheNames.map(cacheName => {
-          console.log('Deleting cache:', cacheName);
-          return caches.delete(cacheName);
-        });
-        
-        Promise.all(deletePromises).finally(() => {
-          this.forceReload();
-        });
-      }).catch(() => {
-        this.forceReload();
-      });
-    } else {
-      this.forceReload();
+      // Clear session storage (but keep local storage for user data)
+      sessionStorage.clear();
+
+      // Add timestamp to prevent browser caching
+      const timestamp = Date.now();
+      console.log('Reloading with timestamp:', timestamp);
+      
+      // Force reload with cache bypass
+      window.location.href = window.location.pathname + '?v=' + timestamp;
+    } catch (error) {
+      console.error('Error clearing caches:', error);
+      // Fallback to simple reload
+      window.location.reload();
     }
   }
 
   private forceReload() {
-    // Add cache busting parameter
-    const currentUrl = window.location.href;
-    const separator = currentUrl.includes('?') ? '&' : '?';
-    const newUrl = currentUrl + separator + 'cb=' + Date.now();
-    
-    // Force navigation to the new URL
-    window.location.replace(newUrl);
+    console.log('Force reloading due to unrecoverable service worker state');
+    window.location.reload();
   }
 }

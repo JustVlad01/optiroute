@@ -108,8 +108,8 @@
 }
 
 .logo-line-1 {
-  font-weight: 700;
-  font-size: 2.4rem;
+  font-weight: 500;
+  font-size: 1.5rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
@@ -511,5 +511,131 @@
     padding: 0.6rem;
     font-size: 0.9rem;
     margin-top: 0.5rem;
+  }
+}
+
+/* PWA Install Button Styles */
+.login-footer {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #ffffff;
+  color: var(--light-text);
+  
+  p {
+    margin: 0 0 1rem 0;
+    font-size: 0.85rem;
+  }
+  
+  .pwa-install-section {
+    margin-top: 1rem;
+    
+    .pwa-install-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      background: linear-gradient(135deg, #FF5252, #D32F2F);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(255, 82, 82, 0.2);
+      
+      i {
+        font-size: 0.9rem;
+      }
+      
+      span {
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      
+      &:hover {
+        background: linear-gradient(135deg, #D32F2F, #B71C1C);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(255, 82, 82, 0.3);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+/* Responsive adjustments for PWA button */
+@media (max-width: 768px) {
+  .login-footer {
+    padding: 1rem 0.75rem;
+    
+    .pwa-install-section {
+      .pwa-install-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        
+        i {
+          font-size: 0.8rem;
+        }
+        
+        span {
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .login-footer {
+    padding: 0.8rem 0.5rem;
+    
+    .pwa-install-section {
+      .pwa-install-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
+        gap: 0.4rem;
+        
+        i {
+          font-size: 0.75rem;
+        }
+        
+        span {
+          font-size: 0.7rem;
+        }
+      }
+    }
+  }
+}
+
+/* Landscape adjustments */
+@media (max-height: 640px) and (orientation: landscape) {
+  .login-footer {
+    padding: 0.5rem;
+    
+    p {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.75rem;
+    }
+    
+    .pwa-install-section {
+      margin-top: 0.5rem;
+      
+      .pwa-install-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
+        
+        i {
+          font-size: 0.75rem;
+        }
+        
+        span {
+          font-size: 0.7rem;
+        }
+      }
+    }
   }
 }

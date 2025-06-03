@@ -101,6 +101,27 @@
   </div>
 
   <div class="login-footer">
-    <p>&copy; 2025 Around Noon Fleet Management</p>
+    
+    
+    <!-- Debug info -->
+    <div class="debug-info" style="font-size: 0.7rem; color: #666; margin: 0.5rem 0;">
+     
+    </div>
+    
+    <!-- PWA Install Button -->
+    <div class="pwa-install-section" *ngIf="showPwaButton">
+      <button class="pwa-install-btn" (click)="installPwa()">
+       
+        <span>Install App</span>
+      </button>
+    </div>
+    
+    <!-- Fallback PWA button for testing -->
+    <div class="pwa-install-section" *ngIf="!showPwaButton" style="opacity: 0.7;">
+      <button class="pwa-install-btn" (click)="installPwa()" style="background: #999;">
+        <i class="bi bi-download">⬇️</i>
+        <span>Install App (Debug)</span>
+      </button>
+    </div>
   </div>
 </div>
