@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiRoute - Application Overview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #FF5252;
+            --admin-secondary: #3498db;
+            --light-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --text-color: #333;
+            --light-text: #6c757d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="a" patternUnits="userSpaceOnUse" width="20" height="20"><circle cx="10" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="20" fill="url(%23a)"/></svg>');
+        }
+
+        .logo-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 4rem;
+            letter-spacing: 2px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 1rem;
+        }
+
+        .section-divider {
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            margin: 3rem 0;
+            border-radius: 2px;
+        }
+
+        .admin-divider {
+            background: linear-gradient(135deg, var(--primary-color), var(--admin-secondary));
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--light-text);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, var(--secondary-color), #D32F2F);
+        }
+
+        .admin-card::before {
+            background: linear-gradient(135deg, var(--admin-secondary), var(--primary-color));
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));
+            color: var(--secondary-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-icon {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.2));
+            color: var(--admin-secondary);
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            color: var(--light-text);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            color: var(--text-color);
+        }
+
+        .feature-list li i {
+            color: var(--success-color);
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-stat-number {
+            color: var(--admin-secondary);
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--light-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .screenshot-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .screenshot-placeholder {
+            background: linear-gradient(135deg, var(--light-bg), #e9ecef);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: var(--light-text);
+        }
+
+        .comparison-section {
+            background: white;
+            border-radius: 12px;
+            padding: 3rem;
+            margin: 3rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-side {
+            padding: 2rem;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .client-side {
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.05), rgba(255, 82, 82, 0.1));
+            border: 2px solid rgba(255, 82, 82, 0.2);
+        }
+
+        .admin-side {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(52, 152, 219, 0.1));
+            border: 2px solid rgba(52, 152, 219, 0.2);
+        }
+
+        .tech-stack {
+            background: var(--primary-color);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 4rem;
+        }
+
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, var(--secondary-color), #D32F2F);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(255, 82, 82, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 2px 8px rgba(255, 82, 82, 0.4); }
+            50% { box-shadow: 0 2px 12px rgba(255, 82, 82, 0.7); transform: scale(1.05); }
+            100% { box-shadow: 0 2px 8px rgba(255, 82, 82, 0.4); }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), #D32F2F);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FF7373, #D32F2F);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
+        }
+
+        .admin-btn {
+            background: linear-gradient(135deg, var(--admin-secondary), var(--primary-color));
+        }
+
+        .admin-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #1e2b37);
+        }
+
+        @media (max-width: 768px) {
+            .logo-title {
+                font-size: 2.5rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="logo-title">OPTIROUTE</h1>
+            <h2 class="h3 mb-4">Comprehensive Fleet Management & Driver Performance Platform</h2>
+            <p class="lead">Streamlining delivery operations with intelligent route optimization, performance tracking, and comprehensive reporting systems</p>
+        </div>
+    </section>
+
+    <!-- Client Side Features -->
+    <section class="py-5">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="bi bi-person-circle text-danger me-3"></i>
+                    Driver/Client Application
+                </h2>
+                <p class="section-subtitle">Empowering drivers with intuitive tools for performance tracking, form management, and delivery optimization</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">8+</div>
+                    <div class="stat-label">Core Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">PWA Access</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Mobile Responsive</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Real-time</div>
+                    <div class="stat-label">Updates</div>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                        <div class="notification-badge">!</div>
+                    </div>
+                    <h3 class="feature-title">My Driving Performance</h3>
+                    <p class="feature-description">Comprehensive performance metrics with real-time notifications for new data uploads</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Performance metrics tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Real-time notifications</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Historical data analysis</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Supervisor feedback integration</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h3 class="feature-title">Driver Forms Management</h3>
+                    <p class="feature-description">Digital form completion system with rejection handling and template management</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Digital form completion</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Rejected order forms</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Template-based forms</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Form status tracking</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h3 class="feature-title">Delivery Updates</h3>
+                    <p class="feature-description">Real-time delivery status updates and outstanding delivery tracking system</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Store delivery updates</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Outstanding delivery tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Time-stamped updates</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Route optimization data</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <h3 class="feature-title">Store Library</h3>
+                    <p class="feature-description">Comprehensive store database with search functionality and detailed information</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Store code search</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Store name search</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Complete store information</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Location details</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <h3 class="feature-title">Staff Roster</h3>
+                    <p class="feature-description">Personal schedule management and team assignment viewing</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Personal schedule view</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Team assignments</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Shift planning</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Calendar integration</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="feature-title">Incident Reporting</h3>
+                    <p class="feature-description">Comprehensive reporting system for van issues and vehicle accidents</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Van issue reporting</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Accident reporting</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Photo upload capability</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Maintenance integration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider admin-divider"></div>
+
+    <!-- Admin Side Features -->
+    <section class="py-5">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="bi bi-shield-check text-primary me-3"></i>
+                    Admin Management Platform
+                </h2>
+                <p class="section-subtitle">Powerful administrative tools for comprehensive fleet management, analytics, and team oversight</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number admin-stat-number">10+</div>
+                    <div class="stat-label">Management Modules</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number admin-stat-number">Advanced</div>
+                    <div class="stat-label">Analytics</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number admin-stat-number">Multi-level</div>
+                    <div class="stat-label">Reporting</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number admin-stat-number">Real-time</div>
+                    <div class="stat-label">Monitoring</div>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h3 class="feature-title">Advanced Reporting System</h3>
+                    <p class="feature-description">Comprehensive reporting with analytics, export capabilities, and detailed insights</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Vehicle accident reports</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Performance analytics</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Export to PDF/Excel</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Custom report generation</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h3 class="feature-title">Driver Management Suite</h3>
+                    <p class="feature-description">Complete driver oversight including forms, assignments, and performance tracking</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Driver form management</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Assignment tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Performance monitoring</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Individual driver dashboards</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3 class="feature-title">Vehicle/Crate Tracking</h3>
+                    <p class="feature-description">Real-time tracking system with interactive charts and balance monitoring</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Crates in/out tracking</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Balance calculations</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Interactive charts</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Historical data analysis</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="feature-title">Team Management</h3>
+                    <p class="feature-description">Comprehensive staff and roster management with registration and scheduling</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Staff registration</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Roster management</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Team information</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Schedule coordination</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h3 class="feature-title">Driver Updates & Analytics</h3>
+                    <p class="feature-description">Route performance analytics with delivery time tracking and insights</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Route performance analytics</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Weekly delivery metrics</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Circle K vs Starbucks analysis</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Interactive charts</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card admin-card">
+                    <div class="feature-icon admin-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="feature-title">Van Issues Management</h3>
+                    <p class="feature-description">Comprehensive van issue tracking with detailed reporting and analytics</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle-fill"></i> Issue tracking & categorization</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Photo documentation</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Maintenance scheduling</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Report generation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="comparison-section">
+                <div class="section-header">
+                    <h2 class="section-title">Platform Comparison</h2>
+                    <p class="section-subtitle">Understanding the distinct roles and capabilities of each platform</p>
+                </div>
+                
+                <div class="comparison-grid">
+                    <div class="comparison-side client-side">
+                        <h3><i class="bi bi-person-circle me-2"></i>Client Platform</h3>
+                        <h5>Focus: Driver Experience & Field Operations</h5>
+                        <ul class="feature-list mt-3">
+                            <li><i class="bi bi-check-circle-fill"></i> Mobile-first PWA design</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Real-time performance notifications</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Quick access to essential tools</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Offline capability</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Simple, intuitive interface</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Field reporting capabilities</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-side admin-side">
+                        <h3><i class="bi bi-shield-check me-2"></i>Admin Platform</h3>
+                        <h5>Focus: Management & Analytics</h5>
+                        <ul class="feature-list mt-3">
+                            <li><i class="bi bi-check-circle-fill"></i> Comprehensive dashboard</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Advanced analytics & charts</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Multi-level reporting</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Team management tools</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Data export capabilities</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Performance monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Stack -->
+    <section class="tech-stack">
+        <div class="container text-center">
+            <h2 class="section-title text-white">Technical Architecture</h2>
+            <p class="section-subtitle text-white-50">Built with modern technologies for scalability, performance, and reliability</p>
+            
+            <div class="tech-badges">
+                <span class="tech-badge">Angular 19</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">Bootstrap 5</span>
+                <span class="tech-badge">Supabase</span>
+                <span class="tech-badge">Chart.js</span>
+                <span class="tech-badge">PWA</span>
+                <span class="tech-badge">Express.js</span>
+                <span class="tech-badge">PostgreSQL</span>
+                <span class="tech-badge">Angular Material</span>
+                <span class="tech-badge">Google Maps</span>
+                <span class="tech-badge">PDF Generation</span>
+                <span class="tech-badge">Excel Export</span>
+            </div>
+            
+            <div class="row mt-5">
+                <div class="col-md-4">
+                    <h4><i class="bi bi-phone me-2"></i>Mobile-First</h4>
+                    <p class="text-white-50">Progressive Web App with offline capabilities and responsive design</p>
+                </div>
+                <div class="col-md-4">
+                    <h4><i class="bi bi-cloud me-2"></i>Cloud-Ready</h4>
+                    <p class="text-white-50">Scalable architecture with cloud database integration</p>
+                </div>
+                <div class="col-md-4">
+                    <h4><i class="bi bi-lightning me-2"></i>Real-Time</h4>
+                    <p class="text-white-50">Live updates and notifications for immediate response</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Features Summary -->
+    <section class="py-5">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Key Capabilities Summary</h2>
+                <p class="section-subtitle">Complete overview of all system capabilities and features</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="screenshot-container">
+                        <h4><i class="bi bi-clipboard-data me-2 text-danger"></i>Client Features</h4>
+                        <ul class="feature-list">
+                            <li><i class="bi bi-check-circle-fill"></i> Dashboard with performance notifications</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Digital form management system</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Real-time delivery updates</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Store library with search</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Staff roster management</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Van issue reporting</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Accident reporting system</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Performance tracking</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4">
+                    <div class="screenshot-container">
+                        <h4><i class="bi bi-gear me-2 text-primary"></i>Admin Features</h4>
+                        <ul class="feature-list">
+                            <li><i class="bi bi-check-circle-fill"></i> Comprehensive admin dashboard</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Advanced reporting system</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Driver management suite</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Vehicle/crate tracking</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Team registration & management</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Route performance analytics</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Van issues management</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Export capabilities (PDF/Excel)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <h3 class="logo-title mb-3" style="font-size: 2rem;">OPTIROUTE</h3>
+            <p class="mb-2">Comprehensive Fleet Management & Driver Performance Platform</p>
+            <p class="text-muted">Built with Angular, TypeScript, and modern web technologies</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

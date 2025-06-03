@@ -317,29 +317,33 @@ export class SupabaseService {
       shift_end_time: formData.shift_end_time || null,
       van_registration: formData.van_registration || formData.vanRegistration || '',
       starting_mileage: startingMileage,
-      fuel_added: formData.fuel_added || formData.fuelAdded || false,
+      fuel_added: Boolean(formData.fuel_added || formData.fuelAdded || false),
       litres_added: formData.litres_added || formData.litresAdded || null,
       fuel_card_reg: formData.fuel_card_reg || formData.fuelCardReg || null,
-      full_uniform: formData.full_uniform || formData.fullUniform || false,
-      all_site_keys: formData.all_site_keys || formData.allSiteKeys || false,
+      full_uniform: Boolean(formData.full_uniform || formData.fullUniform || false),
+      all_site_keys: Boolean(formData.all_site_keys || formData.allSiteKeys || false),
       work_start_time: formData.work_start_time || formData.workStartTime || this.formatTime(new Date()),
       preload_van_temp: formData.preload_van_temp || formData.preloadVanTemp || 0,
       preload_product_temp: formData.preload_product_temp || formData.preloadProductTemp || 0,
-      auxiliary_products: formData.auxiliary_products || formData.auxiliaryProducts || false,
+      auxiliary_products: Boolean(formData.auxiliary_products || formData.auxiliaryProducts || false),
       number_of_crates_out: numberOfCratesOut,
       van_probe_serial_number: formData.van_probe_serial_number || formData.vanProbeSerialNumber || null,
-      paperwork_issues: formData.paperwork_issues || formData.paperworkIssues || false,
+      paperwork_issues: Boolean(formData.paperwork_issues || formData.paperworkIssues || false),
       paperwork_issues_reason: formData.paperwork_issues_reason || formData.paperworkIssuesReason || null,
+      orders_products_issues: Boolean(formData.orders_products_issues || false),
+      orders_products_issues_reason: formData.orders_products_issues_reason || null,
+      site_issues: Boolean(formData.site_issues || false),
+      site_issues_reason: formData.site_issues_reason || null,
       
       // New end-of-shift fields
       closing_mileage: closingMileage,
-      recycled_all_returns: formData.recycled_all_returns || formData.recycledAllReturns || false,
-      van_fridge_working: formData.van_fridge_working || formData.vanFridgeWorking || false,
-      returned_van_probe: formData.returned_van_probe || formData.returnedVanProbe || false,
+      recycled_all_returns: Boolean(formData.recycled_all_returns || formData.recycledAllReturns || false),
+      van_fridge_working: Boolean(formData.van_fridge_working || formData.vanFridgeWorking || false),
+      returned_van_probe: Boolean(formData.returned_van_probe || formData.returnedVanProbe || false),
       van_issues: formData.van_issues || formData.vanIssues || null,
       repairs_needed: formData.repairs_needed || formData.repairsNeeded || null,
       number_of_crates_in: numberOfCratesIn,
-      needs_review: formData.needs_review || false
+      needs_review: Boolean(formData.needs_review || false)
     };
     
     console.log('Formatted submission data:', submissionData);

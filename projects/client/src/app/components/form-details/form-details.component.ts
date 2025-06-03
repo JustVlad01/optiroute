@@ -284,16 +284,15 @@ export class FormDetailsComponent implements OnInit {
     
     // Issues validation - check if any issue is marked but reason is missing
     const issueFields = [
-      { issue: 'paperwork_issues', reason: 'paperwork_issues_reason' },
-      { issue: 'orders_products_issues', reason: 'orders_products_issues_reason' },
-      { issue: 'site_issues', reason: 'site_issues_reason' }
+      { issue: 'paperwork_issues', reason: 'paperwork_issues_reason', name: 'Paperwork Issues - Description required' },
+      { issue: 'orders_products_issues', reason: 'orders_products_issues_reason', name: 'Orders/Products Issues - Please select a form type' },
+      { issue: 'site_issues', reason: 'site_issues_reason', name: 'Site Issues - Description required' }
     ];
     
     for (const field of issueFields) {
       if (this.driverForm.get(field.issue)?.value && 
           !this.driverForm.get(field.reason)?.valid) {
-        errors.push('Issues and Complaints');
-        break;
+        errors.push(field.name);
       }
     }
     
@@ -398,6 +397,18 @@ export class FormDetailsComponent implements OnInit {
       }
     } else {
       console.error('Form is invalid - marking fields as touched to show errors');
+      
+      // Specifically log the orders_products_issues validation state
+      const ordersIssuesChecked = this.driverForm.get('orders_products_issues')?.value;
+      const ordersIssuesReason = this.driverForm.get('orders_products_issues_reason');
+      console.log('Orders/Products Issues Debug:', {
+        checkbox_checked: ordersIssuesChecked,
+        reason_value: ordersIssuesReason?.value,
+        reason_valid: ordersIssuesReason?.valid,
+        reason_errors: ordersIssuesReason?.errors,
+        reason_touched: ordersIssuesReason?.touched
+      });
+      
       // Mark all fields as touched to show validation errors
       Object.keys(this.driverForm.controls).forEach(key => {
         const control = this.driverForm.get(key);
@@ -407,6 +418,9 @@ export class FormDetailsComponent implements OnInit {
       // Show section-level validation errors
       this.sectionErrors = this.validateSections();
       this.showSectionErrors = true;
+      
+      // Scroll to the top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
   
