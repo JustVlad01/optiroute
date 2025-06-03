@@ -23,7 +23,7 @@
   }
   
   .nav-title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
     letter-spacing: 0.5px;
     color: white;
@@ -34,7 +34,7 @@
     align-items: center;
     
     i {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       margin-right: 10px;
       color: #fff;
     }
@@ -42,7 +42,7 @@
     span {
       font-weight: 600;
       color: #fff;
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       letter-spacing: 0.5px;
     }
   }
@@ -837,5 +837,16 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar {
+    height: 56px;
+    
+    .nav-title {
+      font-size: 1.1rem;
+    }
   }
 } 

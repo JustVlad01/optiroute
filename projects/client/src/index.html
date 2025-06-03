@@ -2,23 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Client</title>
+  <title>Around Noon Driver App</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Favicon and Icons - Around Noon Custom Branding -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/android-launchericon-48-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="icons/android-launchericon-96-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/android-launchericon-192-192.png">
   
-  <!-- Apple iOS PWA Support -->
+  <!-- Apple iOS PWA Support - Custom Around Noon Icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Around Noon">
+  <meta name="format-detection" content="telephone=no">
   
-  <!-- Apple Touch Icons -->
-  <link rel="apple-touch-icon" sizes="48x48" href="icons/android-launchericon-48-48.png">
+  <!-- Apple Touch Icons - All sizes using Around Noon branding -->
+  <link rel="apple-touch-icon" sizes="57x57" href="icons/android-launchericon-72-72.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="icons/android-launchericon-72-72.png">
   <link rel="apple-touch-icon" sizes="72x72" href="icons/android-launchericon-72-72.png">
-  <link rel="apple-touch-icon" sizes="96x96" href="icons/android-launchericon-96-96.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="icons/android-launchericon-96-96.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="icons/android-launchericon-144-144.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/android-launchericon-144-144.png">
   <link rel="apple-touch-icon" sizes="144x144" href="icons/android-launchericon-144-144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/android-launchericon-192-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/android-launchericon-192-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icons/android-launchericon-192-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="icons/android-launchericon-512-512.png">
+  <link rel="apple-touch-icon" href="icons/android-launchericon-192-192.png">
+  
+  <!-- Microsoft/Windows Icons -->
+  <meta name="msapplication-TileImage" content="icons/android-launchericon-144-144.png">
+  <meta name="msapplication-TileColor" content="#2c506e">
+  <meta name="msapplication-config" content="browserconfig.xml">
+  
+  <!-- Android Chrome Icons -->
+  <meta name="theme-color" content="#2c506e">
   
   <script>
     console.log('Client index.html loaded');
@@ -103,7 +124,6 @@
     });
   </script>
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
   <!-- iOS Safari nomodule polyfill -->
   <script>
     !function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()},!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();
