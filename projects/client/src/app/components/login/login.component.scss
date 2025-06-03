@@ -83,6 +83,14 @@
   align-items: center;
   justify-content: center;
   width: fit-content;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.logo:hover {
+  transform: scale(1.02);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .logo-line {

@@ -49,6 +49,12 @@
               <div *ngIf="item.type === 'image'" class="image-card">
                 <div class="image-container">
                   <img [src]="item.url" [alt]="item.name" (click)="openImage(item)">
+                  <!-- Fullscreen overlay button -->
+                  <button class="fullscreen-overlay-btn" 
+                          (click)="openImageInFullscreen(item); $event.stopPropagation()" 
+                          title="Open in fullscreen">
+                    <i class="bi bi-fullscreen"></i>
+                  </button>
                 </div>
                 <div *ngIf="item.comments" class="comments-section">
                   <p class="comment-text">{{ item.comments }}</p>
@@ -79,25 +85,25 @@
   </div>
 
   <!-- Enhanced Image Modal with Fullscreen, Rotate, and Zoom support -->
-  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImage()">
+  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImage()" tabindex="0">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-controls">
-        <button class="control-button" (click)="zoomOut()" title="Zoom Out">
+        <button class="control-button" (click)="zoomOut()" title="Zoom Out (-)">
           <i class="bi bi-zoom-out"></i>
         </button>
-        <button class="control-button" (click)="zoomIn()" title="Zoom In">
+        <button class="control-button" (click)="zoomIn()" title="Zoom In (+)">
           <i class="bi bi-zoom-in"></i>
         </button>
-        <button class="control-button" (click)="rotateLeft()" title="Rotate Left">
+        <button class="control-button" (click)="rotateLeft()" title="Rotate Left (←)">
           <i class="bi bi-arrow-counterclockwise"></i>
         </button>
-        <button class="control-button" (click)="rotateRight()" title="Rotate Right">
+        <button class="control-button" (click)="rotateRight()" title="Rotate Right (→)">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
-        <button class="control-button" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+        <button class="control-button" (click)="toggleFullscreen()" title="Toggle Fullscreen (F)">
           <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'"></i>
         </button>
-        <button class="control-button close-button" (click)="closeImage()" title="Close">
+        <button class="control-button close-button" (click)="closeImage()" title="Close (Esc)">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
@@ -106,10 +112,14 @@
              [alt]="selectedImage.name" 
              class="modal-image" 
              #imageElement 
-             [style.transform]="'rotate(' + currentRotation + 'deg) scale(' + currentZoom + ')'">
+             [style.transform]="'rotate(' + currentRotation + 'deg) scale(' + currentZoom + ') translate(' + (panX / currentZoom) + 'px, ' + (panY / currentZoom) + 'px)'"
+             (touchstart)="onTouchStart($event)"
+             (touchmove)="onTouchMove($event)"
+             (touchend)="onTouchEnd($event)">
       </div>
       <div class="modal-footer">
-        <p>Uploaded: {{ selectedImage.created_at | date:'medium' }}</p>
+        <p class="d-none d-md-block">Uploaded: {{ selectedImage.created_at | date:'medium' }} | Use keyboard: F (fullscreen), +/- (zoom), ←/→ (rotate), Esc (close)</p>
+        <p class="d-md-none">Uploaded: {{ selectedImage.created_at | date:'short' }} | Pinch to zoom, drag to pan, double-tap to reset</p>
       </div>
     </div>
   </div>

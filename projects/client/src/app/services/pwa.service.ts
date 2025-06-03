@@ -28,6 +28,7 @@ export class PwaService {
   handleAroundNoonClick(): void {
     this.clickCount++;
     console.log(`PWA: Click count: ${this.clickCount}`);
+    console.log('PWA: handleAroundNoonClick() called');
 
     // Reset the count after 10 seconds of no clicks
     clearTimeout(this.resetTimeout);
@@ -38,21 +39,29 @@ export class PwaService {
 
     // Check if user has clicked 5 times
     if (this.clickCount >= 5) {
+      console.log('PWA: 5 clicks reached! Showing install prompt...');
       this.showInstallPrompt();
       this.clickCount = 0; // Reset count after showing prompt
     }
   }
 
   private showInstallPrompt(): void {
+    console.log('PWA: showInstallPrompt() called');
+    console.log('PWA: deferredPrompt available:', !!this.deferredPrompt);
+    console.log('PWA: isIos():', this.isIos());
+    console.log('PWA: isStandalone():', this.isStandalone());
+    
     if (this.deferredPrompt) {
+      console.log('PWA: Using native browser prompt');
       // Show the installation prompt
       const userChoice = confirm(
         '🚀 Install Around Noon App?\n\n' +
         'Would you like to install the Around Noon app on your device for quick access? ' +
-        'You can access it from your home screen like a native app!'
+        'You can access it from your home screen'
       );
 
       if (userChoice) {
+        console.log('PWA: User confirmed installation');
         // Show the install prompt
         this.deferredPrompt.prompt();
         
@@ -65,10 +74,14 @@ export class PwaService {
           }
           this.deferredPrompt = null;
         });
+      } else {
+        console.log('PWA: User cancelled installation');
       }
     } else {
+      console.log('PWA: Using fallback prompt');
       // Fallback if PWA prompt is not available
       if (this.isIos()) {
+        console.log('PWA: Showing iOS instructions');
         alert(
           '📱 Install Around Noon App\n\n' +
           'To install this app on your iOS device:\n' +
@@ -77,8 +90,10 @@ export class PwaService {
           '3. Tap "Add" to install the app'
         );
       } else if (this.isStandalone()) {
+        console.log('PWA: App already installed');
         alert('✅ Around Noon app is already installed!');
       } else {
+        console.log('PWA: Showing general instructions');
         alert(
           '💡 Install Around Noon App\n\n' +
           'This app can be installed for better performance and offline access. ' +

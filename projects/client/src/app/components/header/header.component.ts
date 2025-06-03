@@ -14,6 +14,7 @@ export class HeaderComponent {
   constructor(private pwaService: PwaService) { }
   
   onAroundNoonClick(): void {
+    console.log('Header: Around Noon clicked!');
     this.pwaService.handleAroundNoonClick();
   }
 } 

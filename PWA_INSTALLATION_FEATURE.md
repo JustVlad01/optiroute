@@ -6,14 +6,15 @@ The Around Noon app now includes a hidden PWA (Progressive Web App) installation
 ## How it Works
 
 ### Activation
-- Users need to click on the "Around Noon" text in the navigation bar **5 times** to trigger the installation prompt
+- Users need to click on the **"AROUND NOON."** logo on the **login page** **5 times** to trigger the installation prompt
+- The logo will show subtle hover effects (slight scale and text shadow) to indicate it's clickable
 - The click counter resets after 10 seconds of inactivity to prevent accidental triggers
 - This hidden feature prevents users from accidentally triggering installation prompts
 
 ### Installation Process
 
 #### For Modern Browsers (Chrome, Edge, Firefox)
-1. After 5 clicks, a confirmation dialog appears asking if the user wants to install the app
+1. After 5 clicks on the login logo, a confirmation dialog appears asking if the user wants to install the app
 2. If the user agrees, the browser's native PWA installation prompt is shown
 3. Users can then install the app directly to their device's home screen
 
@@ -28,6 +29,8 @@ The Around Noon app now includes a hidden PWA (Progressive Web App) installation
 - If PWA prompt is not available, users get general installation guidance
 
 ### Features
+- **Login Page Activation**: Easy access from the first page users see
+- **Visual Feedback**: Hover effects indicate the logo is interactive
 - **Automatic Detection**: Detects if the app is already installed
 - **Platform-Specific Instructions**: Provides appropriate guidance for iOS vs other platforms
 - **User-Friendly**: Clear, emoji-enhanced prompts guide users through installation
@@ -35,8 +38,9 @@ The Around Noon app now includes a hidden PWA (Progressive Web App) installation
 - **Smart Reset**: Click counter automatically resets to prevent false triggers
 
 ### Technical Implementation
+- **Login Component**: PWA functionality integrated into login page
 - **PwaService**: Handles PWA installation logic and browser compatibility
-- **Header Component**: Tracks clicks on "Around Noon" text
+- **Clickable Logo**: "AROUND NOON." logo responds to clicks with visual feedback
 - **Manifest Configuration**: Pre-configured with app icons and metadata
 - **Service Worker**: Enables offline functionality and background updates
 
@@ -55,13 +59,16 @@ The Around Noon app now includes a hidden PWA (Progressive Web App) installation
 - ⚠️ Fallback instructions for unsupported browsers
 
 ## Testing the Feature
-1. Open the Around Noon app in a supported browser
-2. Click on "Around Noon" text in the header 5 times quickly
-3. Follow the installation prompts that appear
-4. The app should now be available as a standalone application
+1. Navigate to the login page of the Around Noon app
+2. Click on the **"AROUND NOON."** logo 5 times quickly
+3. You should see hover effects when hovering over the logo
+4. After 5 clicks, follow the installation prompts that appear
+5. The app should now be available as a standalone application
 
 ## Development Notes
 - The feature uses the browser's `beforeinstallprompt` event
 - Includes fallback handling for browsers without native PWA support
-- Console logging helps with debugging during development
-- Service worker registration enables full PWA functionality 
+- Console logging helps with debugging during development (check browser console)
+- Service worker registration enables full PWA functionality
+- Logo includes visual feedback (scale transform and text shadow on hover)
+- User-select is disabled on the logo to prevent text selection during clicking 

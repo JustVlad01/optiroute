@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Driver } from '../../services/models';
 import { SupabaseService } from '../../services/supabase.service';
+import { PwaService } from '../../services/pwa.service';
 
 @Component({
   selector: 'app-dashboard',

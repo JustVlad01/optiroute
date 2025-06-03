@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { Driver } from '../../services/models';
+import { PwaService } from '../../services/pwa.service';
 
 @Component({
   selector: 'app-login',
@@ -15,7 +16,7 @@ import { Driver } from '../../services/models';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   customId: string = '';
   password: string = '';
   confirmPassword: string = '';
@@ -27,8 +28,13 @@ export class LoginComponent {
 
   constructor(
     private supabaseService: SupabaseService,
-    private router: Router
+    private router: Router,
+    private pwaService: PwaService
   ) {}
+
+  ngOnInit(): void {
+    // Additional initialization logic if needed
+  }
 
   // Helper method to check if passwords match
   passwordsMatch(): boolean {
@@ -187,5 +193,10 @@ export class LoginComponent {
     this.confirmPassword = '';
     this.message = '';
     this.isError = false;
+  }
+
+  onAroundNoonClick(): void {
+    console.log('Login: Around Noon clicked!');
+    this.pwaService.handleAroundNoonClick();
   }
 }

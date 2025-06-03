@@ -26,6 +26,20 @@ export class DriverPerformanceComponent implements OnInit {
   maxZoom = 3;
   minZoom = 0.5;
 
+  // Properties for touch gestures
+  panX = 0;
+  panY = 0;
+  private lastPanX = 0;
+  private lastPanY = 0;
+  private initialDistance = 0;
+  private lastTouchDistance = 0;
+  private isPanning = false;
+  private isZooming = false;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private lastTapTime = 0;
+  private readonly doubleTapDelay = 300; // milliseconds
+
   // Properties for grouping by date
   groupedPerformanceData: any[] = [];
   expandedDays: { [key: string]: boolean } = {};
@@ -38,11 +52,38 @@ export class DriverPerformanceComponent implements OnInit {
     private renderer: Renderer2
   ) {}
 
-  // Listen for Esc key to exit fullscreen and close modal
+  // Listen for keyboard events to enhance image viewing experience
   @HostListener('document:keydown.escape', ['$event'])
+  @HostListener('document:keydown', ['$event'])
   onKeydownHandler(event: KeyboardEvent) {
     if (this.selectedImage) {
-      this.closeImage();
+      switch(event.key) {
+        case 'Escape':
+          this.closeImage();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          this.rotateLeft();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          this.rotateRight();
+          break;
+        case '+':
+        case '=':
+          event.preventDefault();
+          this.zoomIn();
+          break;
+        case '-':
+          event.preventDefault();
+          this.zoomOut();
+          break;
+        case 'f':
+        case 'F':
+          event.preventDefault();
+          this.toggleFullscreen();
+          break;
+      }
     }
   }
 
@@ -280,11 +321,38 @@ export class DriverPerformanceComponent implements OnInit {
   }
 
   openImage(image: any): void {
-    console.log('Opening performance image:', image.name);
+    console.log('Opening performance image for height-optimized display:', image.name);
     this.selectedImage = image;
     this.isFullscreen = false;
     this.currentRotation = 0; // Reset rotation
     this.currentZoom = 1;     // Reset zoom
+    this.resetImageTransform(); // Reset pan values
+    
+    // Focus on the modal to enable keyboard navigation
+    setTimeout(() => {
+      const modal = document.querySelector('.modal-overlay');
+      if (modal && modal instanceof HTMLElement) {
+        modal.focus();
+      }
+    }, 100);
+  }
+
+  openImageInFullscreen(item: any): void {
+    console.log('Opening performance image directly in fullscreen:', item.name);
+    this.selectedImage = item;
+    this.currentRotation = 0; // Reset rotation
+    this.currentZoom = 1;     // Reset zoom
+    this.resetImageTransform(); // Reset pan values
+    
+    // Set fullscreen immediately
+    setTimeout(() => {
+      this.enterFullscreen();
+      // Focus on the modal to enable keyboard navigation
+      const modal = document.querySelector('.modal-overlay');
+      if (modal && modal instanceof HTMLElement) {
+        modal.focus();
+      }
+    }, 100);
   }
 
   closeImage(): void {
@@ -298,18 +366,22 @@ export class DriverPerformanceComponent implements OnInit {
   // Image transformation methods
   rotateLeft(): void {
     this.currentRotation -= 90;
+    this.updateImageTransform();
   }
 
   rotateRight(): void {
     this.currentRotation += 90;
+    this.updateImageTransform();
   }
 
   zoomIn(): void {
     this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
+    this.updateImageTransform();
   }
 
   zoomOut(): void {
     this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
+    this.updateImageTransform();
   }
 
   toggleFullscreen(): void {
@@ -457,5 +529,109 @@ export class DriverPerformanceComponent implements OnInit {
 
   toggleDayExpansion(dayGroup: any): void {
     dayGroup.isExpanded = !dayGroup.isExpanded;
+  }
+
+  // Touch gesture methods
+  onTouchStart(event: TouchEvent): void {
+    event.preventDefault();
+    
+    if (event.touches.length === 1) {
+      // Single touch - start panning
+      this.isPanning = true;
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+      this.lastPanX = this.panX;
+      this.lastPanY = this.panY;
+    } else if (event.touches.length === 2) {
+      // Two fingers - start zooming
+      this.isZooming = true;
+      this.isPanning = false;
+      
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      this.initialDistance = this.getTouchDistance(touch1, touch2);
+      this.lastTouchDistance = this.initialDistance;
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    event.preventDefault();
+    
+    if (event.touches.length === 1 && this.isPanning && !this.isZooming) {
+      // Single touch panning
+      const deltaX = event.touches[0].clientX - this.touchStartX;
+      const deltaY = event.touches[0].clientY - this.touchStartY;
+      
+      this.panX = this.lastPanX + deltaX;
+      this.panY = this.lastPanY + deltaY;
+      
+      this.updateImageTransform();
+    } else if (event.touches.length === 2 && this.isZooming) {
+      // Two finger pinch zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const currentDistance = this.getTouchDistance(touch1, touch2);
+      
+      const scaleChange = currentDistance / this.lastTouchDistance;
+      const newZoom = this.currentZoom * scaleChange;
+      
+      this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, newZoom));
+      this.lastTouchDistance = currentDistance;
+      
+      this.updateImageTransform();
+    }
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (event.touches.length === 0) {
+      // Check for double-tap to reset zoom and pan
+      const currentTime = Date.now();
+      if (currentTime - this.lastTapTime < this.doubleTapDelay && !this.isPanning && !this.isZooming) {
+        // Double tap detected - reset to default state
+        this.currentZoom = 1;
+        this.resetImageTransform();
+        console.log('Double-tap detected: Reset zoom and pan');
+      }
+      this.lastTapTime = currentTime;
+      
+      this.isPanning = false;
+      this.isZooming = false;
+    } else if (event.touches.length === 1 && this.isZooming) {
+      // Switch from zoom to pan if one finger lifted
+      this.isZooming = false;
+      this.isPanning = true;
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+      this.lastPanX = this.panX;
+      this.lastPanY = this.panY;
+    }
+  }
+
+  private getTouchDistance(touch1: Touch, touch2: Touch): number {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  private updateImageTransform(): void {
+    const imageElement = this.imageElement?.nativeElement;
+    if (imageElement) {
+      // Apply bounds checking for panning
+      const maxPanX = 100 * this.currentZoom;
+      const maxPanY = 100 * this.currentZoom;
+      
+      this.panX = Math.max(-maxPanX, Math.min(maxPanX, this.panX));
+      this.panY = Math.max(-maxPanY, Math.min(maxPanY, this.panY));
+      
+      const transform = `rotate(${this.currentRotation}deg) scale(${this.currentZoom}) translate(${this.panX / this.currentZoom}px, ${this.panY / this.currentZoom}px)`;
+      imageElement.style.transform = transform;
+    }
+  }
+
+  private resetImageTransform(): void {
+    this.panX = 0;
+    this.panY = 0;
+    this.lastPanX = 0;
+    this.lastPanY = 0;
   }
 }

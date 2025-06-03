@@ -1884,7 +1884,7 @@ export class SupabaseService {
   getImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     
-    // If the path already includes the bucket name (e.g., "rejected-order/123/image.jpg")
+    // If the path already includes the bucket name (e.g., "van-issues/123_456_0.jpg")
     if (imagePath.includes('/')) {
       const parts = imagePath.split('/');
       const bucket = parts[0];
@@ -1892,8 +1892,33 @@ export class SupabaseService {
       return this.getPublicUrl(bucket, fileName);
     }
     
+    // Check if this is a van issue image based on filename pattern
+    // Van issue images typically follow pattern: driverId_timestamp_index.extension
+    if (imagePath.match(/^\d+_\d+_\d+\./)) {
+      return this.getVanIssueImageUrl(imagePath);
+    }
+    
+    // Check if this is a van issue image by checking if it's in a format that would be from van issues
+    // This includes checking for timestamp-like patterns
+    if (imagePath.match(/^\d+_\d{13}_\d+\./)) {
+      return this.getVanIssueImageUrl(imagePath);
+    }
+    
+    // Check for any pattern that looks like it could be a van issue (more lenient)
+    if (imagePath.match(/\d+_\d+_\d+\.(jpg|jpeg|png|gif|webp)$/i)) {
+      return this.getVanIssueImageUrl(imagePath);
+    }
+    
     // Default to vehicle-crash bucket for backward compatibility
     return this.getPublicUrl('vehicle-crash', imagePath);
+  }
+
+  // Specific method for van issue images
+  getVanIssueImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    
+    // For van issue images, always use the van-issues bucket
+    return this.getPublicUrl('van-issues', imagePath);
   }
 
   // Method to delete a file from storage

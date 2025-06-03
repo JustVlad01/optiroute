@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { FormAssignment } from '../../services/models/form-assignment.model';
+import { PwaService } from '../../services/pwa.service';
 
 @Component({
   selector: 'app-driver-forms',
@@ -22,7 +23,8 @@ export class DriverFormsComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private supabaseService: SupabaseService
+    private supabaseService: SupabaseService,
+    private pwaService: PwaService
   ) { }
 
   async ngOnInit(): Promise<void> {
@@ -164,5 +166,10 @@ export class DriverFormsComponent implements OnInit {
       default:
         return 'Daily Driver Form';
     }
+  }
+
+  onMyFormsClick(): void {
+    console.log('Driver Forms: My Forms clicked!');
+    this.pwaService.handleAroundNoonClick();
   }
 } 
