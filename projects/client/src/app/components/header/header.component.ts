@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { PwaService } from '../../services/pwa.service';
 
 @Component({
   selector: 'app-header',
@@ -9,9 +10,10 @@ import { RouterModule } from '@angular/router';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent implements OnInit {
-  constructor() { }
+export class HeaderComponent {
+  constructor(private pwaService: PwaService) { }
   
-  ngOnInit(): void {
+  onAroundNoonClick(): void {
+    this.pwaService.handleAroundNoonClick();
   }
 } 
