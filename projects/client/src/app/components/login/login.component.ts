@@ -24,6 +24,7 @@ export class LoginComponent implements OnInit {
   isError: boolean = false;
   isLoading: boolean = false;
   showPasswordSetup: boolean = false;
+  showPasswordConfirmMessage: boolean = false;
   currentDriver: any = null;
   
   // PWA properties
@@ -59,6 +60,16 @@ export class LoginComponent implements OnInit {
     return this.password === this.confirmPassword;
   }
 
+  // Helper method to check when to show password confirmation message
+  checkPasswordConfirmMessage(): void {
+    // Show message when password is valid (6+ chars) and user is about to enter confirm password
+    if (this.password && this.password.length >= 6 && !this.confirmPassword) {
+      this.showPasswordConfirmMessage = true;
+    } else {
+      this.showPasswordConfirmMessage = false;
+    }
+  }
+
   // Helper method to check if password setup form is valid
   isPasswordSetupFormValid(): boolean {
     // Check if password meets minimum requirements
@@ -68,6 +79,9 @@ export class LoginComponent implements OnInit {
     const confirmPasswordValid = !!(this.confirmPassword && this.passwordsMatch());
     
     const isValid = passwordValid && confirmPasswordValid;
+    
+    // Update confirmation message visibility
+    this.checkPasswordConfirmMessage();
     
     // Debug logging
     console.log('Password validation:', {
@@ -206,6 +220,7 @@ export class LoginComponent implements OnInit {
 
   resetForm() {
     this.showPasswordSetup = false;
+    this.showPasswordConfirmMessage = false;
     this.currentDriver = null;
     this.password = '';
     this.confirmPassword = '';

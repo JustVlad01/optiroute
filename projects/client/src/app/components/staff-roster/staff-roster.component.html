@@ -1,10 +1,23 @@
+<!-- Navigation Bar -->
+<nav class="navbar">
+  <div class="container-fluid">
+    <div class="nav-left">
+      <span class="nav-title">Staff Roster</span>
+    </div>
+    
+    <a class="home-button-flat" (click)="goBack()">
+      <i class="bi bi-house-fill"></i>
+    </a>
+  </div>
+</nav>
+
 <div class="staff-roster-container">
   <div class="header-section">
     <h2 class="page-title">
-      <i class="bi bi-people"></i>
-      Staff Roster
+     
+
     </h2>
-    <p class="page-subtitle">View current staff schedules and assignments</p>
+
   </div>
 
   <!-- Loading State -->
@@ -57,20 +70,61 @@
     </div>
   </div>
 
-  <!-- Image Viewer Modal -->
-  <div class="image-modal" *ngIf="selectedRoster" (click)="closeViewer()">
+  <!-- Enhanced Image Viewer Modal -->
+  <div class="image-modal" *ngIf="selectedRoster" (click)="closeViewer()" [class.fullscreen]="isFullscreen">
     <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>{{ selectedRoster.title }}</h3>
-        <button class="btn-close" (click)="closeViewer()">
-          <i class="bi bi-x"></i>
+      <!-- Image Controls -->
+      <div class="modal-controls">
+        <button class="control-button" (click)="zoomOut()" title="Zoom Out (-)">
+          <i class="bi bi-zoom-out"></i>
+        </button>
+        <button class="control-button" (click)="zoomIn()" title="Zoom In (+)">
+          <i class="bi bi-zoom-in"></i>
+        </button>
+        <button class="control-button" (click)="rotateLeft()" title="Rotate Left (←)">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button class="control-button" (click)="rotateRight()" title="Rotate Right (→)">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="control-button" (click)="toggleFullscreen()" title="Toggle Fullscreen (F)">
+          <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-fullscreen'"></i>
+        </button>
+        <button class="control-button close-button" (click)="closeViewer()" title="Close (Esc)">
+          <i class="bi bi-x-lg"></i>
         </button>
       </div>
-      <div class="modal-body">
-        <img [src]="selectedRoster.image_url" [alt]="selectedRoster.title">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h3>{{ selectedRoster.title }}</h3>
+      </div>
+
+      <!-- Image Container -->
+      <div class="modal-image-wrapper">
+        <img [src]="selectedRoster.image_url" 
+             [alt]="selectedRoster.title"
+             class="modal-image"
+             [style.transform]="'rotate(' + currentRotation + 'deg) scale(' + currentZoom + ') translate(' + (panX / currentZoom) + 'px, ' + (panY / currentZoom) + 'px)'"
+             (touchstart)="onTouchStart($event)"
+             (touchmove)="onTouchMove($event)"
+             (touchend)="onTouchEnd($event)"
+             (dblclick)="onDoubleClick()">
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
         <div class="roster-details" *ngIf="selectedRoster.description">
           <h4>Details</h4>
           <p>{{ selectedRoster.description }}</p>
+        </div>
+        <div class="modal-instructions">
+          <p class="d-none d-md-block">
+            Use keyboard: F (fullscreen), +/- (zoom), ←/→ (rotate), Esc (close)
+          </p>
+          <p class="d-md-none">
+            Pinch to zoom • Drag to pan • Double-tap to reset • Use controls above
+          </p>
         </div>
       </div>
     </div>

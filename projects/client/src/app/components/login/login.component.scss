@@ -161,6 +161,27 @@
   font-size: 1rem;
 }
 
+.password-requirements {
+  text-align: center;
+  color: var(--secondary-color);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.password-confirm-message {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-left: 4px solid #28a745;
+  color: #155724;
+  padding: 12px 15px;
+  margin-top: 15px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .form-label {
   color: var(--primary-color);
   font-weight: 500;

@@ -20,11 +20,11 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Custom navbar with red background to match screenshot */
+/* Custom navbar with red background to match other components */
 .navbar-custom {
-  background: linear-gradient(135deg, #0a5081 0%, #0a3161 100%);
+  background: linear-gradient(135deg, #FF5252 0%, #D32F2F 100%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  height: 64px;
+  height: 56px;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -46,9 +46,9 @@ html, body {
   }
   
   .nav-title {
-    font-size: 1.3rem;
+    font-size: 1rem;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     color: white;
   }
   
@@ -56,8 +56,8 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     color: white;
     text-decoration: none;
     transition: all 0.2s;
@@ -68,7 +68,7 @@ html, body {
     }
     
     i {
-      font-size: 1.35rem;
+      font-size: 1.2rem;
     }
   }
 }
@@ -519,20 +519,10 @@ html, body {
 /* Responsive adjustments - More compact */
 @media (max-width: 768px) {
   .navbar-custom {
-    height: 48px;
-    padding: 0 12px;
+    height: 52px;
     
     .nav-title {
-      font-size: 1.1rem;
-    }
-    
-    .home-button-flat {
-      width: 32px;
-      height: 32px;
-      
-      i {
-        font-size: 1.1rem;
-      }
+      font-size: 0.95rem;
     }
   }
   
