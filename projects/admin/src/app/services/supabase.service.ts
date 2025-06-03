@@ -42,7 +42,7 @@ export class SupabaseService {
   // Initialize storage buckets
   private async initializeStorageBuckets() {
     try {
-      // Check if driver-performance bucket exists
+      // Check if buckets exist
       const { data: buckets, error } = await this.supabase.storage.listBuckets();
       
       if (error) {
@@ -71,6 +71,27 @@ export class SupabaseService {
         }
       } else {
         console.log('Driver performance bucket already exists');
+      }
+
+      // Create rejected-order bucket if it doesn't exist
+      const rejectedOrderBucket = buckets?.find(b => b.name === 'rejected-order');
+      
+      if (!rejectedOrderBucket) {
+        console.log('Creating rejected-order bucket');
+        
+        const { data, error: createError } = await this.supabase.storage.createBucket('rejected-order', {
+          public: true,
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (createError) {
+          console.error('Error creating rejected-order bucket:', createError);
+        } else {
+          console.log('Created rejected-order bucket:', data);
+        }
+      } else {
+        console.log('Rejected order bucket already exists');
       }
     } catch (err) {
       console.error('Exception initializing storage buckets:', err);
@@ -1859,8 +1880,19 @@ export class SupabaseService {
     return data.publicUrl;
   }
 
-  // Method to get image URL for accident reports
+  // Method to get image URL for different types of images
   getImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    
+    // If the path already includes the bucket name (e.g., "rejected-order/123/image.jpg")
+    if (imagePath.includes('/')) {
+      const parts = imagePath.split('/');
+      const bucket = parts[0];
+      const fileName = parts.slice(1).join('/');
+      return this.getPublicUrl(bucket, fileName);
+    }
+    
+    // Default to vehicle-crash bucket for backward compatibility
     return this.getPublicUrl('vehicle-crash', imagePath);
   }
 

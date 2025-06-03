@@ -8,7 +8,7 @@ import { FormAssignment } from '../../services/models/form-assignment.model';
 @Component({
   selector: 'app-driver-forms',
   templateUrl: './driver-forms.component.html',
-  styleUrls: ['./driver-forms.component.scss'],
+  styleUrls: ['./driver-forms.component.scss', './available-forms.component.scss'],
   standalone: true,
   imports: [CommonModule, RouterModule]
 })

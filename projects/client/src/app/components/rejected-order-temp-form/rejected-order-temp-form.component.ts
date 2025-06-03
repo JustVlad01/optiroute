@@ -212,10 +212,32 @@ export class RejectedOrderTempFormComponent implements OnInit {
     try {
       this.submitting = true;
       
+      // Upload files first and get their paths
+      const uploadedFilePaths: { [key: string]: string } = {};
+      
+      for (const [fieldName, file] of Object.entries(this.selectedFiles)) {
+        if (file) {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const fileName = `${this.driverId}/${timestamp}_${fieldName}_${file.name}`;
+          
+          const uploadResult = await this.supabaseService.uploadFile('rejected-order', fileName, file);
+          
+          if (uploadResult.success) {
+            uploadedFilePaths[fieldName] = `rejected-order/${fileName}`;
+          } else {
+            console.error(`Failed to upload ${fieldName}:`, uploadResult.error);
+            alert(`Failed to upload ${fieldName}. Please try again.`);
+            return;
+          }
+        }
+      }
+
       const formData = {
         ...this.rejectedOrderTempForm.value,
         driver_id: this.driverId,
-        form_type: 'rejected_order_temp_checklist'
+        form_type: 'rejected_order_temp_checklist',
+        // Add uploaded file paths
+        ...uploadedFilePaths
       };
 
       if (this.formId) {
@@ -276,5 +298,17 @@ export class RejectedOrderTempFormComponent implements OnInit {
   getSelectedFileName(fieldName: string): string | null {
     const file = this.selectedFiles[fieldName];
     return file ? file.name : null;
+  }
+
+  // Helper method to get image URL for display
+  getImageUrl(imagePath: string | null): string | null {
+    if (!imagePath) return null;
+    return this.supabaseService.getImageUrl(imagePath);
+  }
+
+  // Helper method to check if form has image
+  hasFormImage(fieldName: string): boolean {
+    const formValue = this.rejectedOrderTempForm.get(fieldName)?.value;
+    return formValue && typeof formValue === 'string' && formValue.includes('/');
   }
 } 

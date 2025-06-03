@@ -1688,15 +1688,15 @@
               <div class="photo-grid">
                 <div class="photo-item" *ngIf="selectedTemperatureReport.photo_temp_reading_customer">
                   <label>Customer Temperature Reading</label>
-                  <img [src]="selectedTemperatureReport.photo_temp_reading_customer" alt="Customer Temperature" (click)="openImageModal(selectedTemperatureReport.photo_temp_reading_customer)">
+                  <img [src]="getImageUrl(selectedTemperatureReport.photo_temp_reading_customer)" alt="Customer Temperature" (click)="openImageModal(getImageUrl(selectedTemperatureReport.photo_temp_reading_customer))">
                 </div>
                 <div class="photo-item" *ngIf="selectedTemperatureReport.photo_van_display_temp">
                   <label>Van Display Temperature</label>
-                  <img [src]="selectedTemperatureReport.photo_van_display_temp" alt="Van Display" (click)="openImageModal(selectedTemperatureReport.photo_van_display_temp)">
+                  <img [src]="getImageUrl(selectedTemperatureReport.photo_van_display_temp)" alt="Van Display" (click)="openImageModal(getImageUrl(selectedTemperatureReport.photo_van_display_temp))">
                 </div>
                 <div class="photo-item" *ngIf="selectedTemperatureReport.photo_probe_reading_destructive_pack">
                   <label>Probe Reading from Destructive Pack</label>
-                  <img [src]="selectedTemperatureReport.photo_probe_reading_destructive_pack" alt="Probe Reading" (click)="openImageModal(selectedTemperatureReport.photo_probe_reading_destructive_pack)">
+                  <img [src]="getImageUrl(selectedTemperatureReport.photo_probe_reading_destructive_pack)" alt="Probe Reading" (click)="openImageModal(getImageUrl(selectedTemperatureReport.photo_probe_reading_destructive_pack))">
                 </div>
               </div>
             </div>

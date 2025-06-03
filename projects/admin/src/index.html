@@ -11,18 +11,7 @@
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <!-- Google Maps JavaScript API - Optimized loading -->
-  <script>
-    // Define callback function for when Maps API is fully loaded
-    function initGoogleMaps() {
-      // Maps API is ready
-      window.googleMapsLoaded = true;
-      // Dispatch event so Angular components can react
-      window.dispatchEvent(new Event('google-maps-loaded'));
-    }
-  </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnsVzHUKFmzMl62YcJh2xOhtjeS6Z5T-U&libraries=places&callback=initGoogleMaps&v=weekly&loading=async" defer></script>
-  <!-- Bootstrap JS Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
 </head>
 <body>
   <app-root></app-root>

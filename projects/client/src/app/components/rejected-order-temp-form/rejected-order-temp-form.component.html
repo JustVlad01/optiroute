@@ -295,8 +295,8 @@
             <div class="col-md-4">
               <label for="photo_temp_reading_customer" class="form-label">Photo of temp reading from customer</label>
               
-              <!-- Photo Upload Options -->
-              <div class="photo-upload-options">
+              <!-- Photo Upload Options (not in view mode) -->
+              <div *ngIf="!isViewMode" class="photo-upload-options">
                 <div class="upload-option">
                   <input type="file" class="form-control" id="photo_temp_reading_customer_file" formControlName="photo_temp_reading_customer" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_temp_reading_customer')">
                   <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_temp_reading_customer_file')">
@@ -314,18 +314,29 @@
                 </div>
               </div>
               
-              <div *ngIf="getSelectedFileName('photo_temp_reading_customer')" class="selected-file">
+              <!-- Display selected file name when uploading -->
+              <div *ngIf="!isViewMode && getSelectedFileName('photo_temp_reading_customer')" class="selected-file">
                 <i class="bi bi-check-circle-fill"></i>
                 <span>{{ getSelectedFileName('photo_temp_reading_customer') }}</span>
               </div>
-           
+
+              <!-- Display uploaded image in view mode -->
+              <div *ngIf="isViewMode && hasFormImage('photo_temp_reading_customer')" class="uploaded-image">
+                <img [src]="getImageUrl(rejectedOrderTempForm.get('photo_temp_reading_customer')?.value)" alt="Customer Temperature Reading" class="img-fluid rounded">
+              </div>
+              
+              <!-- No image message in view mode -->
+              <div *ngIf="isViewMode && !hasFormImage('photo_temp_reading_customer')" class="no-image">
+                <i class="bi bi-image"></i>
+                <span>No image uploaded</span>
+              </div>
             </div>
             
             <div class="col-md-4">
               <label for="photo_van_display_temp" class="form-label">Photo of van display temperture</label>
               
-              <!-- Photo Upload Options -->
-              <div class="photo-upload-options">
+              <!-- Photo Upload Options (not in view mode) -->
+              <div *ngIf="!isViewMode" class="photo-upload-options">
                 <div class="upload-option">
                   <input type="file" class="form-control" id="photo_van_display_temp_file" formControlName="photo_van_display_temp" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_van_display_temp')">
                   <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_van_display_temp_file')">
@@ -343,18 +354,29 @@
                 </div>
               </div>
               
-              <div *ngIf="getSelectedFileName('photo_van_display_temp')" class="selected-file">
+              <!-- Display selected file name when uploading -->
+              <div *ngIf="!isViewMode && getSelectedFileName('photo_van_display_temp')" class="selected-file">
                 <i class="bi bi-check-circle-fill"></i>
                 <span>{{ getSelectedFileName('photo_van_display_temp') }}</span>
               </div>
-             
+
+              <!-- Display uploaded image in view mode -->
+              <div *ngIf="isViewMode && hasFormImage('photo_van_display_temp')" class="uploaded-image">
+                <img [src]="getImageUrl(rejectedOrderTempForm.get('photo_van_display_temp')?.value)" alt="Van Display Temperature" class="img-fluid rounded">
+              </div>
+              
+              <!-- No image message in view mode -->
+              <div *ngIf="isViewMode && !hasFormImage('photo_van_display_temp')" class="no-image">
+                <i class="bi bi-image"></i>
+                <span>No image uploaded</span>
+              </div>
             </div>
             
             <div class="col-md-4">
               <label for="photo_probe_reading_destructive_pack" class="form-label">Photo of probe reading from destructive pack</label>
               
-              <!-- Photo Upload Options -->
-              <div class="photo-upload-options">
+              <!-- Photo Upload Options (not in view mode) -->
+              <div *ngIf="!isViewMode" class="photo-upload-options">
                 <div class="upload-option">
                   <input type="file" class="form-control" id="photo_probe_reading_destructive_pack_file" formControlName="photo_probe_reading_destructive_pack" accept="image/*" style="display: none;" (change)="onFileSelected($event, 'photo_probe_reading_destructive_pack')">
                   <button type="button" class="btn btn-outline-secondary upload-btn" (click)="triggerFileInput('photo_probe_reading_destructive_pack_file')">
@@ -372,11 +394,22 @@
                 </div>
               </div>
               
-              <div *ngIf="getSelectedFileName('photo_probe_reading_destructive_pack')" class="selected-file">
+              <!-- Display selected file name when uploading -->
+              <div *ngIf="!isViewMode && getSelectedFileName('photo_probe_reading_destructive_pack')" class="selected-file">
                 <i class="bi bi-check-circle-fill"></i>
                 <span>{{ getSelectedFileName('photo_probe_reading_destructive_pack') }}</span>
               </div>
-         
+
+              <!-- Display uploaded image in view mode -->
+              <div *ngIf="isViewMode && hasFormImage('photo_probe_reading_destructive_pack')" class="uploaded-image">
+                <img [src]="getImageUrl(rejectedOrderTempForm.get('photo_probe_reading_destructive_pack')?.value)" alt="Probe Reading from Destructive Pack" class="img-fluid rounded">
+              </div>
+              
+              <!-- No image message in view mode -->
+              <div *ngIf="isViewMode && !hasFormImage('photo_probe_reading_destructive_pack')" class="no-image">
+                <i class="bi bi-image"></i>
+                <span>No image uploaded</span>
+              </div>
             </div>
           </div>
         </section>

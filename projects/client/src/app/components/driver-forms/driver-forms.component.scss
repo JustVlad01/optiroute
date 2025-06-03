@@ -154,7 +154,7 @@
       border-bottom: 1px solid var(--border-color);
       
       .form-title {
-        color: var(--primary-color);
+        color: #1a202c;
         font-weight: 600;
         font-size: 0.6rem;
         margin: 0;
@@ -218,7 +218,7 @@
       border-top: 1px solid var(--border-color);
       
       .btn-primary {
-        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        background: linear-gradient(135deg, #ff5959, #e64545);
         border: none;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
@@ -524,7 +524,7 @@
       content: '';
       width: 3px;
       height: 1.2rem;
-      background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+      background: linear-gradient(135deg, #ff5959, #e64545);
       margin-right: 0.5rem;
       border-radius: 2px;
     }
@@ -570,21 +570,21 @@
   gap: 0.5rem;
   
   i {
-    color: var(--secondary-color);
+    color: #f13d3d;
     font-size: 1.1rem;
   }
   
   .form-title {
-    color: var(--primary-color);
+    color: #1b1a1a;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.5rem;
     margin: 0;
   }
 }
 
 /* Button styling consistency */
 .btn-primary {
-  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  background: linear-gradient(135deg, #ff5959, #e64545);
   border: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;

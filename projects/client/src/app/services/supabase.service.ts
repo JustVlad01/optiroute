@@ -11,6 +11,47 @@ export class SupabaseService {
 
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+    
+    // Initialize Supabase storage buckets
+    this.initializeStorageBuckets();
+  }
+
+  // Initialize storage buckets
+  private async initializeStorageBuckets() {
+    try {
+      // Check if buckets exist
+      const { data: buckets, error } = await this.supabase.storage.listBuckets();
+      
+      if (error) {
+        console.error('Error listing buckets:', error);
+        return;
+      }
+      
+      console.log('Available buckets:', buckets);
+      
+      // Create rejected-order bucket if it doesn't exist
+      const rejectedOrderBucket = buckets?.find(b => b.name === 'rejected-order');
+      
+      if (!rejectedOrderBucket) {
+        console.log('Creating rejected-order bucket');
+        
+        const { data, error: createError } = await this.supabase.storage.createBucket('rejected-order', {
+          public: true,
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif'],
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (createError) {
+          console.error('Error creating rejected-order bucket:', createError);
+        } else {
+          console.log('Created rejected-order bucket:', data);
+        }
+      } else {
+        console.log('Rejected order bucket already exists');
+      }
+    } catch (err) {
+      console.error('Exception initializing storage buckets:', err);
+    }
   }
 
   // Method to access the Supabase client instance
@@ -1147,5 +1188,79 @@ export class SupabaseService {
   // Method to get form assignment (fix for the naming issue)
   async getFormAssignment(assignmentId: string) {
     return this.getFormAssignmentById(assignmentId);
+  }
+
+  // File Upload Methods
+  
+  // Method to upload a file to Supabase storage
+  async uploadFile(bucket: string, fileName: string, file: File): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log(`Uploading file ${fileName} to bucket ${bucket}`);
+      
+      const { data, error } = await this.supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Error uploading file:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('File uploaded successfully:', data);
+      return { success: true, data };
+    } catch (err) {
+      console.error('Exception uploading file:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to get public URL for a file
+  getPublicUrl(bucket: string, fileName: string): string {
+    const { data } = this.supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+    
+    return data.publicUrl;
+  }
+
+  // Method to delete a file from storage
+  async deleteFile(bucket: string, fileName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`Deleting file ${fileName} from bucket ${bucket}`);
+      
+      const { error } = await this.supabase.storage
+        .from(bucket)
+        .remove([fileName]);
+
+      if (error) {
+        console.error('Error deleting file:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('File deleted successfully');
+      return { success: true };
+    } catch (err) {
+      console.error('Exception deleting file:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  // Method to get image URL for different types of images
+  getImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    
+    // If the path already includes the bucket name (e.g., "rejected-order/123/image.jpg")
+    if (imagePath.includes('/')) {
+      const parts = imagePath.split('/');
+      const bucket = parts[0];
+      const fileName = parts.slice(1).join('/');
+      return this.getPublicUrl(bucket, fileName);
+    }
+    
+    // Default to rejected-order bucket for backward compatibility
+    return this.getPublicUrl('rejected-order', imagePath);
   }
 }

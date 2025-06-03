@@ -65,29 +65,31 @@
 
         <!-- Available Forms Section -->
         <div class="forms-section">
-          <h4 class="section-title mb-3">Available Forms</h4>
-          <div class="forms-list">
+          <h4 class="available-forms-section-title">Available Forms</h4>
+          <div class="available-forms-grid">
             <!-- Show message if no assigned forms -->
             <div *ngIf="sortedForms.length === 0" class="no-forms text-center p-4 bg-light rounded mb-3">
               <p class="mb-0">You have no assigned forms at this time.</p>
             </div>
 
             <!-- Rejected Order Forms -->
-            <div class="form-card" *ngFor="let form of availableForms">
-              <div class="form-header d-flex justify-content-between align-items-center">
-                <div class="form-title-with-icon d-flex align-items-center">
-                  <i class="{{form.icon}} me-2"></i>
-                  <h5 class="form-title mb-0">{{ form.title }}</h5>
+            <div class="available-form-card" *ngFor="let form of availableForms">
+              <div class="available-form-header">
+                <div class="available-form-title-row">
+                  <div class="available-form-icon">
+                    <i class="{{form.icon}}"></i>
+                  </div>
+                  <h5 class="available-form-title">{{ form.title }}</h5>
                 </div>
               </div>
-              <div class="form-body p-3">
-                <p class="mb-0">{{ form.description }}</p>
-              </div>
-              <div class="form-actions p-3 d-flex justify-content-end">
-                <button class="btn btn-primary" (click)="navigateToRejectedOrderForm(form.route)">
-                  <i class="bi bi-plus-circle me-1"></i>
-                  Create New Report
-                </button>
+              <div class="available-form-body">
+                <p class="available-form-description">{{ form.description }}</p>
+                <div class="available-form-actions">
+                  <button class="available-form-btn" (click)="navigateToRejectedOrderForm(form.route)">
+                    <i class="bi bi-plus-circle"></i>
+                    Create New Report
+                  </button>
+                </div>
               </div>
             </div>
           </div>
